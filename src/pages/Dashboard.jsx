@@ -1,12 +1,39 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import QRCode from 'qrcode';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
+
+function AnimatedVoxel({ v }) {
+  const materialRef = useRef();
+  const targetColor = useMemo(() => new THREE.Color(), []);
+  const black = useMemo(() => new THREE.Color('#000000'), []);
+
+  useFrame(() => {
+    if (!materialRef.current) return;
+
+    targetColor.set(v.color);
+    materialRef.current.color.lerp(targetColor, 0.1);
+
+    if (v.isBase) {
+      materialRef.current.emissive.lerp(targetColor, 0.1);
+    } else {
+      materialRef.current.emissive.lerp(black, 0.1);
+    }
+  });
+
+  return (
+    <mesh position={v.pos} castShadow={!v.isBase} receiveShadow>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial ref={materialRef} color={v.color} roughness={0.9} />
+    </mesh>
+  );
+}
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
@@ -123,13 +150,9 @@ export default function Dashboard() {
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
-                <group>
-                  {/* FIX: Correctly mapping the unified array on the Dashboard */}
+                <group rotation={[0, Date.now() * 0.0005, 0]}>
                   {previewVoxels.map((v, i) => (
-                    <mesh key={`preview-${i}`} position={v.pos} castShadow receiveShadow>
-                      <boxGeometry args={[1, 1, 1]} />
-                      <meshStandardMaterial color={v.color} roughness={0.9} />
-                    </mesh>
+                    <AnimatedVoxel key={`preview-${i}`} v={v} />
                   ))}
                 </group>
                 <OrbitControls enableZoom={true} enablePan={true} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
