@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import Landing from './pages/Landing'; // We imported the new Landing page here
 import Dashboard from './pages/Dashboard';
 import QrScanner from './pages/QrScanner';
 import Login from './pages/Login';
@@ -17,19 +18,12 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<Landing />} /> {/* The root domain now safely loads the Landing page! */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/qr/:id" element={<QrScanner />} />
 
           {/* Protected Routes */}
-          <Route 
-            path="/" 
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            } 
-          />
           <Route 
             path="/dashboard" 
             element={
