@@ -116,14 +116,24 @@ export default function Dashboard() {
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
                 <group rotation={[0, Date.now() * 0.0005, 0]}>
-                  {previewVoxels.map((v, i) => (
-                    <mesh key={i} position={v.pos} castShadow receiveShadow>
-                      <boxGeometry args={[1, 1, 1]} />
-                      <meshStandardMaterial color={v.color} roughness={0.9} />
-                    </mesh>
-                  ))}
+                  <group>
+                    {previewVoxels.base.map((v, i) => (
+                      <mesh key={`base-${i}`} position={v.pos} receiveShadow>
+                        <boxGeometry args={[1, 1, 1]} />
+                        <meshStandardMaterial color={v.color} roughness={1} />
+                      </mesh>
+                    ))}
+                  </group>
+                  <group>
+                    {previewVoxels.tree.map((v, i) => (
+                      <mesh key={`tree-${i}`} position={v.pos} castShadow receiveShadow>
+                        <boxGeometry args={[1, 1, 1]} />
+                        <meshStandardMaterial color={v.color} roughness={0.9} />
+                      </mesh>
+                    ))}
+                  </group>
                 </group>
-                <OrbitControls enableZoom={true} enablePan={false} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
+                <OrbitControls enableZoom={true} enablePan={true} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
               </Canvas>
             </div>
 
@@ -180,7 +190,7 @@ export default function Dashboard() {
               myLinks.map((link) => (
                 <div key={link.id} className="bg-white p-8 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex items-center justify-between transition-all hover:shadow-md">
                   <div className="overflow-hidden pr-4">
-                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-wide">{TREE_THEMES[link.treeType]?.name}</span>
+                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-wide">{TREE_THE.MES[link.treeType]?.name || 'Tree'}</span>
                     <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-lg font-medium text-slate-800 block hover:text-emerald-600 transition-colors truncate">
                       {link.destinationUrl}
                     </a>
@@ -194,7 +204,6 @@ export default function Dashboard() {
             )}
           </div>
         )}
-
       </main>
     </div>
   );
