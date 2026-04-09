@@ -124,6 +124,7 @@ export default function Dashboard() {
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
                 <group>
+                  {/* FIX: Correctly mapping the unified array on the Dashboard */}
                   {previewVoxels.map((v, i) => (
                     <mesh key={`preview-${i}`} position={v.pos} castShadow receiveShadow>
                       <boxGeometry args={[1, 1, 1]} />
