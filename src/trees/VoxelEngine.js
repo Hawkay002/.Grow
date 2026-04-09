@@ -1,27 +1,27 @@
 export const TREE_THEMES = {
   cherryblossom: { 
     name: 'Cherry', shape: 'squashed_sphere', density: 0.45, clusterSize: 2.5,
-    qrDark: '#be185d', qrLight: '#fdf2f8', trunk: '#451a03',
+    qrDark: '#831843', qrLight: '#fce7f3', trunk: '#451a03', // Deep Rose dark, visible pastel pink light
     leaf: ['#f472b6', '#db2777', '#fbcfe8', '#be185d']
   },
   pine: { 
     name: 'Pine', shape: 'cone', density: 0.5, clusterSize: 1.5,
-    qrDark: '#064e3b', qrLight: '#f0fdf4', trunk: '#291002',
+    qrDark: '#022c22', qrLight: '#dcfce7', trunk: '#291002', // Deep Jungle dark, visible mint light
     leaf: ['#15803d', '#166534', '#22c55e', '#14532d']
   },
   dragon: { 
     name: 'Dragon', shape: 'umbrella', density: 0.7, clusterSize: 3.0,
-    qrDark: '#451a03', qrLight: '#fefce8', trunk: '#78350f',
+    qrDark: '#291002', qrLight: '#fef08a', trunk: '#78350f', // Deep Mahogany dark, visible golden light
     leaf: ['#a3e635', '#84cc16', '#bef264', '#65a30d']
   },
   maple: { 
     name: 'Maple', shape: 'wide_ellipsoid', density: 0.4, clusterSize: 2.0,
-    qrDark: '#9a3412', qrLight: '#fff7ed', trunk: '#451a03',
+    qrDark: '#7c2d12', qrLight: '#ffedd5', trunk: '#451a03', // Deep Rust dark, visible peach light
     leaf: ['#ea580c', '#c2410c', '#f97316', '#9a3412']
   },
   juniper: { 
     name: 'Juniper', shape: 'swirl', density: 0.35, clusterSize: 2.5,
-    qrDark: '#0f766e', qrLight: '#f0fdfa', trunk: '#1c1917',
+    qrDark: '#134e4a', qrLight: '#ccfbf1', trunk: '#1c1917', // Deep Teal dark, visible cyan light
     leaf: ['#0d9488', '#0f766e', '#14b8a6', '#042f2e']
   }
 };
@@ -38,7 +38,7 @@ export function generateTree(treeType, qrData, qrSize) {
   const center = Math.floor(qrSize / 2);
   const scale = Math.max(1, qrSize / 21);
   
-  // 1. Draw Ground Base Layer (Always solid to provide contrast for the scan)
+  // 1. Draw Ground Base Layer (Solid blocks for scanning contrast)
   for (let row = 0; row < qrSize; row++) {
     for (let col = 0; col < qrSize; col++) {
       if (qrData[row * qrSize + col]) {
@@ -54,7 +54,7 @@ export function generateTree(treeType, qrData, qrSize) {
   const bounds = Math.floor(8 * scale);
   const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
 
-  // 2. Extrude the Tree
+  // 2. Extrude the Tree with rigid QR matrix constraints
   for (let y = 1; y <= bounds * 2.5; y++) {
     for (let x = -bounds * 2; x <= bounds * 2; x++) {
       for (let z = -bounds * 2; z <= bounds * 2; z++) {
@@ -64,8 +64,7 @@ export function generateTree(treeType, qrData, qrSize) {
         const row = Math.floor(z) + center;
 
         // THE EXTRUSION CONSTRAINT:
-        // If this block hovers over a white space, skip it completely.
-        // This guarantees the empty spaces remain empty all the way up.
+        // Leaves and branches ONLY grow over dark QR modules.
         if (col < 0 || col >= qrSize || row < 0 || row >= qrSize) continue;
         if (!qrData[row * qrSize + col]) continue; 
 
@@ -97,7 +96,7 @@ export function generateTree(treeType, qrData, qrSize) {
           }
         }
 
-        // Apply colors
+        // Apply colors and noise
         if (isTrunk) {
           voxels.push({ pos: [x, y, z], color: theme.trunk });
         } else if (isValidCanopy) {
@@ -105,6 +104,7 @@ export function generateTree(treeType, qrData, qrSize) {
           const clusterY = Math.floor(y / theme.clusterSize);
           const clusterZ = Math.floor(z / theme.clusterSize);
           const clusterNoise = hash(clusterX, clusterY, clusterZ);
+          
           const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
           if (isCore || clusterNoise < theme.density) {
@@ -115,5 +115,5 @@ export function generateTree(treeType, qrData, qrSize) {
     }
   }
 
-  return voxels; // Returning unified voxels again!
+  return voxels;
 }
