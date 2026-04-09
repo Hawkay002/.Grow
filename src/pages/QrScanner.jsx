@@ -23,19 +23,15 @@ function CameraController({ viewMode, controlsRef }) {
     if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
-      // 1. TOP-DOWN SCAN MODE: Forcefully lock the camera to the perfect top-down view
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
     } 
     else if (isTransitioning) {
-      // 2. GLIDING BACK: Move to corner, but ONLY while transitioning
       state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 5, 0), 0.1);
 
-      // Once the camera gets close to the corner, shut off the transition! 
-      // This gives the user 100% unrestricted freedom to drag and rotate without snapping back.
       if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
          setIsTransitioning(false);
       }
@@ -51,9 +47,8 @@ function SpinningGroup({ viewMode, children }) {
     if (!groupRef.current) return;
 
     if (viewMode === 'tree') {
-      groupRef.current.rotation.y += delta * 0.15; // Majestic slow spin
+      groupRef.current.rotation.y += delta * 0.15; 
     } else {
-      // Snap to perfect alignment for scanning
       const currentRot = groupRef.current.rotation.y;
       const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
       groupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
@@ -61,6 +56,41 @@ function SpinningGroup({ viewMode, children }) {
   });
 
   return <group ref={groupRef}>{children}</group>;
+}
+
+// NEW: This component manages its own smooth transition between 3D and 2D colors
+function AnimatedVoxel({ v, viewMode }) {
+  const materialRef = useRef();
+  const targetColor = useMemo(() => new THREE.Color(), []);
+  const black = useMemo(() => new THREE.Color('#000000'), []);
+
+  useFrame(() => {
+    if (!materialRef.current) return;
+
+    // 1. Determine target color (Flat QR color vs 3D shaded color)
+    const targetHex = viewMode === 'qr' ? v.qrColor : v.color;
+    targetColor.set(targetHex);
+
+    // 2. Smoothly transition the base color
+    materialRef.current.color.lerp(targetColor, 0.1);
+
+    // 3. Smoothly transition the emissive (glow) property.
+    // In QR mode, we make it glow its own color so it ignores shadows and looks completely flat!
+    // In 3D mode, we fade the glow to black so natural 3D shadows elegantly return.
+    if (viewMode === 'qr' || v.isBase) {
+      materialRef.current.emissive.lerp(targetColor, 0.1);
+    } else {
+      materialRef.current.emissive.lerp(black, 0.1);
+    }
+  });
+
+  return (
+    <mesh position={v.pos} castShadow={!v.isBase} receiveShadow>
+      <boxGeometry args={[1, 1, 1]} />
+      {/* We start with a standard material and let the useFrame logic animate it */}
+      <meshStandardMaterial ref={materialRef} color={v.color} roughness={0.9} />
+    </mesh>
+  );
 }
 
 export default function QrScanner() {
@@ -98,16 +128,11 @@ export default function QrScanner() {
         <CameraController viewMode={viewMode} controlsRef={controlsRef} />
         
         <SpinningGroup viewMode={viewMode}>
-          {/* FIX: Reverted to mapping the unified array. No more crashes! */}
           {voxels.map((v, i) => (
-            <mesh key={`voxel-${i}`} position={v.pos} castShadow receiveShadow>
-              <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={v.color} roughness={0.9} />
-            </mesh>
+            <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} />
           ))}
         </SpinningGroup>
         
-        {/* We disable OrbitControls autoRotate because SpinningGroup handles it perfectly */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
