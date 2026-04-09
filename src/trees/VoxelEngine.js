@@ -1,7 +1,6 @@
 export const TREE_THEMES = {
   cherryblossom: { 
     name: 'cherryblossom', shape: 'squashed_sphere', density: 0.45, clusterSize: 2.5,
-    // Restored original vibrant QR colors
     qrDark: '#be185d', qrLight: '#fdf2f8', trunk: '#3A2318', 
     leaf: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096', '#FFE4E9']
   },
@@ -60,9 +59,17 @@ export function generateTree(treeType, qrData, qrSize) {
     }
   }
 
-  const trunkHeight = Math.floor(7 * scale);
+  // DYNAMIC TRUNK HEIGHT: Willow gets a taller trunk to let vines drop
+  let trunkHeight = Math.floor(7 * scale);
+  if (theme.shape === 'willow') {
+    trunkHeight += Math.floor(3 * scale);
+  }
+
   const radius = Math.floor(5 * scale);
-  const bounds = Math.floor(8 * scale);
+  
+  // DYNAMIC BOUNDS: Willow needs taller bounds so the canopy isn't chopped off at the top
+  const bounds = theme.shape === 'willow' ? Math.floor(10 * scale) : Math.floor(8 * scale);
+  
   const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
 
   // 2. Extrude the Tree
@@ -83,10 +90,15 @@ export function generateTree(treeType, qrData, qrSize) {
            let tx = x, tz = z;
            
            if (theme.name === 'baobab') {
-              trunkRadius = 3.5 - ((y / trunkHeight) * 2.0); 
+              const midY = trunkHeight / 2;
+              const distFromMid = Math.abs(y - midY);
+              const normalizedDist = distFromMid / midY; 
+              trunkRadius = 3.5 - (normalizedDist * 1.8); 
            } else if (theme.name === 'juniper') {
               tx = x - Math.sin(y * 0.5) * 1.5; 
               tz = z - Math.cos(y * 0.5) * 1.5; 
+           } else if (theme.shape === 'willow') {
+              trunkRadius = 1.8; // Slightly thicker trunk to support the massive canopy
            }
            
            isTrunk = Math.sqrt(tx*tx + tz*tz) <= trunkRadius;
@@ -118,12 +130,20 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = Math.sqrt(swirlX*swirlX + (cy_y*cy_y) + swirlZ*swirlZ) <= radius * 1.25;
           }
           else if (theme.shape === 'baobab') {
-            isValidCanopy = cy_y >= -1 && cy_y <= radius * 0.6 && Math.sqrt((x*x)/3 + (cy_y*cy_y)*3 + (z*z)/3) <= radius * 1.4;
+            isValidCanopy = cy_y >= 0 && cy_y <= radius * 0.8 && Math.sqrt((x*x)/1.5 + (cy_y*cy_y)*2 + (z*z)/1.5) <= radius * 1.2;
           }
           else if (theme.shape === 'willow') {
-            const dome = Math.sqrt((x*x)/1.5 + (cy_y*cy_y)/0.8 + (z*z)/1.5) <= radius;
-            const vineDrop = hash(x, 0, z) > 0.6 ? (radius * 1.8) : 0;
-            const isVine = cy_y < 0 && cy_y > -vineDrop && Math.sqrt(x*x + z*z) <= radius * 0.95;
+            // 1. Much wider canopy dome (divisors increased to 2.5)
+            const dome = cy_y >= -2 && Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/1.2 + (z*z)/2.5) <= radius * 1.35;
+            
+            // 2. More frequent, drastically longer vines dropping from the canopy
+            const vineHash = hash(x, 0, z);
+            // Vine drop length dynamically varies from 1.5x radius to 3.5x radius!
+            const vineDrop = vineHash > 0.2 ? (radius * 1.5 + (vineHash * radius * 2.0)) : 0; 
+            
+            // 3. Match the vine spread to the wider canopy
+            const isVine = cy_y < 0 && cy_y > -vineDrop && Math.sqrt((x*x)/2.5 + (z*z)/2.5) <= radius * 1.3;
+            
             isValidCanopy = dome || isVine;
           }
         }
@@ -137,8 +157,19 @@ export function generateTree(treeType, qrData, qrSize) {
           const clusterNoise = hash(clusterX, clusterY, clusterZ);
           const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
-          if (isCore || clusterNoise < theme.density) {
-            voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark });
+          if (theme.name === 'baobab') {
+             const branchNoise = hash(x, y, z);
+             const isBranch = isCore || (Math.sqrt(x*x + z*z) < radius * 0.9 && branchNoise > 0.55);
+             
+             if (isBranch) {
+                voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark });
+             } else if (clusterNoise < 0.15) { 
+                voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark });
+             }
+          } else {
+             if (isCore || clusterNoise < theme.density) {
+                voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark });
+             }
           }
         }
       }
