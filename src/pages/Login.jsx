@@ -14,7 +14,6 @@ export default function Login() {
   const { login, loginWithGoogle, currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to landing page if already logged in
   useEffect(() => {
     if (currentUser) navigate('/');
   }, [currentUser, navigate]);
@@ -45,54 +44,51 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#e5e5e5] p-6 relative overflow-hidden">
-      {/* Background Texture */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#1a1a1a 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-
-      <div className="bg-brand-dark p-10 border-8 border-white shadow-[16px_16px_0px_rgba(255,42,95,1)] w-full max-w-md z-10 text-white">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+      <div className="bg-white p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 w-full max-w-md">
         <div className="text-center mb-8">
-          <FontAwesomeIcon icon={faTree} className="text-5xl text-brand-pop mb-4" />
-          <h2 className="text-4xl font-display font-black uppercase tracking-tight text-white">Welcome Back</h2>
+          <FontAwesomeIcon icon={faTree} className="text-4xl text-emerald-600 mb-4" />
+          <h2 className="text-3xl font-serif text-slate-800">Welcome Back</h2>
         </div>
         
-        {error && <div className="bg-red-500 text-white p-3 border-4 border-white font-bold mb-6 text-center">{error}</div>}
+        {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium mb-6 text-center">{error}</div>}
         
-        <form onSubmit={handleEmailLogin} className="space-y-6">
+        <form onSubmit={handleEmailLogin} className="space-y-5">
           <div>
-            <label className="block font-black uppercase text-sm mb-2 text-gray-300">Email</label>
+            <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">Email</label>
             <input type="email" required onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-4 bg-[#1a1a1a] border-4 border-gray-600 font-mono outline-none focus:bg-[#2a2a2a] focus:border-brand-pop transition-colors text-white" />
+              className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700" />
           </div>
 
           <div>
-            <label className="block font-black uppercase text-sm mb-2 text-gray-300">Password</label>
+            <label className="block text-sm font-medium text-slate-500 mb-2 ml-1">Password</label>
             <div className="relative">
               <input type={showPassword ? "text" : "password"} required onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-4 bg-[#1a1a1a] border-4 border-gray-600 font-mono outline-none focus:bg-[#2a2a2a] focus:border-brand-pop transition-colors text-white pr-12" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700 pr-12" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
               </button>
             </div>
           </div>
 
-          <button disabled={loading} className="w-full bg-brand-pop text-white font-black text-lg uppercase tracking-widest py-4 border-4 border-brand-pop hover:bg-pink-600 transition-all">
-            Log In
+          <button disabled={loading} className="w-full bg-emerald-600 text-white font-medium py-4 rounded-xl hover:bg-emerald-500 hover:shadow-lg hover:-translate-y-0.5 transition-all mt-4">
+            Sign In
           </button>
         </form>
 
         <div className="my-8 flex items-center gap-4">
-          <div className="flex-1 h-1 bg-gray-600"></div>
-          <span className="font-black uppercase text-sm text-gray-400">OR</span>
-          <div className="flex-1 h-1 bg-gray-600"></div>
+          <div className="flex-1 h-px bg-slate-200"></div>
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">or continue with</span>
+          <div className="flex-1 h-px bg-slate-200"></div>
         </div>
 
-        <button onClick={handleGoogleLogin} disabled={loading} className="w-full bg-white text-brand-dark font-black text-lg uppercase tracking-widest py-4 border-4 border-white hover:bg-gray-200 transition-all flex items-center justify-center gap-3">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />
-          Continue with Google
+        <button onClick={handleGoogleLogin} disabled={loading} className="w-full bg-white text-slate-700 font-medium py-4 rounded-xl border border-slate-200 hover:bg-slate-50 hover:shadow-sm transition-all flex items-center justify-center gap-3">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+          Google
         </button>
 
-        <div className="mt-8 text-center font-bold text-gray-400 uppercase text-sm">
-          Need an account? <Link to="/signup" className="text-brand-pop border-b-2 border-brand-pop hover:text-white transition-colors">Sign Up</Link>
+        <div className="mt-8 text-center text-slate-500 text-sm">
+          Need an account? <Link to="/signup" className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors">Sign up</Link>
         </div>
       </div>
     </div>
