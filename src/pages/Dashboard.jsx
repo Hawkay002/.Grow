@@ -123,16 +123,12 @@ export default function Dashboard() {
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
-                <group rotation={[0, Date.now() * 0.0005, 0]}>
+                <group>
+                  {/* FIX: Correctly mapping the unified array on the Dashboard */}
                   {previewVoxels.map((v, i) => (
-                    <mesh key={`preview-${i}`} position={v.pos} castShadow={!v.isBase} receiveShadow>
+                    <mesh key={`preview-${i}`} position={v.pos} castShadow receiveShadow>
                       <boxGeometry args={[1, 1, 1]} />
-                      {/* THE FIX: Unlit material for perfect QR optical contrast */}
-                      {v.isBase ? (
-                        <meshBasicMaterial color={v.color} />
-                      ) : (
-                        <meshStandardMaterial color={v.color} roughness={0.9} />
-                      )}
+                      <meshStandardMaterial color={v.color} roughness={0.9} />
                     </mesh>
                   ))}
                 </group>
