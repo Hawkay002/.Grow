@@ -33,16 +33,20 @@ const hash = (x, y, z) => {
 
 export function generateTree(treeType, qrData, qrSize) {
   const theme = TREE_THEMES[treeType] || TREE_THEMES.cherryblossom;
-  const voxels = [];
+  
+  const base = [];
+  const tree = [];
+  
   const center = Math.floor(qrSize / 2);
   const scale = Math.max(1, qrSize / 21);
   
+  // 1. Generate the QR Base Layer
   for (let row = 0; row < qrSize; row++) {
     for (let col = 0; col < qrSize; col++) {
       if (qrData[row * qrSize + col]) {
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark });
+        base.push({ pos: [col - center, 0, row - center], color: theme.qrDark });
       } else {
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight });
+        base.push({ pos: [col - center, 0, row - center], color: theme.qrLight });
       }
     }
   }
@@ -50,14 +54,14 @@ export function generateTree(treeType, qrData, qrSize) {
   const trunkHeight = Math.floor(7 * scale);
   const radius = Math.floor(5 * scale);
   
-  // FIX: Trunk height dynamically includes the radius so it ALWAYS connects to the canopy
+  // 2. Generate the Trunk
   for (let y = 1; y <= trunkHeight + radius - 1; y++) {
-    voxels.push({ pos: [0, y, 0], color: theme.trunk });
+    tree.push({ pos: [0, y, 0], color: theme.trunk });
     if (y < trunkHeight - 2) { 
-      voxels.push({ pos: [1, y, 0], color: theme.trunk });
-      voxels.push({ pos: [-1, y, 0], color: theme.trunk });
-      voxels.push({ pos: [0, y, 1], color: theme.trunk });
-      voxels.push({ pos: [0, y, -1], color: theme.trunk });
+      tree.push({ pos: [1, y, 0], color: theme.trunk });
+      tree.push({ pos: [-1, y, 0], color: theme.trunk });
+      tree.push({ pos: [0, y, 1], color: theme.trunk });
+      tree.push({ pos: [0, y, -1], color: theme.trunk });
     }
   }
 
@@ -65,6 +69,7 @@ export function generateTree(treeType, qrData, qrSize) {
   const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
   const bounds = Math.floor(8 * scale);
 
+  // 3. Generate the Canopy
   for (let y = 0; y <= bounds * 2.5; y++) {
     for (let x = -bounds * 2; x <= bounds * 2; x++) {
       for (let z = -bounds * 2; z <= bounds * 2; z++) {
@@ -80,7 +85,6 @@ export function generateTree(treeType, qrData, qrSize) {
           isValidShape = y < h && Math.sqrt(x*x + z*z) <= (h - y) * 0.45;
         } 
         else if (theme.shape === 'umbrella') {
-          // FIX: X and Z divided by 3.5 to create a massive, wide spread for the Dragon tree
           const yDome = Math.max(0, y - radius + 1.5);
           isValidShape = y >= radius - 2.5 && Math.sqrt((x*x)/3.5 + (yDome * yDome * 4) + (z*z)/3.5) <= radius + 2;
         } 
@@ -103,12 +107,12 @@ export function generateTree(treeType, qrData, qrSize) {
           const clusterNoise = hash(clusterX, clusterY, clusterZ);
 
           if (isCore || clusterNoise < theme.density) {
-            voxels.push({ pos: [x, cy + y, z], color: getLeafColor() });
+            tree.push({ pos: [x, cy + y, z], color: getLeafColor() });
           }
         }
       }
     }
   }
 
-  return voxels;
+  return { base, tree };
 }
