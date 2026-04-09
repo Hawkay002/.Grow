@@ -28,11 +28,13 @@ function CameraController({ viewMode, controlsRef }) {
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
     } 
     else if (isTransitioning) {
-      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
+      // OVERLAP FIX: Base camera sits higher (Y: 75) and target targets higher (Y: 15) 
+      // so the tree physically sits above the UI buttons in Free Roam mode!
+      state.camera.position.lerp(new THREE.Vector3(50, 75, 65), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
-      controlsRef.current.target.lerp(new THREE.Vector3(0, 5, 0), 0.1);
+      controlsRef.current.target.lerp(new THREE.Vector3(0, 15, 0), 0.1);
 
-      if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
+      if (state.camera.position.distanceTo(new THREE.Vector3(50, 75, 65)) < 1) {
          setIsTransitioning(false);
       }
     }
@@ -58,7 +60,6 @@ function SpinningGroup({ viewMode, children }) {
   return <group ref={groupRef}>{children}</group>;
 }
 
-// NEW: This component manages its own smooth transition between 3D and 2D colors
 function AnimatedVoxel({ v, viewMode }) {
   const materialRef = useRef();
   const targetColor = useMemo(() => new THREE.Color(), []);
@@ -66,17 +67,10 @@ function AnimatedVoxel({ v, viewMode }) {
 
   useFrame(() => {
     if (!materialRef.current) return;
-
-    // 1. Determine target color (Flat QR color vs 3D shaded color)
     const targetHex = viewMode === 'qr' ? v.qrColor : v.color;
     targetColor.set(targetHex);
-
-    // 2. Smoothly transition the base color
     materialRef.current.color.lerp(targetColor, 0.1);
 
-    // 3. Smoothly transition the emissive (glow) property.
-    // In QR mode, we make it glow its own color so it ignores shadows and looks completely flat!
-    // In 3D mode, we fade the glow to black so natural 3D shadows elegantly return.
     if (viewMode === 'qr' || v.isBase) {
       materialRef.current.emissive.lerp(targetColor, 0.1);
     } else {
@@ -87,7 +81,6 @@ function AnimatedVoxel({ v, viewMode }) {
   return (
     <mesh position={v.pos} castShadow={!v.isBase} receiveShadow>
       <boxGeometry args={[1, 1, 1]} />
-      {/* We start with a standard material and let the useFrame logic animate it */}
       <meshStandardMaterial ref={materialRef} color={v.color} roughness={0.9} />
     </mesh>
   );
@@ -120,7 +113,8 @@ export default function QrScanner() {
     <div className="relative w-screen h-screen bg-slate-50 overflow-hidden font-sans">
       
       <Canvas shadows>
-        <OrthographicCamera makeDefault position={[50, 60, 50]} zoom={8} />
+        {/* Set initial load position higher to prevent overlap instantly on load */}
+        <OrthographicCamera makeDefault position={[50, 75, 65]} zoom={8} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
         <Environment preset="city" />
@@ -137,7 +131,7 @@ export default function QrScanner() {
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
-          target={[0, 5, 0]} 
+          target={[0, 15, 0]} 
           maxPolarAngle={Math.PI / 2} 
         />
       </Canvas>
@@ -146,7 +140,7 @@ export default function QrScanner() {
         
         <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
           className="pointer-events-auto mb-4 px-5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-emerald-100 hover:shadow-md transition-all">
-          Grow your own on Vox.ly ✨
+          Grow your own on Grow-Voxly ✨
         </a>
 
         <div className="mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
@@ -160,7 +154,8 @@ export default function QrScanner() {
 
         <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
           <h2 className="font-serif text-2xl text-slate-800 mb-6">Link Discovered</h2>
-          <a href={data.destinationUrl} className="block w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+          {/* BUTTON HOVER FIX: Added active scaling, shadow elevation, and smooth color changes */}
+          <a href={data.destinationUrl} className="block w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200">
             Continue to Destination
           </a>
         </div>
