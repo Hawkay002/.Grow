@@ -10,11 +10,17 @@ import { generateTree } from '../trees/VoxelEngine';
 
 function CameraController({ viewMode }) {
   useFrame((state) => {
-    const targetPosition = viewMode === 'qr' 
-      ? new THREE.Vector3(0, 100, 0) 
-      : new THREE.Vector3(50, 60, 50); 
-
-    state.camera.position.lerp(targetPosition, 0.08);
+    if (viewMode === 'qr') {
+      // Move to top-down view
+      state.camera.position.lerp(new THREE.Vector3(0, 100, 0), 0.08);
+      // FIX: Force the camera 'up' vector to align perfectly with the grid to stop the diamond twist
+      state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
+    } else {
+      // Move to isometric view
+      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.08);
+      // Reset 'up' vector for normal 3D interaction
+      state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.08);
+    }
     state.camera.lookAt(0, 0, 0);
   });
   return null;
@@ -80,7 +86,14 @@ export default function QrScanner() {
           ))}
         </SpinningGroup>
         
-        <OrbitControls enableZoom={true} enablePan={false} enableRotate={viewMode === 'tree'} target={[0, 5, 0]} maxPolarAngle={Math.PI / 2} />
+        {/* FIX: enabled={viewMode === 'tree'} completely locks user control when viewing the flat QR code */}
+        <OrbitControls 
+          enabled={viewMode === 'tree'} 
+          enableZoom={true} 
+          enablePan={false} 
+          target={[0, 5, 0]} 
+          maxPolarAngle={Math.PI / 2} 
+        />
       </Canvas>
 
       <div className="absolute bottom-12 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
