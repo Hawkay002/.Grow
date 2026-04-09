@@ -73,9 +73,9 @@ export function generateTree(treeType, qrData, qrSize) {
   // PRE-CALCULATE WILLOW VINES (Strict maximum of 5)
   const willowVines = [];
   if (theme.shape === 'willow') {
-    for(let i = 0; i < 5; i++) {
+    for(let i = 0; i < 7; i++) {
       // Spaces 5 vines evenly in a circle, with a tiny bit of noise offset
-      const angle = ((i * Math.PI * 2) / 5) + hash(i, 1, 1);
+      const angle = ((i * Math.PI * 2) / 7) + hash(i, 1, 1);
       willowVines.push({
         vx: Math.cos(angle) * (radius * 1.0), // Sit at the edge of the canopy
         vz: Math.sin(angle) * (radius * 1.0),
