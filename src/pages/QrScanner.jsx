@@ -23,15 +23,19 @@ function CameraController({ viewMode, controlsRef }) {
     if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
+      // 1. TOP-DOWN SCAN MODE: Forcefully lock the camera to the perfect top-down view
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
     } 
     else if (isTransitioning) {
+      // 2. GLIDING BACK: Move to corner, but ONLY while transitioning
       state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 5, 0), 0.1);
 
+      // Once the camera gets close to the corner, shut off the transition! 
+      // This gives the user 100% unrestricted freedom to drag and rotate without snapping back.
       if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
          setIsTransitioning(false);
       }
@@ -47,8 +51,9 @@ function SpinningGroup({ viewMode, children }) {
     if (!groupRef.current) return;
 
     if (viewMode === 'tree') {
-      groupRef.current.rotation.y += delta * 0.15; 
+      groupRef.current.rotation.y += delta * 0.15; // Majestic slow spin
     } else {
+      // Snap to perfect alignment for scanning
       const currentRot = groupRef.current.rotation.y;
       const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
       groupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
@@ -93,19 +98,16 @@ export default function QrScanner() {
         <CameraController viewMode={viewMode} controlsRef={controlsRef} />
         
         <SpinningGroup viewMode={viewMode}>
+          {/* FIX: Reverted to mapping the unified array. No more crashes! */}
           {voxels.map((v, i) => (
-            <mesh key={`voxel-${i}`} position={v.pos} castShadow={!v.isBase} receiveShadow>
+            <mesh key={`voxel-${i}`} position={v.pos} castShadow receiveShadow>
               <boxGeometry args={[1, 1, 1]} />
-              {/* THE FIX: Base layer ignores 3D shadows, Tree gets natural shading */}
-              {v.isBase ? (
-                <meshBasicMaterial color={v.color} />
-              ) : (
-                <meshStandardMaterial color={v.color} roughness={0.9} />
-              )}
+              <meshStandardMaterial color={v.color} roughness={0.9} />
             </mesh>
           ))}
         </SpinningGroup>
         
+        {/* We disable OrbitControls autoRotate because SpinningGroup handles it perfectly */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
