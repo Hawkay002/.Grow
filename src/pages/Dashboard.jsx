@@ -15,8 +15,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('create');
   const [loading, setLoading] = useState(false);
   
-  // Form State
-  const [linkTitle, setLinkTitle] = useState(''); // NEW: Title State
+  const [linkTitle, setLinkTitle] = useState('');
   const [url, setUrl] = useState('');
   const [treeType, setTreeType] = useState('cherryblossom');
   
@@ -50,7 +49,7 @@ export default function Dashboard() {
     try {
       const docRef = await addDoc(collection(db, 'qrs'), {
         userId: currentUser.uid, 
-        title: linkTitle || 'Untitled Tree', // NEW: Saves the title to Firebase
+        title: linkTitle || 'Untitled Tree',
         destinationUrl: url, 
         treeType, 
         createdAt: serverTimestamp(), 
@@ -65,7 +64,7 @@ export default function Dashboard() {
 
       setRecentlyCreated({ link: shortLink, img: qrDataUrl, title: linkTitle || 'Untitled Tree' });
       setUrl(''); 
-      setLinkTitle(''); // Reset title after creation
+      setLinkTitle(''); 
     } catch (error) {
       alert("Failed to grow link.");
     }
@@ -124,23 +123,13 @@ export default function Dashboard() {
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
-                <group rotation={[0, Date.now() * 0.0005, 0]}>
-                  <group>
-                    {previewVoxels.base.map((v, i) => (
-                      <mesh key={`base-${i}`} position={v.pos} receiveShadow>
-                        <boxGeometry args={[1, 1, 1]} />
-                        <meshStandardMaterial color={v.color} roughness={1} />
-                      </mesh>
-                    ))}
-                  </group>
-                  <group>
-                    {previewVoxels.tree.map((v, i) => (
-                      <mesh key={`tree-${i}`} position={v.pos} castShadow receiveShadow>
-                        <boxGeometry args={[1, 1, 1]} />
-                        <meshStandardMaterial color={v.color} roughness={0.9} />
-                      </mesh>
-                    ))}
-                  </group>
+                <group>
+                  {previewVoxels.map((v, i) => (
+                    <mesh key={`preview-${i}`} position={v.pos} castShadow receiveShadow>
+                      <boxGeometry args={[1, 1, 1]} />
+                      <meshStandardMaterial color={v.color} roughness={0.9} />
+                    </mesh>
+                  ))}
                 </group>
                 <OrbitControls enableZoom={true} enablePan={true} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
               </Canvas>
@@ -148,7 +137,6 @@ export default function Dashboard() {
 
             <form onSubmit={handleGenerate} className="max-w-2xl mx-auto space-y-8">
               
-              {/* NEW: Title Input Field */}
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Tree Title</label>
                 <input 
@@ -217,7 +205,6 @@ export default function Dashboard() {
                       <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
                         {TREE_THEMES[link.treeType]?.name || 'Tree'}
                       </span>
-                      {/* NEW: Displays the Title boldly */}
                       <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
                         {link.title || 'Untitled Tree'}
                       </h3>
