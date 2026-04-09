@@ -8,40 +8,55 @@ import * as THREE from 'three';
 import QRCode from 'qrcode';
 import { generateTree } from '../trees/VoxelEngine';
 
-function CameraController({ viewMode }) {
-  useFrame((state) => {
-    if (viewMode === 'qr') {
-      // Move to top-down view
-      state.camera.position.lerp(new THREE.Vector3(0, 100, 0), 0.08);
-      // FIX: Force the camera 'up' vector to align perfectly with the grid to stop the diamond twist
-      state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
-    } else {
-      // Move to isometric view
-      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.08);
-      // Reset 'up' vector for normal 3D interaction
-      state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.08);
-    }
-    state.camera.lookAt(0, 0, 0);
-  });
-  return null;
-}
+function SceneAnimator({ viewMode, voxels }) {
+  const mainGroupRef = useRef();
+  const treeGroupRef = useRef();
 
-function SpinningGroup({ viewMode, children }) {
-  const groupRef = useRef();
-  
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
+    if (!mainGroupRef.current || !treeGroupRef.current) return;
 
+    // 1. Camera Flight
+    const targetPos = viewMode === 'qr' ? new THREE.Vector3(0, 100, 0) : new THREE.Vector3(50, 60, 50);
+    const targetUp = viewMode === 'qr' ? new THREE.Vector3(0, 0, -1) : new THREE.Vector3(0, 1, 0);
+    
+    state.camera.position.lerp(targetPos, 0.08);
+    state.camera.up.lerp(targetUp, 0.08);
+    state.camera.lookAt(0, 0, 0);
+
+    // 2. Rotation & Tree Retraction
     if (viewMode === 'tree') {
-      groupRef.current.rotation.y += delta * 0.15;
+      mainGroupRef.current.rotation.y += delta * 0.15; // Slow, majestic spin
+      treeGroupRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
     } else {
-      const currentRot = groupRef.current.rotation.y;
+      const currentRot = mainGroupRef.current.rotation.y;
       const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
+      mainGroupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
+      
+      treeGroupRef.current.scale.lerp(new THREE.Vector3(0, 0, 0), 0.1); // Tree sinks into the ground
     }
   });
 
-  return <group ref={groupRef}>{children}</group>;
+  return (
+    <group ref={mainGroupRef}>
+      <group>
+        {voxels.base.map((v, i) => (
+          <mesh key={`base-${i}`} position={v.pos} receiveShadow>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={v.color} roughness={1} />
+          </mesh>
+        ))}
+      </group>
+      
+      <group ref={treeGroupRef}>
+        {voxels.tree.map((v, i) => (
+          <mesh key={`tree-${i}`} position={v.pos} castShadow receiveShadow>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={v.color} roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
 }
 
 export default function QrScanner() {
@@ -59,7 +74,7 @@ export default function QrScanner() {
   }, [id]);
 
   const voxels = useMemo(() => {
-    if (!data) return [];
+    if (!data) return { base: [], tree: [] };
     const matrix = QRCode.create(data.destinationUrl, { errorCorrectionLevel: 'M' });
     return generateTree(data.treeType, matrix.modules.data, matrix.modules.size);
   }, [data]);
@@ -71,39 +86,28 @@ export default function QrScanner() {
       
       <Canvas shadows>
         <OrthographicCamera makeDefault position={[50, 60, 50]} zoom={8} />
-        <CameraController viewMode={viewMode} />
-        
         <ambientLight intensity={0.6} />
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
         <Environment preset="city" />
         
-        <SpinningGroup viewMode={viewMode}>
-          {voxels.map((v, i) => (
-            <mesh key={i} position={v.pos} castShadow receiveShadow>
-              <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={v.color} roughness={0.9} />
-            </mesh>
-          ))}
-        </SpinningGroup>
+        <SceneAnimator viewMode={viewMode} voxels={voxels} />
         
-        {/* FIX: enabled={viewMode === 'tree'} completely locks user control when viewing the flat QR code */}
-        <OrbitControls 
-          enabled={viewMode === 'tree'} 
-          enableZoom={true} 
-          enablePan={false} 
-          target={[0, 5, 0]} 
-          maxPolarAngle={Math.PI / 2} 
-        />
+        <OrbitControls enableZoom={true} enablePan={true} enableRotate={viewMode === 'tree'} target={[0, 5, 0]} maxPolarAngle={Math.PI / 2} />
       </Canvas>
 
-      <div className="absolute bottom-12 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
+      <div className="absolute bottom-20 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
         
+        <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
+          className="pointer-events-auto mb-4 px-5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-emerald-100 hover:shadow-md transition-all">
+          Grow your own on Vox.ly ✨
+        </a>
+
         <div className="mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
           <button onClick={() => setViewMode('tree')} className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'tree' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
             3D Canvas
           </button>
           <button onClick={() => setViewMode('qr')} className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'qr' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
-            2D Code
+            Scan Code
           </button>
         </div>
 
