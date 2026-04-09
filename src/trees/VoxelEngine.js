@@ -1,28 +1,28 @@
 export const TREE_THEMES = {
   cherryblossom: { 
     name: 'Cherry', shape: 'squashed_sphere', density: 0.45, clusterSize: 2.5,
-    qrDark: '#1A050D', qrLight: '#FFFFFF', trunk: '#3A2318', 
-    leaf: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096', '#FFE4E9']
+    qrDark: '#be185d', qrLight: '#fdf2f8', trunk: '#451a03',
+    leaf: ['#f472b6', '#db2777', '#fbcfe8', '#be185d']
   },
   pine: { 
     name: 'Pine', shape: 'cone', density: 0.5, clusterSize: 1.5,
-    qrDark: '#01120A', qrLight: '#FFFFFF', trunk: '#2D241E', 
-    leaf: ['#1B4332', '#2D6A4F', '#40916C', '#52B788', '#081C15']
+    qrDark: '#064e3b', qrLight: '#f0fdf4', trunk: '#291002',
+    leaf: ['#15803d', '#166534', '#22c55e', '#14532d']
   },
   dragon: { 
     name: 'Dragon', shape: 'umbrella', density: 0.7, clusterSize: 3.0,
-    qrDark: '#1A0800', qrLight: '#FFFFFF', trunk: '#5C1A06', 
-    leaf: ['#274C2B', '#386641', '#4C956C', '#2D6A4F', '#132A13']
+    qrDark: '#451a03', qrLight: '#fefce8', trunk: '#78350f',
+    leaf: ['#a3e635', '#84cc16', '#bef264', '#65a30d']
   },
   maple: { 
     name: 'Maple', shape: 'wide_ellipsoid', density: 0.4, clusterSize: 2.0,
-    qrDark: '#1F0B04', qrLight: '#FFFFFF', trunk: '#3A2618', 
-    leaf: ['#9D0208', '#D00000', '#DC2F02', '#E85D04', '#F48C06']
+    qrDark: '#9a3412', qrLight: '#fff7ed', trunk: '#451a03',
+    leaf: ['#ea580c', '#c2410c', '#f97316', '#9a3412']
   },
   juniper: { 
     name: 'Juniper', shape: 'swirl', density: 0.35, clusterSize: 2.5,
-    qrDark: '#051917', qrLight: '#FFFFFF', trunk: '#1A1A1A', 
-    leaf: ['#2D4A22', '#3A5A40', '#588157', '#A3B18A', '#344E41']
+    qrDark: '#0f766e', qrLight: '#f0fdfa', trunk: '#1c1917',
+    leaf: ['#0d9488', '#0f766e', '#14b8a6', '#042f2e']
   }
 };
 
@@ -38,13 +38,13 @@ export function generateTree(treeType, qrData, qrSize) {
   const center = Math.floor(qrSize / 2);
   const scale = Math.max(1, qrSize / 21);
   
-  // 1. Draw Ground Base Layer (Flagged as isBase: true)
+  // 1. Draw Ground Base Layer (Always solid to provide contrast for the scan)
   for (let row = 0; row < qrSize; row++) {
     for (let col = 0; col < qrSize; col++) {
       if (qrData[row * qrSize + col]) {
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark, isBase: true });
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark });
       } else {
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight, isBase: true });
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight });
       }
     }
   }
@@ -54,20 +54,25 @@ export function generateTree(treeType, qrData, qrSize) {
   const bounds = Math.floor(8 * scale);
   const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
 
-  // 2. Extrude the Tree with rigid QR matrix constraints
+  // 2. Extrude the Tree
   for (let y = 1; y <= bounds * 2.5; y++) {
     for (let x = -bounds * 2; x <= bounds * 2; x++) {
       for (let z = -bounds * 2; z <= bounds * 2; z++) {
         
+        // Map 3D coordinate to 2D QR Code Matrix
         const col = Math.floor(x) + center;
         const row = Math.floor(z) + center;
 
+        // THE EXTRUSION CONSTRAINT:
+        // If this block hovers over a white space, skip it completely.
+        // This guarantees the empty spaces remain empty all the way up.
         if (col < 0 || col >= qrSize || row < 0 || row >= qrSize) continue;
         if (!qrData[row * qrSize + col]) continue; 
 
+        // Shape calculations
         let isTrunk = y <= trunkHeight && Math.sqrt(x*x + z*z) <= 1.5;
         let isValidCanopy = false;
-        const cy_y = y - trunkHeight; 
+        const cy_y = y - trunkHeight; // Relative Y for canopy shaping
 
         if (y >= trunkHeight * 0.4) {
           if (theme.shape === 'squashed_sphere') {
@@ -92,6 +97,7 @@ export function generateTree(treeType, qrData, qrSize) {
           }
         }
 
+        // Apply colors
         if (isTrunk) {
           voxels.push({ pos: [x, y, z], color: theme.trunk });
         } else if (isValidCanopy) {
@@ -99,7 +105,6 @@ export function generateTree(treeType, qrData, qrSize) {
           const clusterY = Math.floor(y / theme.clusterSize);
           const clusterZ = Math.floor(z / theme.clusterSize);
           const clusterNoise = hash(clusterX, clusterY, clusterZ);
-          
           const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
           if (isCore || clusterNoise < theme.density) {
@@ -110,5 +115,5 @@ export function generateTree(treeType, qrData, qrSize) {
     }
   }
 
-  return voxels;
+  return voxels; // Returning unified voxels again!
 }
