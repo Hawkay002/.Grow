@@ -57,7 +57,7 @@ export function generateTree(treeType, qrData, qrSize) {
     voxels.push({ pos: [0, y, 0], color: theme.trunk }); 
     if (y < trunkHeight - 2) { // Thicker base
       voxels.push({ pos: [1, y, 0], color: theme.trunk });
-      voxels.push({ pos: [-1, y, 0], color: theme.trunk });
+      voxels.push({ pos: [-1, y, 0], color: theme.trunk }); 
       voxels.push({ pos: [0, y, 1], color: theme.trunk });
       voxels.push({ pos: [0, y, -1], color: theme.trunk });
     }
