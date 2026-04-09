@@ -1,6 +1,6 @@
 export const TREE_THEMES = {
   cherryblossom: { 
-    name: 'cherryblossom', shape: 'squashed_sphere', density: 0.45, clusterSize: 2.5,
+    name: 'cherryblossom', shape: 'squashed_sphere', density: 0.45, clusterSize: 2.5, 
     qrDark: '#be185d', qrLight: '#fdf2f8', trunk: '#3A2318', 
     leaf: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096', '#FFE4E9']
   },
