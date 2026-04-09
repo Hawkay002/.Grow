@@ -1,256 +1,181 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRightFromBracket, faLink, faQrcode, faTree, faTrash, faCopy, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
-import TreePreview from '../components/TreePreview';
+import QRCode from 'qrcode';
+import { Canvas } from '@react-three/fiber';
+import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
+import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('create'); // 'create' or 'links'
+  const [activeTab, setActiveTab] = useState('create');
   const [loading, setLoading] = useState(false);
-  
-  // Create Tab State
   const [url, setUrl] = useState('');
   const [treeType, setTreeType] = useState('cherryblossom');
-  const [recentlyCreatedLink, setRecentlyCreatedLink] = useState(null);
-
-  // My Links Tab State
+  const [recentlyCreated, setRecentlyCreated] = useState(null);
   const [myLinks, setMyLinks] = useState([]);
-  const [fetchingLinks, setFetchingLinks] = useState(false);
 
   useEffect(() => {
     if (!currentUser) navigate('/login');
+    if (currentUser) fetchMyLinks();
   }, [currentUser, navigate]);
 
-  // Fetch Links when switching to the 'links' tab
-  useEffect(() => {
-    if (activeTab === 'links' && currentUser) {
-      fetchMyLinks();
-    }
-  }, [activeTab, currentUser]);
-
   async function fetchMyLinks() {
-    setFetchingLinks(true);
-    try {
-      const q = query(collection(db, 'qrs'), where("userId", "==", currentUser.uid));
-      const querySnapshot = await getDocs(q);
-      const links = [];
-      querySnapshot.forEach((doc) => {
-        links.push({ id: doc.id, ...doc.data() });
-      });
-      // Sort by newest first (handling potential missing timestamps initially)
-      links.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-      setMyLinks(links);
-    } catch (err) {
-      console.error("Failed to fetch links:", err);
-    }
-    setFetchingLinks(false);
+    const q = query(collection(db, 'qrs'), where("userId", "==", currentUser.uid));
+    const querySnapshot = await getDocs(q);
+    const links = [];
+    querySnapshot.forEach((doc) => links.push({ id: doc.id, ...doc.data() }));
+    setMyLinks(links.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Are you sure you want to chop down this tree?")) return;
-    try {
-      await deleteDoc(doc(db, 'qrs', id));
-      setMyLinks(myLinks.filter(link => link.id !== id));
-    } catch (err) {
-      console.error("Error deleting document:", err);
-    }
+    if (!window.confirm("Remove this tree from your forest?")) return;
+    await deleteDoc(doc(db, 'qrs', id));
+    setMyLinks(myLinks.filter(link => link.id !== id));
   }
-
-  const treeOptions = [
-    { id: 'cherryblossom', name: 'Cherry', color: 'bg-pink-500' },
-    { id: 'pine', name: 'Pine', color: 'bg-green-700' },
-    { id: 'dragon', name: 'Dragon', color: 'bg-lime-500' },
-    { id: 'maple', name: 'Maple', color: 'bg-orange-500' },
-    { id: 'juniper', name: 'Juniper', color: 'bg-teal-800' }
-  ];
 
   async function handleGenerate(e) {
     e.preventDefault();
     setLoading(true);
-
     try {
       const docRef = await addDoc(collection(db, 'qrs'), {
-        userId: currentUser.uid,
-        destinationUrl: url,
-        treeType: treeType,
-        createdAt: serverTimestamp(),
-        clicks: 0
+        userId: currentUser.uid, destinationUrl: url, treeType, createdAt: serverTimestamp(), clicks: 0
+      });
+      const shortLink = `${window.location.origin}/qr/${docRef.id}`;
+      
+      // Generate the beautifully colored 2D QR code right away
+      const theme = TREE_THEMES[treeType];
+      const qrDataUrl = await QRCode.toDataURL(shortLink, {
+        width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight }
       });
 
-      const shortLink = `${window.location.origin}/qr/${docRef.id}`;
-      setRecentlyCreatedLink(shortLink);
+      setRecentlyCreated({ link: shortLink, img: qrDataUrl });
       setUrl(''); 
-      
-      // Optionally auto-switch to links tab
-      // setActiveTab('links');
-
     } catch (error) {
-      alert("Failed to generate link.");
+      alert("Failed to grow link.");
     }
     setLoading(false);
   }
 
+  // Live 3D Preview Engine
+  const previewVoxels = useMemo(() => {
+    const matrix = QRCode.create(url || "https://vox.ly", { errorCorrectionLevel: 'M' });
+    return generateTree(treeType, matrix.modules.data, matrix.modules.size);
+  }, [url, treeType]);
+
   if (!currentUser) return null;
 
   return (
-    <div className="min-h-screen bg-[#f4f4f5] font-sans text-brand-dark pb-20 relative overflow-hidden">
-      {/* Background Texture */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none z-0" style={{ backgroundImage: 'radial-gradient(#1a1a1a 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-
-      {/* Header */}
-      <header className="bg-white border-b-8 border-brand-dark px-6 py-4 flex justify-between items-center relative z-10">
-        <h1 className="text-3xl font-display font-black tracking-tight uppercase flex items-center gap-3">
-          <div className="bg-brand-pop text-white w-10 h-10 flex items-center justify-center border-4 border-brand-dark shadow-[4px_4px_0px_rgba(26,26,26,1)]">
-            <FontAwesomeIcon icon={faTree} />
-          </div>
-          Vox.ly
-        </h1>
-        <button onClick={logout} className="font-black uppercase text-sm border-b-4 border-transparent hover:border-brand-pop transition-all flex items-center gap-2">
-          <FontAwesomeIcon icon={faRightFromBracket} /> Log Out
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200">
+      
+      {/* Soft, floating header */}
+      <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
+        <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Vox.ly</h1>
+        <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+          Sign Out
         </button>
       </header>
 
-      <main className="max-w-4xl mx-auto mt-12 px-6 relative z-10">
+      <main className="max-w-4xl mx-auto mt-16 px-6 pb-24">
         
-        {/* Navigation Tabs */}
-        <div className="flex gap-4 mb-8">
-          <button 
-            onClick={() => setActiveTab('create')}
-            className={`flex-1 py-4 font-black uppercase tracking-widest text-lg border-4 border-brand-dark transition-all ${activeTab === 'create' ? 'bg-brand-pop text-white shadow-[8px_8px_0px_rgba(26,26,26,1)] -translate-y-1' : 'bg-white text-brand-dark hover:bg-gray-100'}`}
-          >
-            Plant a Tree
+        {/* Airy, minimalist tabs */}
+        <div className="flex gap-12 mb-12 border-b border-slate-200 px-4">
+          <button onClick={() => setActiveTab('create')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'create' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
+            Cultivate
           </button>
-          <button 
-            onClick={() => setActiveTab('links')}
-            className={`flex-1 py-4 font-black uppercase tracking-widest text-lg border-4 border-brand-dark transition-all ${activeTab === 'links' ? 'bg-brand-pop text-white shadow-[8px_8px_0px_rgba(26,26,26,1)] -translate-y-1' : 'bg-white text-brand-dark hover:bg-gray-100'}`}
-          >
+          <button onClick={() => setActiveTab('links')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'links' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
             My Forest
           </button>
         </div>
 
-        {/* Tab 1: Create */}
         {activeTab === 'create' && (
-          <div className="bg-white p-8 border-8 border-brand-dark shadow-[16px_16px_0px_rgba(26,26,26,1)] animate-[fadeIn_0.3s_ease-out]">
+          <div className="space-y-12 animate-[fadeIn_0.5s_ease-out]">
             
-            {/* 3D Visualization Header */}
-            <div className="mb-8">
-              <TreePreview url={url} treeType={treeType} />
+            {/* Elegant 3D Preview without tight boxes */}
+            <div className="w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
+              <Canvas shadows camera={{ position: [50, 60, 50], zoom: 12 }}>
+                <ambientLight intensity={0.6} />
+                <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
+                <Environment preset="city" />
+                <group rotation={[0, Date.now() * 0.0005, 0]}>
+                  {previewVoxels.map((v, i) => (
+                    <mesh key={i} position={v.pos} castShadow receiveShadow>
+                      <boxGeometry args={[1, 1, 1]} />
+                      <meshStandardMaterial color={v.color} roughness={0.9} />
+                    </mesh>
+                  ))}
+                </group>
+                <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1.5} />
+              </Canvas>
             </div>
 
-            <form onSubmit={handleGenerate} className="space-y-8">
-              {/* URL Input */}
+            <form onSubmit={handleGenerate} className="max-w-2xl mx-auto space-y-10">
               <div>
-                <label className="block text-sm font-black uppercase mb-3 tracking-widest text-gray-500">
-                  <FontAwesomeIcon icon={faLink} className="mr-2" />
-                  Destination URL
-                </label>
+                <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Destination Link</label>
                 <input 
-                  type="url" required placeholder="https://your-website.com" value={url} onChange={(e) => setUrl(e.target.value)}
-                  className="w-full p-5 bg-[#f4f4f5] border-4 border-brand-dark font-mono outline-none focus:bg-white focus:border-brand-pop transition-colors text-lg"
+                  type="url" required placeholder="Where should this tree lead?" value={url} onChange={(e) => setUrl(e.target.value)}
+                  className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
                 />
               </div>
 
-              {/* Side-by-Side Tree Selectors */}
               <div>
-                <label className="block text-sm font-black uppercase mb-3 tracking-widest text-gray-500">Select Species</label>
-                <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
-                  {treeOptions.map(tree => (
+                <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Botanical Species</label>
+                <div className="flex gap-4 overflow-x-auto pb-4 px-2">
+                  {Object.entries(TREE_THEMES).map(([id, theme]) => (
                     <button
-                      key={tree.id}
-                      type="button"
-                      onClick={() => setTreeType(tree.id)}
-                      className={`flex-1 min-w-[100px] py-4 border-4 transition-all font-black uppercase text-sm flex flex-col items-center gap-2
-                        ${treeType === tree.id 
-                          ? 'border-brand-dark bg-white shadow-[4px_4px_0px_rgba(26,26,26,1)] -translate-y-1' 
-                          : 'border-transparent bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                      key={id} type="button" onClick={() => setTreeType(id)}
+                      className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3
+                        ${treeType === id ? 'bg-emerald-50 ring-2 ring-emerald-500 text-emerald-900 shadow-md' : 'bg-white ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50'}`}
                     >
-                      <div className={`w-6 h-6 rounded-full border-2 border-brand-dark ${tree.color}`}></div>
-                      {tree.name}
+                      <div className="w-8 h-8 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
+                      <span className="font-medium text-sm">{theme.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <button 
-                disabled={loading || !url} 
-                className="w-full bg-brand-dark text-white font-black uppercase tracking-widest py-6 text-xl border-4 border-brand-dark hover:bg-brand-pop hover:shadow-[8px_8px_0px_rgba(26,26,26,1)] transition-all disabled:opacity-50 disabled:shadow-none"
-              >
-                {loading ? 'Planting...' : 'Generate Interactive Link'}
+              <button disabled={loading || !url} className="w-full bg-slate-900 text-white font-medium py-5 rounded-2xl hover:bg-slate-800 hover:shadow-xl transition-all disabled:opacity-50">
+                {loading ? 'Cultivating...' : 'Grow Interactive Code'}
               </button>
             </form>
 
-            {/* Success Feedback */}
-            {recentlyCreatedLink && (
-              <div className="mt-8 p-6 bg-[#f0fdf4] border-4 border-[#166534] text-center">
-                <h3 className="font-black uppercase text-xl text-[#166534] mb-2">Success! Tree Planted.</h3>
-                <p className="font-mono text-sm mb-4 break-all">{recentlyCreatedLink}</p>
-                <button 
-                  onClick={() => navigator.clipboard.writeText(recentlyCreatedLink)}
-                  className="bg-[#166534] text-white px-6 py-2 font-black uppercase text-sm hover:bg-[#14532d]"
-                >
-                  <FontAwesomeIcon icon={faCopy} className="mr-2" /> Copy Link
-                </button>
+            {/* Soft Success State displaying the colored QR */}
+            {recentlyCreated && (
+              <div className="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
+                <h3 className="font-serif text-2xl text-emerald-900 mb-6">It is ready.</h3>
+                <img src={recentlyCreated.img} alt="Colored QR" className="w-48 h-48 mx-auto mb-6 rounded-xl shadow-sm" />
+                <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="block text-emerald-600 font-medium mb-6 hover:underline truncate px-4">
+                  {recentlyCreated.link}
+                </a>
+                <a href={recentlyCreated.img} download="voxly-tree.png" className="block w-full bg-emerald-50 text-emerald-700 font-medium py-3 rounded-xl hover:bg-emerald-100 transition-colors">
+                  Download Image
+                </a>
               </div>
             )}
           </div>
         )}
 
-        {/* Tab 2: My Links */}
+        {/* Links Tab - Clean and breathable */}
         {activeTab === 'links' && (
-          <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
-            {fetchingLinks ? (
-              <div className="text-center font-black uppercase text-2xl py-20 text-gray-400">Loading Forest...</div>
-            ) : myLinks.length === 0 ? (
-              <div className="bg-white p-12 border-8 border-brand-dark shadow-[16px_16px_0px_rgba(26,26,26,1)] text-center">
-                <FontAwesomeIcon icon={faTree} className="text-6xl text-gray-200 mb-6" />
-                <h2 className="text-2xl font-black uppercase tracking-widest text-brand-dark mb-4">Your forest is empty</h2>
-                <button onClick={() => setActiveTab('create')} className="text-brand-pop font-black uppercase border-b-4 border-brand-pop">Go plant a tree</button>
-              </div>
-            ) : (
-              myLinks.map((link) => (
-                <div key={link.id} className="bg-white p-6 border-4 border-brand-dark shadow-[8px_8px_0px_rgba(26,26,26,1)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:-translate-y-1 transition-transform">
-                  
-                  <div className="flex-1 overflow-hidden">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="bg-brand-dark text-white px-3 py-1 font-black uppercase text-xs">{link.treeType}</span>
-                      <span className="text-gray-400 font-bold text-sm">{new Date(link.createdAt?.toDate()).toLocaleDateString()}</span>
-                    </div>
-                    <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-xl font-bold truncate block hover:text-brand-pop transition-colors">
-                      {link.destinationUrl}
-                    </a>
-                  </div>
-
-                  <div className="flex gap-2 w-full md:w-auto">
-                    <a 
-                      href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer"
-                      className="flex-1 md:flex-none text-center bg-gray-100 border-2 border-brand-dark px-4 py-3 font-black uppercase text-sm hover:bg-brand-pop hover:text-white hover:border-brand-pop transition-colors"
-                    >
-                      <FontAwesomeIcon icon={faExternalLinkAlt} /> View
-                    </a>
-                    <button 
-                      onClick={() => navigator.clipboard.writeText(`${window.location.origin}/qr/${link.id}`)}
-                      className="flex-1 md:flex-none text-center bg-gray-100 border-2 border-brand-dark px-4 py-3 font-black uppercase text-sm hover:bg-brand-dark hover:text-white transition-colors"
-                    >
-                      <FontAwesomeIcon icon={faCopy} /> Copy
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(link.id)}
-                      className="text-center bg-red-100 text-red-600 border-2 border-red-600 px-4 py-3 font-black hover:bg-red-600 hover:text-white transition-colors"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </div>
-
+          <div className="space-y-6">
+            {myLinks.map((link) => (
+              <div key={link.id} className="bg-white p-8 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex items-center justify-between group hover:shadow-md transition-all">
+                <div>
+                  <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-wide">{TREE_THEMES[link.treeType]?.name}</span>
+                  <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-lg font-medium text-slate-800 block hover:text-emerald-600 transition-colors">
+                    {link.destinationUrl}
+                  </a>
                 </div>
-              ))
-            )}
+                <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-emerald-600 font-medium text-sm">View</a>
+                  <button onClick={() => handleDelete(link.id)} className="text-slate-400 hover:text-red-500 font-medium text-sm">Delete</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
