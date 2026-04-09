@@ -48,7 +48,10 @@ export function generateTree(treeType, qrData, qrSize) {
   }
 
   const trunkHeight = Math.floor(7 * scale);
-  for (let y = 1; y <= trunkHeight + 3; y++) {
+  const radius = Math.floor(5 * scale);
+  
+  // FIX: Trunk height dynamically includes the radius so it ALWAYS connects to the canopy
+  for (let y = 1; y <= trunkHeight + radius - 1; y++) {
     voxels.push({ pos: [0, y, 0], color: theme.trunk });
     if (y < trunkHeight - 2) { 
       voxels.push({ pos: [1, y, 0], color: theme.trunk });
@@ -59,36 +62,32 @@ export function generateTree(treeType, qrData, qrSize) {
   }
 
   const cy = trunkHeight;
-  const radius = Math.floor(5 * scale);
   const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
   const bounds = Math.floor(8 * scale);
 
   for (let y = 0; y <= bounds * 2.5; y++) {
-    for (let x = -bounds * 1.5; x <= bounds * 1.5; x++) {
-      for (let z = -bounds * 1.5; z <= bounds * 1.5; z++) {
+    for (let x = -bounds * 2; x <= bounds * 2; x++) {
+      for (let z = -bounds * 2; z <= bounds * 2; z++) {
         
         let isValidShape = false;
         
         if (theme.shape === 'squashed_sphere') {
-          // Squished Y, inflated middle. Poking branches added via noise.
           const isPoke = hash(x, y, z) > 0.95 ? 1.5 : 0;
           isValidShape = Math.sqrt((x*x)/2.5 + ((y-radius)*(y-radius))/0.5 + (z*z)/2.5) <= radius + isPoke;
         } 
         else if (theme.shape === 'cone') {
-          // Pine height scales up significantly more (bounds * 2.2)
           const h = bounds * 2.2;
           isValidShape = y < h && Math.sqrt(x*x + z*z) <= (h - y) * 0.45;
         } 
         else if (theme.shape === 'umbrella') {
-          // Dome shape: flat bottom, rounded top.
+          // FIX: X and Z divided by 3.5 to create a massive, wide spread for the Dragon tree
           const yDome = Math.max(0, y - radius + 1.5);
-          isValidShape = y >= radius - 1.5 && Math.sqrt(x*x + (yDome * yDome * 3) + z*z) <= radius + 2;
+          isValidShape = y >= radius - 2.5 && Math.sqrt((x*x)/3.5 + (yDome * yDome * 4) + (z*z)/3.5) <= radius + 2;
         } 
         else if (theme.shape === 'wide_ellipsoid') {
           isValidShape = Math.sqrt((x*x)/2.5 + ((y-radius)*(y-radius))/1 + (z*z)/2.5) <= radius;
         }
         else if (theme.shape === 'swirl') {
-          // Extreme swirl: increased frequency and amplitude
           const swirlX = x - Math.sin(y * 0.8) * 3.5;
           const swirlZ = z - Math.cos(y * 0.8) * 3.5;
           isValidShape = Math.sqrt(swirlX*swirlX + ((y-radius)*(y-radius)) + swirlZ*swirlZ) <= radius;
