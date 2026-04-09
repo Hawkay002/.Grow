@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; 
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
@@ -18,6 +18,8 @@ export default function Dashboard() {
   const [treeType, setTreeType] = useState('cherryblossom');
   const [recentlyCreated, setRecentlyCreated] = useState(null);
   const [myLinks, setMyLinks] = useState([]);
+  
+  const [linkToDelete, setLinkToDelete] = useState(null);
 
   useEffect(() => {
     if (!currentUser) navigate('/login');
@@ -32,10 +34,11 @@ export default function Dashboard() {
     setMyLinks(links.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm("Remove this tree from your forest?")) return;
-    await deleteDoc(doc(db, 'qrs', id));
-    setMyLinks(myLinks.filter(link => link.id !== id));
+  async function confirmDelete() {
+    if (!linkToDelete) return;
+    await deleteDoc(doc(db, 'qrs', linkToDelete));
+    setMyLinks(myLinks.filter(link => link.id !== linkToDelete));
+    setLinkToDelete(null);
   }
 
   async function handleGenerate(e) {
@@ -70,6 +73,23 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200">
       
+      {linkToDelete && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
+            <h3 className="font-serif text-2xl text-slate-800 mb-2">Uproot this tree?</h3>
+            <p className="text-slate-500 mb-8 text-sm">This action cannot be undone. The link will immediately stop working.</p>
+            <div className="flex gap-4">
+              <button onClick={() => setLinkToDelete(null)} className="flex-1 py-3 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmDelete} className="flex-1 py-3 font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors shadow-md">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Vox.ly</h1>
         <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
@@ -90,7 +110,6 @@ export default function Dashboard() {
 
         {activeTab === 'create' && (
           <div className="space-y-12 animate-[fadeIn_0.5s_ease-out]">
-            
             <div className="w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
               <Canvas shadows camera={{ position: [50, 60, 50], zoom: 8 }}>
                 <ambientLight intensity={0.6} />
@@ -104,7 +123,7 @@ export default function Dashboard() {
                     </mesh>
                   ))}
                 </group>
-                <OrbitControls enableZoom={true} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
+                <OrbitControls enableZoom={true} enablePan={false} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
               </Canvas>
             </div>
 
@@ -159,16 +178,16 @@ export default function Dashboard() {
                <div className="text-center py-20 text-slate-400 font-medium">Your forest is currently empty.</div>
             ) : (
               myLinks.map((link) => (
-                <div key={link.id} className="bg-white p-8 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex items-center justify-between group hover:shadow-md transition-all">
+                <div key={link.id} className="bg-white p-8 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex items-center justify-between transition-all hover:shadow-md">
                   <div className="overflow-hidden pr-4">
                     <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-wide">{TREE_THEMES[link.treeType]?.name}</span>
                     <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-lg font-medium text-slate-800 block hover:text-emerald-600 transition-colors truncate">
                       {link.destinationUrl}
                     </a>
                   </div>
-                  <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-emerald-600 font-medium text-sm">View</a>
-                    <button onClick={() => handleDelete(link.id)} className="text-slate-400 hover:text-red-500 font-medium text-sm">Delete</button>
+                  <div className="flex gap-4 shrink-0">
+                    <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-800 font-medium text-sm bg-emerald-50 px-4 py-2 rounded-lg transition-colors">View</a>
+                    <button onClick={() => setLinkToDelete(link.id)} className="text-red-500 hover:text-red-700 font-medium text-sm bg-red-50 px-4 py-2 rounded-lg transition-colors">Delete</button>
                   </div>
                 </div>
               ))
