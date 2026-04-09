@@ -13,19 +13,70 @@ function CameraController({ viewMode, controlsRef }) {
     if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
-      // Swoop camera to top-down view for structural scanning
-      state.camera.position.lerp(new THREE.Vector3(0, 100, 0), 0.08);
-      state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08); // Prevents the diamond twist
-      controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 0), 0.08);
-      controlsRef.current.autoRotate = false; // Stop spinning so they can scan it!
+      // 1. TOP-DOWN SCAN MODE
+      // We add a +15 offset to the Z-axis. This moves the camera "down" the grid, 
+      // which forces the QR code to slide "UP" on the user's screen, escaping the buttons!
+      state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
+      state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
+      
+      // Target also shifts by 15 to keep the camera perfectly flat
+      controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
+      controlsRef.current.autoRotate = false; // Stop spinning for a clean scan
     } else {
-      // Revert UP vector, but DO NOT force position. 
-      // This allows the user to freely drag the tree without it fighting back!
+      // 2. FREE ROAM MODE
+      // Glide back to the corner isometric angle
+      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.08);
-      controlsRef.current.autoRotate = true; // Resume native majestic spinning
+      
+      // Re-center the target on the tree trunk so orbiting feels perfectly balanced again
+      controlsRef.current.target.lerp(new THREE.Vector3(0, 5, 0), 0.08);
+      controlsRef.current.autoRotate = true; // Resume majestic spinning
     }
   });
   return null;
+}
+
+function SceneAnimator({ viewMode, voxels }) {
+  const mainGroupRef = useRef();
+  const treeGroupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (!mainGroupRef.current || !treeGroupRef.current) return;
+
+    // Rotation & Tree Retraction
+    if (viewMode === 'tree') {
+      mainGroupRef.current.rotation.y += delta * 0.15; // Slow, majestic spin
+      treeGroupRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+    } else {
+      const currentRot = mainGroupRef.current.rotation.y;
+      const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
+      mainGroupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
+      
+      treeGroupRef.current.scale.lerp(new THREE.Vector3(0, 0, 0), 0.1); // Tree sinks into the ground
+    }
+  });
+
+  return (
+    <group ref={mainGroupRef}>
+      <group>
+        {voxels.base.map((v, i) => (
+          <mesh key={`base-${i}`} position={v.pos} receiveShadow>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={v.color} roughness={1} />
+          </mesh>
+        ))}
+      </group>
+      
+      <group ref={treeGroupRef}>
+        {voxels.tree.map((v, i) => (
+          <mesh key={`tree-${i}`} position={v.pos} castShadow receiveShadow>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={v.color} roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
 }
 
 export default function QrScanner() {
@@ -44,7 +95,7 @@ export default function QrScanner() {
   }, [id]);
 
   const voxels = useMemo(() => {
-    if (!data) return [];
+    if (!data) return { base: [], tree: [] };
     const matrix = QRCode.create(data.destinationUrl, { errorCorrectionLevel: 'M' });
     return generateTree(data.treeType, matrix.modules.data, matrix.modules.size);
   }, [data]);
@@ -60,22 +111,15 @@ export default function QrScanner() {
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
         <Environment preset="city" />
         
+        {/* Pass controlsRef to the CameraController so it can manipulate the target */}
         <CameraController viewMode={viewMode} controlsRef={controlsRef} />
-        
-        <group>
-          {voxels.map((v, i) => (
-            <mesh key={`voxel-${i}`} position={v.pos} castShadow receiveShadow>
-              <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={v.color} roughness={0.9} />
-            </mesh>
-          ))}
-        </group>
+        <SceneAnimator viewMode={viewMode} voxels={voxels} />
         
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
-          enablePan={true} // User requested absolute free movement
-          autoRotateSpeed={1.0} 
+          enablePan={true} 
+          autoRotateSpeed={1.0}
           target={[0, 5, 0]} 
           maxPolarAngle={Math.PI / 2} 
         />
