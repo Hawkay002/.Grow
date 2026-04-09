@@ -14,11 +14,14 @@ export default function Dashboard() {
 
   const [activeTab, setActiveTab] = useState('create');
   const [loading, setLoading] = useState(false);
+  
+  // Form State
+  const [linkTitle, setLinkTitle] = useState(''); // NEW: Title State
   const [url, setUrl] = useState('');
   const [treeType, setTreeType] = useState('cherryblossom');
+  
   const [recentlyCreated, setRecentlyCreated] = useState(null);
   const [myLinks, setMyLinks] = useState([]);
-  
   const [linkToDelete, setLinkToDelete] = useState(null);
 
   useEffect(() => {
@@ -46,7 +49,12 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const docRef = await addDoc(collection(db, 'qrs'), {
-        userId: currentUser.uid, destinationUrl: url, treeType, createdAt: serverTimestamp(), clicks: 0
+        userId: currentUser.uid, 
+        title: linkTitle || 'Untitled Tree', // NEW: Saves the title to Firebase
+        destinationUrl: url, 
+        treeType, 
+        createdAt: serverTimestamp(), 
+        clicks: 0
       });
       const shortLink = `${window.location.origin}/qr/${docRef.id}`;
       
@@ -55,8 +63,9 @@ export default function Dashboard() {
         width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight }
       });
 
-      setRecentlyCreated({ link: shortLink, img: qrDataUrl });
+      setRecentlyCreated({ link: shortLink, img: qrDataUrl, title: linkTitle || 'Untitled Tree' });
       setUrl(''); 
+      setLinkTitle(''); // Reset title after creation
     } catch (error) {
       alert("Failed to grow link.");
     }
@@ -137,18 +146,28 @@ export default function Dashboard() {
               </Canvas>
             </div>
 
-            <form onSubmit={handleGenerate} className="max-w-2xl mx-auto space-y-10">
+            <form onSubmit={handleGenerate} className="max-w-2xl mx-auto space-y-8">
+              
+              {/* NEW: Title Input Field */}
+              <div>
+                <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Tree Title</label>
+                <input 
+                  type="text" placeholder="e.g., My Portfolio, Event Tickets..." value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)}
+                  className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Destination Link</label>
                 <input 
-                  type="url" required placeholder="Where should this tree lead?" value={url} onChange={(e) => setUrl(e.target.value)}
+                  type="url" required placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)}
                   className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Botanical Species</label>
-                <div className="flex gap-4 overflow-x-auto pb-4 pt-4 px-2 -mt-4 custom-scrollbar">
+                <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 custom-scrollbar">
                   {Object.entries(TREE_THEMES).map(([id, theme]) => (
                     <button
                       key={id} type="button" onClick={() => setTreeType(id)}
@@ -162,15 +181,18 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <button disabled={loading || !url} className="w-full bg-slate-900 text-white font-medium py-5 rounded-2xl hover:bg-slate-800 hover:shadow-xl transition-all disabled:opacity-50">
+              <button disabled={loading || !url} className="w-full bg-slate-900 text-white font-medium py-5 rounded-2xl hover:bg-slate-800 hover:shadow-xl transition-all disabled:opacity-50 mt-4">
                 {loading ? 'Cultivating...' : 'Grow Interactive Code'}
               </button>
             </form>
 
             {recentlyCreated && (
               <div className="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
-                <h3 className="font-serif text-2xl text-emerald-900 mb-6">It is ready.</h3>
+                <h3 className="font-serif text-2xl text-emerald-900 mb-2">{recentlyCreated.title} is ready.</h3>
+                <p className="text-slate-500 text-sm mb-6">Scan to interact, or share the link below.</p>
+                
                 <img src={recentlyCreated.img} alt="Colored QR" className="w-48 h-48 mx-auto mb-6 rounded-xl shadow-sm" />
+                
                 <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="block text-emerald-600 font-medium mb-6 hover:underline truncate px-4">
                   {recentlyCreated.link}
                 </a>
@@ -188,17 +210,32 @@ export default function Dashboard() {
                <div className="text-center py-20 text-slate-400 font-medium">Your forest is currently empty.</div>
             ) : (
               myLinks.map((link) => (
-                <div key={link.id} className="bg-white p-8 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex items-center justify-between transition-all hover:shadow-md">
-                  <div className="overflow-hidden pr-4">
-                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-wide">{TREE_THE.MES[link.treeType]?.name || 'Tree'}</span>
-                    <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-lg font-medium text-slate-800 block hover:text-emerald-600 transition-colors truncate">
+                <div key={link.id} className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
+                  
+                  <div className="overflow-hidden w-full">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
+                        {TREE_THEMES[link.treeType]?.name || 'Tree'}
+                      </span>
+                      {/* NEW: Displays the Title boldly */}
+                      <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
+                        {link.title || 'Untitled Tree'}
+                      </h3>
+                    </div>
+                    <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
                       {link.destinationUrl}
                     </a>
                   </div>
-                  <div className="flex gap-4 shrink-0">
-                    <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-800 font-medium text-sm bg-emerald-50 px-4 py-2 rounded-lg transition-colors">View</a>
-                    <button onClick={() => setLinkToDelete(link.id)} className="text-red-500 hover:text-red-700 font-medium text-sm bg-red-50 px-4 py-2 rounded-lg transition-colors">Delete</button>
+
+                  <div className="flex gap-3 shrink-0 w-full sm:w-auto">
+                    <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none text-center text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl transition-colors">
+                      View
+                    </a>
+                    <button onClick={() => setLinkToDelete(link.id)} className="flex-1 sm:flex-none text-center text-red-600 hover:text-red-800 font-medium text-sm bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl transition-colors">
+                      Delete
+                    </button>
                   </div>
+
                 </div>
               ))
             )}
