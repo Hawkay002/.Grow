@@ -36,6 +36,15 @@ export default function Dashboard() {
     e.preventDefault();
     setLoading(true);
 
+    // Define beautiful, thematic colors for each tree type
+    const qrThemeColors = {
+      cherryblossom: { dark: '#be185d', light: '#fdf2f8' }, // Deep pink on light pink
+      pine: { dark: '#14532d', light: '#f0fdf4' },         // Forest green on mint
+      dragon: { dark: '#451a03', light: '#fefce8' },       // Bark brown on pale yellow
+      maple: { dark: '#9a3412', light: '#fff7ed' },        // Autumn orange on cream
+      juniper: { dark: '#064e3b', light: '#ecfdf5' }       // Deep teal on pale teal
+    };
+
     try {
       // 1. Save to Firebase Database
       const docRef = await addDoc(collection(db, 'qrs'), {
@@ -50,13 +59,16 @@ export default function Dashboard() {
       const uniqueScannerLink = `${window.location.origin}/qr/${docRef.id}`;
       setShortLink(uniqueScannerLink);
 
+      // Apply the dynamic colors based on the selected tree
+      const activeColors = qrThemeColors[treeType] || { dark: '#1a1a1a', light: '#ffffff' };
+
       // 3. Generate the 2D QR Image
       const qrDataUrl = await QRCode.toDataURL(uniqueScannerLink, {
         width: 300,
         margin: 2,
         color: {
-          dark: '#1a1a1a', 
-          light: '#ffffff'
+          dark: activeColors.dark,
+          light: activeColors.light
         }
       });
       
