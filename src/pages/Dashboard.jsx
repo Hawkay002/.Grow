@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, deleteDoc, doc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import QRCode from 'qrcode';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
@@ -16,10 +16,8 @@ function AnimatedVoxel({ v }) {
 
   useFrame(() => {
     if (!materialRef.current) return;
-
     targetColor.set(v.color);
     materialRef.current.color.lerp(targetColor, 0.1);
-
     if (v.isBase) {
       materialRef.current.emissive.lerp(targetColor, 0.1);
     } else {
@@ -51,22 +49,25 @@ export default function Dashboard() {
   const [linkToDelete, setLinkToDelete] = useState(null);
 
   useEffect(() => {
-    if (!currentUser) navigate('/login');
-    if (currentUser) fetchMyLinks();
-  }, [currentUser, navigate]);
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
 
-  async function fetchMyLinks() {
+    // REAL-TIME UPDATE FIX: Switched from getDocs to onSnapshot
     const q = query(collection(db, 'qrs'), where("userId", "==", currentUser.uid));
-    const querySnapshot = await getDocs(q);
-    const links = [];
-    querySnapshot.forEach((doc) => links.push({ id: doc.id, ...doc.data() }));
-    setMyLinks(links.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
-  }
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const links = [];
+      querySnapshot.forEach((doc) => links.push({ id: doc.id, ...doc.data() }));
+      setMyLinks(links.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+    });
+
+    return () => unsubscribe();
+  }, [currentUser, navigate]);
 
   async function confirmDelete() {
     if (!linkToDelete) return;
     await deleteDoc(doc(db, 'qrs', linkToDelete));
-    setMyLinks(myLinks.filter(link => link.id !== linkToDelete));
     setLinkToDelete(null);
   }
 
@@ -109,7 +110,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200">
       
       {linkToDelete && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
             <h3 className="font-serif text-2xl text-slate-800 mb-2">Uproot this tree?</h3>
             <p className="text-slate-500 mb-8 text-sm">This action cannot be undone. The link will immediately stop working.</p>
@@ -126,7 +127,8 @@ export default function Dashboard() {
       )}
 
       <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
-        <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Vox.ly</h1>
+        {/* CHANGED: App Name */}
+        <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
         <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
           Sign Out
         </button>
@@ -146,7 +148,7 @@ export default function Dashboard() {
         {activeTab === 'create' && (
           <div className="space-y-12 animate-[fadeIn_0.5s_ease-out]">
             <div className="w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
-              <Canvas shadows camera={{ position: [50, 60, 50], zoom: 8 }}>
+              <Canvas shadows camera={{ position: [50, 75, 65], zoom: 8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
@@ -155,12 +157,11 @@ export default function Dashboard() {
                     <AnimatedVoxel key={`preview-${i}`} v={v} />
                   ))}
                 </group>
-                <OrbitControls enableZoom={true} enablePan={true} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
+                <OrbitControls enableZoom={true} enablePan={true} autoRotate autoRotateSpeed={1.5} target={[0, 15, 0]} maxPolarAngle={Math.PI / 2} />
               </Canvas>
             </div>
 
             <form onSubmit={handleGenerate} className="max-w-2xl mx-auto space-y-8">
-              
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Tree Title</label>
                 <input 
@@ -180,16 +181,21 @@ export default function Dashboard() {
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Botanical Species</label>
                 <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 custom-scrollbar">
-                  {Object.entries(TREE_THEMES).map(([id, theme]) => (
-                    <button
-                      key={id} type="button" onClick={() => setTreeType(id)}
-                      className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3
-                        ${treeType === id ? 'bg-emerald-50 ring-2 ring-emerald-500 text-emerald-900 shadow-md -translate-y-1' : 'bg-white ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
-                    >
-                      <div className="w-8 h-8 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
-                      <span className="font-medium text-sm">{theme.name}</span>
-                    </button>
-                  ))}
+                  {Object.entries(TREE_THEMES).map(([id, theme]) => {
+                    const isActive = treeType === id;
+                    return (
+                      <button
+                        key={id} type="button" onClick={() => setTreeType(id)}
+                        // UI FIX: Dynamically match the button border & background to the tree's leaf color!
+                        style={isActive ? { borderColor: theme.leaf[0], backgroundColor: `${theme.leaf[0]}15`, color: theme.leaf[0] } : {}}
+                        className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3 border-2
+                          ${isActive ? 'shadow-md -translate-y-1' : 'bg-white border-transparent ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
+                      >
+                        <div className="w-8 h-8 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
+                        <span className="font-medium text-sm capitalize">{theme.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -197,22 +203,6 @@ export default function Dashboard() {
                 {loading ? 'Cultivating...' : 'Grow Interactive Code'}
               </button>
             </form>
-
-            {recentlyCreated && (
-              <div className="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
-                <h3 className="font-serif text-2xl text-emerald-900 mb-2">{recentlyCreated.title} is ready.</h3>
-                <p className="text-slate-500 text-sm mb-6">Scan to interact, or share the link below.</p>
-                
-                <img src={recentlyCreated.img} alt="Colored QR" className="w-48 h-48 mx-auto mb-6 rounded-xl shadow-sm" />
-                
-                <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="block text-emerald-600 font-medium mb-6 hover:underline truncate px-4">
-                  {recentlyCreated.link}
-                </a>
-                <a href={recentlyCreated.img} download="voxly-tree.png" className="block w-full bg-emerald-50 text-emerald-700 font-medium py-3 rounded-xl hover:bg-emerald-100 transition-colors">
-                  Download Image
-                </a>
-              </div>
-            )}
           </div>
         )}
 
@@ -223,7 +213,6 @@ export default function Dashboard() {
             ) : (
               myLinks.map((link) => (
                 <div key={link.id} className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
-                  
                   <div className="overflow-hidden w-full">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -237,7 +226,6 @@ export default function Dashboard() {
                       {link.destinationUrl}
                     </a>
                   </div>
-
                   <div className="flex gap-3 shrink-0 w-full sm:w-auto">
                     <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none text-center text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl transition-colors">
                       View
@@ -246,7 +234,6 @@ export default function Dashboard() {
                       Delete
                     </button>
                   </div>
-
                 </div>
               ))
             )}
