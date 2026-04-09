@@ -47,7 +47,6 @@ export default function Dashboard() {
       });
       const shortLink = `${window.location.origin}/qr/${docRef.id}`;
       
-      // Generate the beautifully colored 2D QR code right away
       const theme = TREE_THEMES[treeType];
       const qrDataUrl = await QRCode.toDataURL(shortLink, {
         width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight }
@@ -61,7 +60,6 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // Live 3D Preview Engine
   const previewVoxels = useMemo(() => {
     const matrix = QRCode.create(url || "https://vox.ly", { errorCorrectionLevel: 'M' });
     return generateTree(treeType, matrix.modules.data, matrix.modules.size);
@@ -72,7 +70,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200">
       
-      {/* Soft, floating header */}
       <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Vox.ly</h1>
         <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
@@ -82,7 +79,6 @@ export default function Dashboard() {
 
       <main className="max-w-4xl mx-auto mt-16 px-6 pb-24">
         
-        {/* Airy, minimalist tabs */}
         <div className="flex gap-12 mb-12 border-b border-slate-200 px-4">
           <button onClick={() => setActiveTab('create')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'create' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
             Cultivate
@@ -95,9 +91,8 @@ export default function Dashboard() {
         {activeTab === 'create' && (
           <div className="space-y-12 animate-[fadeIn_0.5s_ease-out]">
             
-            {/* Elegant 3D Preview without tight boxes */}
             <div className="w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
-              <Canvas shadows camera={{ position: [50, 60, 50], zoom: 12 }}>
+              <Canvas shadows camera={{ position: [50, 60, 50], zoom: 8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
@@ -109,7 +104,7 @@ export default function Dashboard() {
                     </mesh>
                   ))}
                 </group>
-                <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1.5} />
+                <OrbitControls enableZoom={true} autoRotate autoRotateSpeed={1.5} minZoom={4} maxZoom={20} />
               </Canvas>
             </div>
 
@@ -124,12 +119,12 @@ export default function Dashboard() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Botanical Species</label>
-                <div className="flex gap-4 overflow-x-auto pb-4 px-2">
+                <div className="flex gap-4 overflow-x-auto pb-4 pt-4 px-2 -mt-4 custom-scrollbar">
                   {Object.entries(TREE_THEMES).map(([id, theme]) => (
                     <button
                       key={id} type="button" onClick={() => setTreeType(id)}
                       className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3
-                        ${treeType === id ? 'bg-emerald-50 ring-2 ring-emerald-500 text-emerald-900 shadow-md' : 'bg-white ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50'}`}
+                        ${treeType === id ? 'bg-emerald-50 ring-2 ring-emerald-500 text-emerald-900 shadow-md -translate-y-1' : 'bg-white ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
                     >
                       <div className="w-8 h-8 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
                       <span className="font-medium text-sm">{theme.name}</span>
@@ -143,7 +138,6 @@ export default function Dashboard() {
               </button>
             </form>
 
-            {/* Soft Success State displaying the colored QR */}
             {recentlyCreated && (
               <div className="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
                 <h3 className="font-serif text-2xl text-emerald-900 mb-6">It is ready.</h3>
@@ -159,23 +153,26 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Links Tab - Clean and breathable */}
         {activeTab === 'links' && (
           <div className="space-y-6">
-            {myLinks.map((link) => (
-              <div key={link.id} className="bg-white p-8 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex items-center justify-between group hover:shadow-md transition-all">
-                <div>
-                  <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-wide">{TREE_THEMES[link.treeType]?.name}</span>
-                  <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-lg font-medium text-slate-800 block hover:text-emerald-600 transition-colors">
-                    {link.destinationUrl}
-                  </a>
+            {myLinks.length === 0 ? (
+               <div className="text-center py-20 text-slate-400 font-medium">Your forest is currently empty.</div>
+            ) : (
+              myLinks.map((link) => (
+                <div key={link.id} className="bg-white p-8 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex items-center justify-between group hover:shadow-md transition-all">
+                  <div className="overflow-hidden pr-4">
+                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-3 inline-block uppercase tracking-wide">{TREE_THEMES[link.treeType]?.name}</span>
+                    <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-lg font-medium text-slate-800 block hover:text-emerald-600 transition-colors truncate">
+                      {link.destinationUrl}
+                    </a>
+                  </div>
+                  <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-emerald-600 font-medium text-sm">View</a>
+                    <button onClick={() => handleDelete(link.id)} className="text-slate-400 hover:text-red-500 font-medium text-sm">Delete</button>
+                  </div>
                 </div>
-                <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-emerald-600 font-medium text-sm">View</a>
-                  <button onClick={() => handleDelete(link.id)} className="text-slate-400 hover:text-red-500 font-medium text-sm">Delete</button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
