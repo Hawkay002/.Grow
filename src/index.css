@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f4f4f5] text-brand-dark antialiased;
+    margin: 0;
+    overflow-x: hidden;
+  }
+}
