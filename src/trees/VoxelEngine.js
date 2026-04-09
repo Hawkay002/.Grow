@@ -38,13 +38,15 @@ export function generateTree(treeType, qrData, qrSize) {
   const center = Math.floor(qrSize / 2);
   const scale = Math.max(1, qrSize / 21);
   
-  // 1. Draw Ground Base Layer (Always solid to provide contrast for the scan)
+  // 1. Draw Ground Base Layer
   for (let row = 0; row < qrSize; row++) {
     for (let col = 0; col < qrSize; col++) {
       if (qrData[row * qrSize + col]) {
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark });
+        // Adding qrColor tag for the scanner to swap to
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark, qrColor: theme.qrDark });
       } else {
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight });
+        // Adding qrColor tag for the scanner to swap to
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight, qrColor: theme.qrLight });
       }
     }
   }
@@ -59,20 +61,15 @@ export function generateTree(treeType, qrData, qrSize) {
     for (let x = -bounds * 2; x <= bounds * 2; x++) {
       for (let z = -bounds * 2; z <= bounds * 2; z++) {
         
-        // Map 3D coordinate to 2D QR Code Matrix
         const col = Math.floor(x) + center;
         const row = Math.floor(z) + center;
 
-        // THE EXTRUSION CONSTRAINT:
-        // If this block hovers over a white space, skip it completely.
-        // This guarantees the empty spaces remain empty all the way up.
         if (col < 0 || col >= qrSize || row < 0 || row >= qrSize) continue;
         if (!qrData[row * qrSize + col]) continue; 
 
-        // Shape calculations
         let isTrunk = y <= trunkHeight && Math.sqrt(x*x + z*z) <= 1.5;
         let isValidCanopy = false;
-        const cy_y = y - trunkHeight; // Relative Y for canopy shaping
+        const cy_y = y - trunkHeight;
 
         if (y >= trunkHeight * 0.4) {
           if (theme.shape === 'squashed_sphere') {
@@ -97,9 +94,9 @@ export function generateTree(treeType, qrData, qrSize) {
           }
         }
 
-        // Apply colors
+        // Apply colors AND the flat qrColor for scanning mode
         if (isTrunk) {
-          voxels.push({ pos: [x, y, z], color: theme.trunk });
+          voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark });
         } else if (isValidCanopy) {
           const clusterX = Math.floor(x / theme.clusterSize);
           const clusterY = Math.floor(y / theme.clusterSize);
@@ -108,12 +105,12 @@ export function generateTree(treeType, qrData, qrSize) {
           const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
           if (isCore || clusterNoise < theme.density) {
-            voxels.push({ pos: [x, y, z], color: getLeafColor() });
+            voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark });
           }
         }
       }
     }
   }
 
-  return voxels; // Returning unified voxels again!
+  return voxels;
 }
