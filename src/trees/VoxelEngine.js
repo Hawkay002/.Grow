@@ -54,7 +54,7 @@ export function generateTree(treeType, qrData, qrSize) {
   // 2. Draw Taller, Solid Trunk
   const trunkHeight = Math.floor(7 * scale);
   for (let y = 1; y <= trunkHeight; y++) {
-    voxels.push({ pos: [0, y, 0], color: theme.trunk });
+    voxels.push({ pos: [0, y, 0], color: theme.trunk }); 
     if (y < trunkHeight - 2) { // Thicker base
       voxels.push({ pos: [1, y, 0], color: theme.trunk });
       voxels.push({ pos: [-1, y, 0], color: theme.trunk });
