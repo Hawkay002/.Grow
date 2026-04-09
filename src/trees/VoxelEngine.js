@@ -62,14 +62,28 @@ export function generateTree(treeType, qrData, qrSize) {
   // DYNAMIC TRUNK HEIGHT overrides
   let trunkHeight = Math.floor(7 * scale);
   if (theme.shape === 'willow') {
-    trunkHeight += Math.floor(1 * scale); // Shortened Willow Height
+    trunkHeight += Math.floor(1 * scale); 
   } else if (theme.shape === 'baobab') {
-    trunkHeight += Math.floor(4 * scale); // Significantly taller Baobab Height
+    trunkHeight += Math.floor(6 * scale); // Taller Baobab
   }
 
   const radius = Math.floor(5 * scale);
   const bounds = theme.shape === 'willow' ? Math.floor(10 * scale) : Math.floor(8 * scale);
   
+  // PRE-CALCULATE WILLOW VINES (Strict maximum of 5)
+  const willowVines = [];
+  if (theme.shape === 'willow') {
+    for(let i = 0; i < 5; i++) {
+      // Spaces 5 vines evenly in a circle, with a tiny bit of noise offset
+      const angle = ((i * Math.PI * 2) / 5) + hash(i, 1, 1);
+      willowVines.push({
+        vx: Math.cos(angle) * (radius * 1.0), // Sit at the edge of the canopy
+        vz: Math.sin(angle) * (radius * 1.0),
+        drop: radius * 1.5 + (hash(i, 2, 2) * radius * 1.5) // Drop length scales with radius
+      });
+    }
+  }
+
   const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
 
   // 2. Extrude the Tree
@@ -90,7 +104,6 @@ export function generateTree(treeType, qrData, qrSize) {
            let tx = x, tz = z;
            
            if (theme.name === 'baobab') {
-              // Thicker trunk base that tapers perfectly
               const midY = trunkHeight / 2;
               const distFromMid = Math.abs(y - midY);
               const normalizedDist = distFromMid / midY; 
@@ -131,16 +144,21 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = Math.sqrt(swirlX*swirlX + (cy_y*cy_y) + swirlZ*swirlZ) <= radius * 1.25;
           }
           else if (theme.shape === 'baobab') {
-            isValidCanopy = cy_y >= 0 && cy_y <= radius * 0.8 && Math.sqrt((x*x)/1.5 + (cy_y*cy_y)*2 + (z*z)/1.5) <= radius * 1.5;
+            // Taller, wider dome to support the lush leaves
+            isValidCanopy = cy_y >= 0 && cy_y <= radius * 1.2 && Math.sqrt((x*x)/1.5 + (cy_y*cy_y)*1.5 + (z*z)/1.5) <= radius * 1.5;
           }
           else if (theme.shape === 'willow') {
             const dome = cy_y >= -2 && Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/1.2 + (z*z)/2.5) <= radius * 1.35;
             
-            // Reduced vine density by increasing the threshold to 0.6
-            const vineHash = hash(x, 0, z);
-            const vineDrop = vineHash > 0.6 ? (radius * 1.5 + (vineHash * radius * 1.5)) : 0; 
-            const isVine = cy_y < 0 && cy_y > -vineDrop && Math.sqrt((x*x)/2.5 + (z*z)/2.5) <= radius * 1.3;
-            
+            // STRICT MAX 5 VINES CHECK
+            let isVine = false;
+            for (let v of willowVines) {
+               // If block is within 1.5 radius of a pre-calculated vine point, drop it down
+               if (Math.sqrt((x - v.vx)**2 + (z - v.vz)**2) <= 1.5 && cy_y < 0 && cy_y > -v.drop) {
+                  isVine = true;
+                  break;
+               }
+            }
             isValidCanopy = dome || isVine;
           }
         }
@@ -155,19 +173,23 @@ export function generateTree(treeType, qrData, qrSize) {
           const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
           if (theme.name === 'baobab') {
-             // 4-Sided Baobab Trigonometry!
              const angle = Math.atan2(z, x);
-             const branchFactor = Math.cos(4 * angle); // Creates 4 distinct directional peaks
+             const branchFactor = Math.cos(4 * angle);
              const distToCenterXZ = Math.sqrt(x*x + z*z);
              
-             // Core is trunk, plus 4 outwards branches
-             const isBranch = isCore || (branchFactor > 0.4 && distToCenterXZ < radius * 1.1);
-             // Leaves only spawn on the outer edges of the 4 branches
-             const isLeafArea = branchFactor > 0.1 && distToCenterXZ >= radius * 0.9 && distToCenterXZ <= radius * 1.4;
+             // Brown Branches cross shape
+             const isBranch = isCore || (branchFactor > 0.4 && distToCenterXZ < radius * 1.2);
+             // Lush Green head sits on top and outer edges of the branches
+             const isLeafArea = branchFactor > 0.1 && distToCenterXZ >= radius * 0.6 && distToCenterXZ <= radius * 1.5 && cy_y >= radius * 0.2;
              
              if (isBranch) {
-                voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark });
-             } else if (isLeafArea && clusterNoise < 0.5) { 
+                // If the branch is high up, mix some leaves in so it blends
+                if (cy_y > radius * 0.5 && clusterNoise < 0.4) {
+                   voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark });
+                } else {
+                   voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark });
+                }
+             } else if (isLeafArea && clusterNoise < 0.85) { // High density threshold for leafy top
                 voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark });
              }
           } else {
