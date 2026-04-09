@@ -1,125 +1,109 @@
-// --- Simple Pseudo-Random Noise Function ---
-// Real Perlin noise is heavy; this math hack creates fast, organic-looking noise for voxels
-function hashNoise(x, y, z) {
-  const dot = x * 12.9898 + y * 78.233 + z * 37.719;
-  const sin = Math.sin(dot) * 43758.5453;
-  return sin - Math.floor(sin);
-}
-
-// --- 3D Bresenham Algorithm ---
-// Maps a continuous 3D line to discrete voxel coordinates
-function drawLine3D(voxels, x0, y0, z0, x1, y1, z1, thickness, colorStr) {
-  const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-  const dy = Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
-  const dz = Math.abs(z1 - z0), sz = z0 < z1 ? 1 : -1;
-  let errX = dx / 2, errY = dy / 2, errZ = dz / 2;
-
-  let cx = x0, cy = y0, cz = z0;
-  
-  // Track unique coordinates to avoid rendering duplicate voxels
-  const addVoxel = (vx, vy, vz) => {
-    voxels.push({ pos: [vx, vy, vz], color: colorStr });
-  };
-
-  while (true) {
-    // Add thickness around the core line
-    for (let tx = -thickness; tx <= thickness; tx++) {
-      for (let tz = -thickness; tz <= thickness; tz++) {
-        if (Math.abs(tx) + Math.abs(tz) <= thickness) { // Diamond shape thickness
-          addVoxel(cx + tx, cy, cz + tz);
-        }
-      }
-    }
-
-    if (cx === x1 && cy === y1 && cz === z1) break;
-    
-    // Step forward in 3D space
-    if (dx >= dy && dx >= dz) { errY -= dy; errZ -= dz; cx += sx; if (errY < 0) { cy += sy; errY += dx; } if (errZ < 0) { cz += sz; errZ += dx; } }
-    else if (dy >= dx && dy >= dz) { errX -= dx; errZ -= dz; cy += sy; if (errX < 0) { cx += sx; errX += dy; } if (errZ < 0) { cz += sz; errZ += dy; } }
-    else { errX -= dx; errY -= dy; cz += sz; if (errX < 0) { cx += sx; errX += dz; } if (errY < 0) { cy += sy; errY += dz; } }
+// Centralized Themes so the entire app (3D and 2D QRs) shares the exact same colors
+export const TREE_THEMES = {
+  cherryblossom: { 
+    name: 'Cherry', shape: 'sphere', density: 0.35, // 65% empty space!
+    qrDark: '#be185d', qrLight: '#fdf2f8', trunk: '#451a03',
+    leaf: ['#f472b6', '#db2777', '#fbcfe8', '#be185d']
+  },
+  pine: { 
+    name: 'Pine', shape: 'cone', density: 0.45,
+    qrDark: '#064e3b', qrLight: '#f0fdf4', trunk: '#291002',
+    leaf: ['#15803d', '#166534', '#22c55e', '#14532d']
+  },
+  dragon: { 
+    name: 'Dragon', shape: 'umbrella', density: 0.6,
+    qrDark: '#451a03', qrLight: '#fefce8', trunk: '#78350f',
+    leaf: ['#a3e635', '#84cc16', '#bef264', '#65a30d']
+  },
+  maple: { 
+    name: 'Maple', shape: 'ellipsoid', density: 0.4,
+    qrDark: '#9a3412', qrLight: '#fff7ed', trunk: '#451a03',
+    leaf: ['#ea580c', '#c2410c', '#f97316', '#9a3412']
+  },
+  juniper: { 
+    name: 'Juniper', shape: 'wild', density: 0.3,
+    qrDark: '#0f766e', qrLight: '#f0fdfa', trunk: '#1c1917',
+    leaf: ['#0d9488', '#0f766e', '#14b8a6', '#042f2e']
   }
-}
+};
 
-// --- The L-System / Recursive Branching Engine ---
-export function generateOrganicTree({ 
-  qrSize, 
-  qrData, 
-  colors, 
-  branchAngles, 
-  leafDensity, 
-  maxDepth 
-}) {
+// Extremely fast noise alternative for organic gaps
+const hash = (x, y, z) => {
+  let h = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+  return h - Math.floor(h);
+};
+
+export function generateTree(treeType, qrData, qrSize) {
+  const theme = TREE_THEMES[treeType] || TREE_THEMES.cherryblossom;
   const voxels = [];
   const center = Math.floor(qrSize / 2);
   const scale = Math.max(1, qrSize / 21);
   
-  // 1. Generate the Base (The QR Ground)
+  // 1. Draw QR Ground (The Shadowed Area)
   for (let row = 0; row < qrSize; row++) {
     for (let col = 0; col < qrSize; col++) {
-      const isDark = qrData[row * qrSize + col];
-      voxels.push({ 
-        pos: [col - center, 0, row - center], 
-        color: isDark ? colors.baseDark : colors.baseLight 
-      });
+      if (qrData[row * qrSize + col]) {
+        // Deepen the ground color to look like a shadow
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark });
+      } else {
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight });
+      }
     }
   }
 
-  // Helper to pick random shades for organic leaves
-  const getLeafColor = () => colors.leaf[Math.floor(Math.random() * colors.leaf.length)];
+  // 2. Draw Taller, Solid Trunk
+  const trunkHeight = Math.floor(7 * scale);
+  for (let y = 1; y <= trunkHeight; y++) {
+    voxels.push({ pos: [0, y, 0], color: theme.trunk });
+    if (y < trunkHeight - 2) { // Thicker base
+      voxels.push({ pos: [1, y, 0], color: theme.trunk });
+      voxels.push({ pos: [-1, y, 0], color: theme.trunk });
+      voxels.push({ pos: [0, y, 1], color: theme.trunk });
+      voxels.push({ pos: [0, y, -1], color: theme.trunk });
+    }
+  }
 
-  // 2. The Recursive Branching Function
-  function growBranch(startX, startY, startZ, angleX, angleY, length, thickness, depth) {
-    // Calculate end points based on angles
-    const endX = Math.round(startX + length * Math.sin(angleY) * Math.cos(angleX));
-    const endY = Math.round(startY + length * Math.cos(angleY));
-    const endZ = Math.round(startZ + length * Math.sin(angleY) * Math.sin(angleX));
+  // 3. Fast Geometric Canopy Generation
+  const cy = trunkHeight;
+  const radius = Math.floor(5 * scale);
+  const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
 
-    // Draw the actual branch
-    drawLine3D(voxels, startX, startY, startZ, endX, endY, endZ, thickness, colors.trunk);
-
-    // If we haven't reached the tips, split into smaller branches
-    if (depth > 0) {
-      const numSplits = Math.floor(Math.random() * 2) + 2; // 2 or 3 branches
-      for (let i = 0; i < numSplits; i++) {
-        // Perturb the angles to spread them out organically
-        const newAngleX = angleX + (Math.random() * branchAngles.spread - branchAngles.spread/2);
-        const newAngleY = angleY + (Math.random() * branchAngles.lift - branchAngles.lift/2) + 0.2; // Keep them pointing mostly up
-        const newLength = Math.max(2, length * 0.7); // Branches get shorter
-        const newThickness = Math.max(0, thickness - 1); // Branches get thinner
+  // Single 3D loop bounding box (Incredibly fast)
+  const bounds = Math.floor(8 * scale);
+  for (let y = 0; y <= bounds * 2; y++) {
+    for (let x = -bounds; x <= bounds; x++) {
+      for (let z = -bounds; z <= bounds; z++) {
         
-        growBranch(endX, endY, endZ, newAngleX, newAngleY, newLength, newThickness, depth - 1);
-      }
-    } 
-    // 3. Leaf Generation (If we are at the very tips of the branches)
-    else {
-      const clusterRadius = Math.floor(4 * scale);
-      for (let lx = -clusterRadius; lx <= clusterRadius; lx++) {
-        for (let ly = -clusterRadius; ly <= clusterRadius; ly++) {
-          for (let lz = -clusterRadius; lz <= clusterRadius; lz++) {
-            const distance = Math.sqrt(lx*lx + ly*ly + lz*lz);
-            if (distance <= clusterRadius) {
-              // Apply Noise to break up the cluster and make gaps
-              const noiseVal = hashNoise(endX + lx, endY + ly, endZ + lz);
-              if (noiseVal < leafDensity) { 
-                voxels.push({ 
-                  pos: [endX + lx, endY + ly, endZ + lz], 
-                  color: getLeafColor() 
-                });
-              }
-            }
-          }
+        let isValidShape = false;
+        
+        // Shape Math
+        if (theme.shape === 'sphere') {
+          isValidShape = Math.sqrt(x*x + (y-radius)*(y-radius) + z*z) <= radius;
+        } 
+        else if (theme.shape === 'cone') {
+          const h = bounds * 1.5;
+          isValidShape = y < h && Math.sqrt(x*x + z*z) <= (h - y) * 0.6;
+        } 
+        else if (theme.shape === 'umbrella') {
+          isValidShape = y > radius && y < radius + 3 && Math.sqrt(x*x + z*z) <= radius + 2;
+        } 
+        else if (theme.shape === 'ellipsoid') {
+          isValidShape = Math.sqrt((x*x)/1 + ((y-radius)*(y-radius))/2 + (z*z)/1) <= radius * 0.8;
+        }
+        else if (theme.shape === 'wild') {
+          const d1 = Math.sqrt(x*x + (y-radius)*(y-radius) + z*z);
+          const d2 = Math.sqrt((x-3)*(x-3) + (y-radius+2)*(y-radius+2) + z*z);
+          const d3 = Math.sqrt((x+2)*(x+2) + (y-radius-2)*(y-radius-2) + (z-2)*(z-2));
+          isValidShape = d1 < radius*0.7 || d2 < radius*0.6 || d3 < radius*0.5;
+        }
+
+        // Apply massive air gaps using density
+        if (isValidShape && hash(x, y, z) < theme.density) {
+          voxels.push({ pos: [x, cy + y, z], color: getLeafColor() });
         }
       }
     }
   }
-
-  // Start the L-System (The Root/Trunk)
-  const initialThickness = Math.floor(1.5 * scale);
-  const initialLength = Math.floor(6 * scale);
-  
-  // growBranch(startX, startY, startZ, angleX, angleY, length, thickness, depth)
-  // angleY = 0 means pointing straight up.
-  growBranch(0, 1, 0, 0, 0, initialLength, initialThickness, maxDepth);
 
   return voxels;
 }
