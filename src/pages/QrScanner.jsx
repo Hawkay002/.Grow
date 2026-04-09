@@ -6,158 +6,23 @@ import { Canvas } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
 import { motion } from 'framer-motion-3d';
 import QRCode from 'qrcode';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTree, faQrcode } from '@fortawesome/free-solid-svg-icons';
 
-// --- Procedural Voxel Math ---
-function generateVoxelScene(qrModules, size, treeType) {
-  const voxels = [];
-  const center = Math.floor(size / 2);
-  
-  // Theme Colors (Now using arrays for leaf color variation!)
-  const COLORS = {
-    baseDark: '#84cc16', // Grass green
-    baseLight: '#f4f4f5', // Path white
-    cherry: { 
-      trunk: '#451a03', 
-      leaf: ['#f472b6', '#db2777', '#fbcfe8', '#be185d'] // Pinks: standard, dark, pale, deep
-    },
-    pine: { 
-      trunk: '#291002', 
-      leaf: ['#15803d', '#166534', '#22c55e', '#14532d'] // Greens: standard, dark, bright, deep
-    },
-    dragon: { 
-      trunk: '#78350f', 
-      leaf: ['#a3e635', '#84cc16', '#bef264', '#65a30d'] // Yellow-greens
-    },
-    maple: { 
-      trunk: '#451a03', 
-      leaf: ['#ea580c', '#c2410c', '#f97316', '#9a3412'] // Oranges
-    },
-    juniper: { 
-      trunk: '#1c1917', 
-      leaf: ['#065f46', '#047857', '#059669', '#064e3b'] // Teals
-    }
-  };
+// Import our separated organic trees
+import CherryBlossom from '../trees/CherryBlossom';
+import Pine from '../trees/Pine';
+import Maple from '../trees/Maple';
+import Dragon from '../trees/Dragon';
+import Juniper from '../trees/Juniper';
 
-  const theme = COLORS[treeType === 'cherryblossom' ? 'cherry' : treeType];
-  
-  // Helper to pick a random shade for the leaves
-  const getRandomLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
-
-  // 1. Generate QR Base
-  for (let row = 0; row < size; row++) {
-    for (let col = 0; col < size; col++) {
-      const isDark = qrModules[row * size + col];
-      const x = col - center;
-      const z = row - center;
-      voxels.push({ pos: [x, 0, z], color: isDark ? COLORS.baseDark : COLORS.baseLight });
-    }
-  }
-
-  // 2. Tree Math based on QR Scale
-  const scaleRatio = Math.max(1, size / 21);
-  const trunkHeight = Math.floor(5 * scaleRatio); // Slightly taller to match thicker base
-  
-  // Generate Thicker Trunk
-  for (let y = 1; y <= trunkHeight; y++) {
-    voxels.push({ pos: [0, y, 0], color: theme.trunk }); // Center core
-    
-    // Thicken the bottom half of the trunk to create "roots" and weight
-    if (y < trunkHeight - 1) {
-      voxels.push({ pos: [1, y, 0], color: theme.trunk });
-      voxels.push({ pos: [-1, y, 0], color: theme.trunk });
-      voxels.push({ pos: [0, y, 1], color: theme.trunk });
-      voxels.push({ pos: [0, y, -1], color: theme.trunk });
-      
-      // If it's a larger QR, make the base a full 3x3 block
-      if (scaleRatio > 1.2 && y < trunkHeight - 2) {
-         voxels.push({ pos: [1, y, 1], color: theme.trunk });
-         voxels.push({ pos: [-1, y, -1], color: theme.trunk });
-         voxels.push({ pos: [1, y, -1], color: theme.trunk });
-         voxels.push({ pos: [-1, y, 1], color: theme.trunk });
-      }
-    }
-  }
-
-  // 3. Procedural Canopies (With Gaps and Color Variance)
-  const canopyBaseY = trunkHeight;
-  const GAP_CHANCE = 0.25; // 25% chance a leaf is missing to create air gaps
-  
-  if (treeType === 'cherryblossom' || treeType === 'maple') {
-    const radius = Math.floor(4.5 * scaleRatio);
-    for (let x = -radius; x <= radius; x++) {
-      for (let y = -radius; y <= radius; y++) {
-        for (let z = -radius; z <= radius; z++) {
-          if (Math.sqrt(x*x + y*y + z*z) <= radius + (Math.random()*0.5)) {
-            // Apply Gap Chance
-            if (Math.random() > GAP_CHANCE) {
-              voxels.push({ pos: [x, y + canopyBaseY + 2, z], color: getRandomLeafColor() });
-            }
-          }
-        }
-      }
-    }
-  } 
-  
-  else if (treeType === 'pine') {
-    const height = Math.floor(8 * scaleRatio);
-    for (let y = 0; y < height; y++) {
-      const radius = Math.max(0, Math.floor(height/1.5) - y);
-      for (let x = -radius; x <= radius; x++) {
-        for (let z = -radius; z <= radius; z++) {
-          if (Math.abs(x) + Math.abs(z) <= radius + (Math.random()*0.5)) {
-            if (Math.random() > GAP_CHANCE) {
-              voxels.push({ pos: [x, y + canopyBaseY, z], color: getRandomLeafColor() });
-            }
-          }
-        }
-      }
-    }
-  }
-
-  else if (treeType === 'dragon') {
-    const radius = Math.floor(5.5 * scaleRatio);
-    for (let x = -radius; x <= radius; x++) {
-      for (let y = 0; y <= 2; y++) {
-        for (let z = -radius; z <= radius; z++) {
-          if (Math.sqrt(x*x + z*z) <= radius - y) {
-             // Less gaps for dragon tree to keep its umbrella shape solid
-            if (Math.random() > 0.15) {
-              voxels.push({ pos: [x, y + canopyBaseY + 1, z], color: getRandomLeafColor() });
-            }
-          }
-        }
-      }
-    }
-  }
-
-  else if (treeType === 'juniper') {
-    const height = Math.floor(7 * scaleRatio);
-    for (let y = 0; y < height; y++) {
-      const xOffset = Math.sin(y) * 2;
-      const zOffset = Math.cos(y) * 2;
-      const radius = 2.5 * scaleRatio;
-      for (let x = -radius; x <= radius; x++) {
-        for (let z = -radius; z <= radius; z++) {
-          if (Math.sqrt(x*x + z*z) <= radius) {
-            // High gap chance for a wild, twisty look
-            if (Math.random() > 0.35) {
-              voxels.push({ pos: [Math.round(x + xOffset), y + canopyBaseY, Math.round(z + zOffset)], color: getRandomLeafColor() });
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return voxels;
-}
-
-// --- React Component ---
 export default function QrScanner() {
   const { id } = useParams();
   const [data, setData] = useState(null);
-  const [voxels, setVoxels] = useState([]);
+  const [qrMatrix, setQrMatrix] = useState(null);
+  const [qrImageUrl, setQrImageUrl] = useState('');
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState('tree'); // 'tree' or 'qr'
 
   useEffect(() => {
     async function loadData() {
@@ -171,53 +36,87 @@ export default function QrScanner() {
         const dbData = docSnap.data();
         setData(dbData);
 
-        const qrMatrix = QRCode.create(dbData.destinationUrl, { errorCorrectionLevel: 'M' });
-        const sceneVoxels = generateVoxelScene(qrMatrix.modules.data, qrMatrix.modules.size, dbData.treeType);
-        setVoxels(sceneVoxels);
+        // Get 2D Matrix for the 3D base
+        const matrix = QRCode.create(dbData.destinationUrl, { errorCorrectionLevel: 'M' });
+        setQrMatrix(matrix);
+
+        // Get actual Image for the 2D toggle view
+        const imgUrl = await QRCode.toDataURL(dbData.destinationUrl, {
+          width: 400, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' }
+        });
+        setQrImageUrl(imgUrl);
 
       } catch (err) {
         console.error(err);
-        setError("Error loading 3D scene.");
+        setError("Error loading scene.");
       }
     }
     loadData();
   }, [id]);
 
-  if (error) return <div className="min-h-screen flex items-center justify-center font-display font-black text-4xl text-red-500 bg-[#f4f4f5]">{error}</div>;
-  if (!data) return <div className="min-h-screen flex items-center justify-center font-display font-black text-4xl animate-pulse text-brand-dark bg-[#f4f4f5]">Planting...</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center font-display font-black text-4xl text-brand-pop bg-[#f4f4f5] border-8 border-brand-dark m-4">{error}</div>;
+  if (!data || !qrMatrix) return <div className="min-h-screen flex items-center justify-center font-display font-black text-4xl animate-pulse text-brand-dark bg-[#f4f4f5] raw-texture">Planting...</div>;
+
+  // Dynamically select the right component
+  const TreeComponent = {
+    cherryblossom: CherryBlossom,
+    pine: Pine,
+    maple: Maple,
+    dragon: Dragon,
+    juniper: Juniper
+  }[data.treeType] || CherryBlossom;
 
   return (
-    <div className="relative w-screen h-screen bg-[#f4f4f5] overflow-hidden">
+    <div className="relative w-screen h-screen bg-[#e5e5e5] overflow-hidden">
       
-      {/* 3D Canvas */}
-      <Canvas className="w-full h-full">
-        <OrthographicCamera makeDefault position={[50, 50, 50]} zoom={12} />
-        <OrbitControls enablePan={false} enableZoom={true} maxZoom={40} minZoom={5} autoRotate autoRotateSpeed={1.0} />
-        <Environment preset="city" />
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow />
+      {/* Background Texture Element */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#1a1a1a 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
-        <motion.group
-          initial={{ scale: 0, y: -20 }}
-          animate={{ scale: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 100, damping: 12, mass: 1.2 }}
-        >
-          {voxels.map((v, i) => (
-            <mesh key={i} position={v.pos}>
-              <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={v.color} roughness={0.9} metalness={0.1} />
-            </mesh>
-          ))}
-        </motion.group>
-      </Canvas>
+      {viewMode === 'tree' ? (
+        <Canvas className="w-full h-full cursor-grab active:cursor-grabbing" shadows>
+          <OrthographicCamera makeDefault position={[50, 50, 50]} zoom={12} />
+          <OrbitControls enablePan={false} enableZoom={true} maxZoom={40} minZoom={5} autoRotate autoRotateSpeed={1.0} />
+          <Environment preset="city" />
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[20, 30, 20]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} />
 
-      {/* Brutalist UI Overlay */}
-      <div className="absolute bottom-10 left-0 w-full flex flex-col items-center pointer-events-none z-10">
-        <div className="bg-white/90 backdrop-blur-md px-8 py-6 rounded-3xl shadow-2xl border-4 border-brand-dark text-center pointer-events-auto mx-4 max-w-sm w-full transform transition-transform hover:scale-105">
-          <h2 className="font-display font-black text-xl uppercase mb-4 text-brand-dark tracking-tight">Destination Unlocked</h2>
+          <motion.group initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 90, damping: 14 }}>
+            <TreeComponent qrData={qrMatrix.modules.data} qrSize={qrMatrix.modules.size} />
+          </motion.group>
+        </Canvas>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center p-8 animate-[fadeIn_0.3s_ease-out]">
+          <div className="bg-white p-6 border-8 border-brand-dark shadow-[12px_12px_0px_rgba(26,26,26,1)] rotate-[-2deg]">
+            <img src={qrImageUrl} alt="QR Code" className="w-full max-w-sm h-auto" />
+          </div>
+        </div>
+      )}
+
+      {/* Pop UI Overlay */}
+      <div className="absolute bottom-24 left-0 w-full flex flex-col items-center pointer-events-none z-10">
+        
+        {/* Toggle Switch */}
+        <div className="mb-8 pointer-events-auto flex bg-white border-4 border-brand-dark p-1 shadow-[6px_6px_0px_rgba(26,26,26,1)]">
+          <button 
+            onClick={() => setViewMode('tree')}
+            className={`px-6 py-2 font-black uppercase text-sm transition-colors ${viewMode === 'tree' ? 'bg-brand-pop text-white' : 'text-brand-dark hover:bg-gray-200'}`}
+          >
+            <FontAwesomeIcon icon={faTree} className="mr-2" /> 3D View
+          </button>
+          <button 
+            onClick={() => setViewMode('qr')}
+            className={`px-6 py-2 font-black uppercase text-sm transition-colors ${viewMode === 'qr' ? 'bg-brand-pop text-white' : 'text-brand-dark hover:bg-gray-200'}`}
+          >
+            <FontAwesomeIcon icon={faQrcode} className="mr-2" /> 2D Code
+          </button>
+        </div>
+
+        {/* Unlock Modal (Shifted Upwards) */}
+        <div className="bg-white px-8 py-6 border-4 border-brand-dark shadow-[8px_8px_0px_rgba(26,26,26,1)] text-center pointer-events-auto mx-4 max-w-sm w-full transform transition-transform hover:-translate-y-1">
+          <h2 className="font-display font-black text-2xl uppercase mb-4 text-brand-dark tracking-tight">Destination Unlocked</h2>
           <a 
             href={data.destinationUrl}
-            className="block w-full bg-brand-pop text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-[4px_4px_0px_rgba(26,26,26,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+            className="block w-full bg-[#1a1a1a] text-white font-black uppercase tracking-widest py-4 border-2 border-transparent hover:border-brand-pop hover:bg-brand-pop active:translate-y-1 active:shadow-none transition-all"
           >
             Enter Link
           </a>
