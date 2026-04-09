@@ -93,7 +93,7 @@ export function generateTree(treeType, qrData, qrSize) {
         else if (theme.shape === 'wild') {
           const d1 = Math.sqrt(x*x + (y-radius)*(y-radius) + z*z);
           const d2 = Math.sqrt((x-3)*(x-3) + (y-radius+2)*(y-radius+2) + z*z);
-          const d3 = Math.sqrt((x+2)*(x+2) + (y-radius-2)*(y-radius-2) + (z-2)*(z-2));
+          const d3 = Math.sqrt((x+2)*(x+2) + (y-radius-2)*(y-radius-2) + (z-2)*(z-2)); 
           isValidShape = d1 < radius*0.7 || d2 < radius*0.6 || d3 < radius*0.5;
         }
 
