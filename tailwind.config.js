@@ -6,15 +6,18 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        brand: {
-          dark: '#1a1a1a',
-          pop: '#ff2a5f', // A dramatic pink/red for buttons
-        }
-      },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-        display: ['Space Grotesk', 'sans-serif'], // Good for brutalist/raw headings
+        serif: ['"Playfair Display"', 'serif'],
+      },
+      animation: {
+        'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+      },
+      keyframes: {
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
       }
     },
   },
