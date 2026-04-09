@@ -33,86 +33,87 @@ const hash = (x, y, z) => {
 
 export function generateTree(treeType, qrData, qrSize) {
   const theme = TREE_THEMES[treeType] || TREE_THEMES.cherryblossom;
-  
-  const base = [];
-  const tree = [];
+  const voxels = [];
   
   const center = Math.floor(qrSize / 2);
   const scale = Math.max(1, qrSize / 21);
   
-  // 1. Generate the QR Base Layer
+  // 1. Draw Ground Base Layer (Always solid to provide contrast for the scan)
   for (let row = 0; row < qrSize; row++) {
     for (let col = 0; col < qrSize; col++) {
       if (qrData[row * qrSize + col]) {
-        base.push({ pos: [col - center, 0, row - center], color: theme.qrDark });
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark });
       } else {
-        base.push({ pos: [col - center, 0, row - center], color: theme.qrLight });
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight });
       }
     }
   }
 
   const trunkHeight = Math.floor(7 * scale);
   const radius = Math.floor(5 * scale);
-  
-  // 2. Generate the Trunk
-  for (let y = 1; y <= trunkHeight + radius - 1; y++) {
-    tree.push({ pos: [0, y, 0], color: theme.trunk });
-    if (y < trunkHeight - 2) { 
-      tree.push({ pos: [1, y, 0], color: theme.trunk });
-      tree.push({ pos: [-1, y, 0], color: theme.trunk });
-      tree.push({ pos: [0, y, 1], color: theme.trunk });
-      tree.push({ pos: [0, y, -1], color: theme.trunk });
-    }
-  }
-
-  const cy = trunkHeight;
-  const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
   const bounds = Math.floor(8 * scale);
+  const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
 
-  // 3. Generate the Canopy
-  for (let y = 0; y <= bounds * 2.5; y++) {
+  // 2. Extrude the Tree
+  for (let y = 1; y <= bounds * 2.5; y++) {
     for (let x = -bounds * 2; x <= bounds * 2; x++) {
       for (let z = -bounds * 2; z <= bounds * 2; z++) {
         
-        let isValidShape = false;
-        
-        if (theme.shape === 'squashed_sphere') {
-          const isPoke = hash(x, y, z) > 0.95 ? 1.5 : 0;
-          isValidShape = Math.sqrt((x*x)/2.5 + ((y-radius)*(y-radius))/0.5 + (z*z)/2.5) <= radius + isPoke;
-        } 
-        else if (theme.shape === 'cone') {
-          const h = bounds * 2.2;
-          isValidShape = y < h && Math.sqrt(x*x + z*z) <= (h - y) * 0.45;
-        } 
-        else if (theme.shape === 'umbrella') {
-          const yDome = Math.max(0, y - radius + 1.5);
-          isValidShape = y >= radius - 2.5 && Math.sqrt((x*x)/3.5 + (yDome * yDome * 4) + (z*z)/3.5) <= radius + 2;
-        } 
-        else if (theme.shape === 'wide_ellipsoid') {
-          isValidShape = Math.sqrt((x*x)/2.5 + ((y-radius)*(y-radius))/1 + (z*z)/2.5) <= radius;
-        }
-        else if (theme.shape === 'swirl') {
-          const swirlX = x - Math.sin(y * 0.8) * 3.5;
-          const swirlZ = z - Math.cos(y * 0.8) * 3.5;
-          isValidShape = Math.sqrt(swirlX*swirlX + ((y-radius)*(y-radius)) + swirlZ*swirlZ) <= radius;
+        // Map 3D coordinate to 2D QR Code Matrix
+        const col = Math.floor(x) + center;
+        const row = Math.floor(z) + center;
+
+        // THE EXTRUSION CONSTRAINT:
+        // If this block hovers over a white space, skip it completely.
+        // This guarantees the empty spaces remain empty all the way up.
+        if (col < 0 || col >= qrSize || row < 0 || row >= qrSize) continue;
+        if (!qrData[row * qrSize + col]) continue; 
+
+        // Shape calculations
+        let isTrunk = y <= trunkHeight && Math.sqrt(x*x + z*z) <= 1.5;
+        let isValidCanopy = false;
+        const cy_y = y - trunkHeight; // Relative Y for canopy shaping
+
+        if (y >= trunkHeight * 0.4) {
+          if (theme.shape === 'squashed_sphere') {
+            const isPoke = hash(x, y, z) > 0.95 ? 1.5 : 0;
+            isValidCanopy = Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/0.5 + (z*z)/2.5) <= radius + isPoke;
+          } 
+          else if (theme.shape === 'cone') {
+            const h = bounds * 2.2;
+            isValidCanopy = cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
+          } 
+          else if (theme.shape === 'umbrella') {
+            const yDome = Math.max(0, cy_y - 1.5);
+            isValidCanopy = cy_y >= -1.5 && Math.sqrt((x*x)/3.5 + (yDome * yDome * 4) + (z*z)/3.5) <= radius + 2;
+          } 
+          else if (theme.shape === 'wide_ellipsoid') {
+            isValidCanopy = Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/1 + (z*z)/2.5) <= radius;
+          }
+          else if (theme.shape === 'swirl') {
+            const swirlX = x - Math.sin(cy_y * 0.8) * 3.5;
+            const swirlZ = z - Math.cos(cy_y * 0.8) * 3.5;
+            isValidCanopy = Math.sqrt(swirlX*swirlX + (cy_y*cy_y) + swirlZ*swirlZ) <= radius;
+          }
         }
 
-        const distToCenter = Math.sqrt(x*x + (y-radius)*(y-radius) + z*z);
-        const isCore = distToCenter < radius * 0.4; 
-
-        if (isValidShape) {
+        // Apply colors
+        if (isTrunk) {
+          voxels.push({ pos: [x, y, z], color: theme.trunk });
+        } else if (isValidCanopy) {
           const clusterX = Math.floor(x / theme.clusterSize);
           const clusterY = Math.floor(y / theme.clusterSize);
           const clusterZ = Math.floor(z / theme.clusterSize);
           const clusterNoise = hash(clusterX, clusterY, clusterZ);
+          const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
           if (isCore || clusterNoise < theme.density) {
-            tree.push({ pos: [x, cy + y, z], color: getLeafColor() });
+            voxels.push({ pos: [x, y, z], color: getLeafColor() });
           }
         }
       }
     }
   }
 
-  return { base, tree };
+  return voxels; // Returning unified voxels again!
 }
