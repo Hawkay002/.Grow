@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -21,17 +21,21 @@ function CameraController({ viewMode }) {
 }
 
 function SpinningGroup({ viewMode, children }) {
-  const [rotation, setRotation] = useState(0);
+  const groupRef = useRef();
   
   useFrame((state, delta) => {
+    if (!groupRef.current) return;
+
     if (viewMode === 'tree') {
-      setRotation((prev) => prev + delta * 0.5);
+      groupRef.current.rotation.y += delta * 0.15;
     } else {
-      setRotation(0);
+      const currentRot = groupRef.current.rotation.y;
+      const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
     }
   });
 
-  return <group rotation={[0, rotation, 0]}>{children}</group>;
+  return <group ref={groupRef}>{children}</group>;
 }
 
 export default function QrScanner() {
@@ -76,7 +80,7 @@ export default function QrScanner() {
           ))}
         </SpinningGroup>
         
-        <OrbitControls enableZoom={true} enableRotate={viewMode === 'tree'} target={[0, 5, 0]} maxPolarAngle={Math.PI / 2} />
+        <OrbitControls enableZoom={true} enablePan={false} enableRotate={viewMode === 'tree'} target={[0, 5, 0]} maxPolarAngle={Math.PI / 2} />
       </Canvas>
 
       <div className="absolute bottom-12 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
