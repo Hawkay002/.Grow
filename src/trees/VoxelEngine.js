@@ -1,28 +1,38 @@
 export const TREE_THEMES = {
   cherryblossom: { 
-    name: 'Cherry', shape: 'squashed_sphere', density: 0.45, clusterSize: 2.5,
-    qrDark: '#be185d', qrLight: '#fdf2f8', trunk: '#451a03',
-    leaf: ['#f472b6', '#db2777', '#fbcfe8', '#be185d']
+    name: 'cherryblossom', shape: 'squashed_sphere', density: 0.45, clusterSize: 2.5,
+    qrDark: '#1A050D', qrLight: '#FFFFFF', trunk: '#3A2318', 
+    leaf: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096', '#FFE4E9']
   },
   pine: { 
-    name: 'Pine', shape: 'cone', density: 0.5, clusterSize: 1.5,
-    qrDark: '#064e3b', qrLight: '#f0fdf4', trunk: '#291002',
-    leaf: ['#15803d', '#166534', '#22c55e', '#14532d']
+    name: 'pine', shape: 'cone', density: 0.5, clusterSize: 1.5,
+    qrDark: '#01120A', qrLight: '#FFFFFF', trunk: '#2D241E', 
+    leaf: ['#1B4332', '#2D6A4F', '#40916C', '#52B788', '#081C15']
   },
-  dragon: { 
-    name: 'Dragon', shape: 'umbrella', density: 0.7, clusterSize: 3.0,
-    qrDark: '#451a03', qrLight: '#fefce8', trunk: '#78350f',
-    leaf: ['#a3e635', '#84cc16', '#bef264', '#65a30d']
+  socotradragon: { 
+    name: 'socotra dragon', shape: 'umbrella', density: 0.7, clusterSize: 3.0,
+    qrDark: '#1A0800', qrLight: '#FFFFFF', trunk: '#5C1A06', 
+    leaf: ['#274C2B', '#386641', '#4C956C', '#2D6A4F', '#132A13']
   },
   maple: { 
-    name: 'Maple', shape: 'wide_ellipsoid', density: 0.4, clusterSize: 2.0,
-    qrDark: '#9a3412', qrLight: '#fff7ed', trunk: '#451a03',
-    leaf: ['#ea580c', '#c2410c', '#f97316', '#9a3412']
+    name: 'maple', shape: 'wide_ellipsoid', density: 0.4, clusterSize: 2.0,
+    qrDark: '#1F0B04', qrLight: '#FFFFFF', trunk: '#3A2618', 
+    leaf: ['#9D0208', '#D00000', '#DC2F02', '#E85D04', '#F48C06']
   },
   juniper: { 
-    name: 'Juniper', shape: 'swirl', density: 0.35, clusterSize: 2.5,
-    qrDark: '#0f766e', qrLight: '#f0fdfa', trunk: '#1c1917',
-    leaf: ['#0d9488', '#0f766e', '#14b8a6', '#042f2e']
+    name: 'juniper', shape: 'swirl', density: 0.35, clusterSize: 2.5,
+    qrDark: '#051917', qrLight: '#FFFFFF', trunk: '#1A1A1A', 
+    leaf: ['#2D4A22', '#3A5A40', '#588157', '#A3B18A', '#344E41']
+  },
+  baobab: {
+    name: 'baobab', shape: 'baobab', density: 0.6, clusterSize: 3.5,
+    qrDark: '#1c1814', qrLight: '#FFFFFF', trunk: '#75695c',
+    leaf: ['#56692e', '#6a8239', '#445423', '#839e4a']
+  },
+  weepingwillow: {
+    name: 'weeping willow', shape: 'willow', density: 0.4, clusterSize: 1.5,
+    qrDark: '#111a05', qrLight: '#FFFFFF', trunk: '#3d3224',
+    leaf: ['#8f9e59', '#a2b366', '#768545', '#b7c975', '#606e33']
   }
 };
 
@@ -42,11 +52,9 @@ export function generateTree(treeType, qrData, qrSize) {
   for (let row = 0; row < qrSize; row++) {
     for (let col = 0; col < qrSize; col++) {
       if (qrData[row * qrSize + col]) {
-        // Adding qrColor tag for the scanner to swap to
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark, qrColor: theme.qrDark });
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrDark, qrColor: theme.qrDark, isBase: true });
       } else {
-        // Adding qrColor tag for the scanner to swap to
-        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight, qrColor: theme.qrLight });
+        voxels.push({ pos: [col - center, 0, row - center], color: theme.qrLight, qrColor: theme.qrLight, isBase: true });
       }
     }
   }
@@ -67,11 +75,27 @@ export function generateTree(treeType, qrData, qrSize) {
         if (col < 0 || col >= qrSize || row < 0 || row >= qrSize) continue;
         if (!qrData[row * qrSize + col]) continue; 
 
-        let isTrunk = y <= trunkHeight && Math.sqrt(x*x + z*z) <= 1.5;
+        // TRUNK SHAPING LOGIC (Twists for Juniper, thick base for Baobab)
+        let isTrunk = false;
+        if (y <= trunkHeight) {
+           let trunkRadius = 1.5;
+           let tx = x, tz = z;
+           
+           if (theme.name === 'baobab') {
+              trunkRadius = 3.5 - ((y / trunkHeight) * 2.0); // Tapers upwards
+           } else if (theme.name === 'juniper') {
+              tx = x - Math.sin(y * 0.5) * 1.5; // Twists X
+              tz = z - Math.cos(y * 0.5) * 1.5; // Twists Z
+           }
+           
+           isTrunk = Math.sqrt(tx*tx + tz*tz) <= trunkRadius;
+        }
+
+        // CANOPY SHAPING LOGIC
         let isValidCanopy = false;
         const cy_y = y - trunkHeight;
 
-        if (y >= trunkHeight * 0.4) {
+        if (y >= trunkHeight * 0.4 || theme.shape === 'willow') {
           if (theme.shape === 'squashed_sphere') {
             const isPoke = hash(x, y, z) > 0.95 ? 1.5 : 0;
             isValidCanopy = Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/0.5 + (z*z)/2.5) <= radius + isPoke;
@@ -88,13 +112,25 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/1 + (z*z)/2.5) <= radius;
           }
           else if (theme.shape === 'swirl') {
-            const swirlX = x - Math.sin(cy_y * 0.8) * 3.5;
-            const swirlZ = z - Math.cos(cy_y * 0.8) * 3.5;
-            isValidCanopy = Math.sqrt(swirlX*swirlX + (cy_y*cy_y) + swirlZ*swirlZ) <= radius;
+            const swirlX = x - Math.sin(cy_y * 0.8) * (radius * 0.5);
+            const swirlZ = z - Math.cos(cy_y * 0.8) * (radius * 0.5);
+            // Multiplied radius by 1.25 for wider Juniper spread
+            isValidCanopy = Math.sqrt(swirlX*swirlX + (cy_y*cy_y) + swirlZ*swirlZ) <= radius * 1.25;
+          }
+          else if (theme.shape === 'baobab') {
+            // Very flat, wide dome
+            isValidCanopy = cy_y >= -1 && cy_y <= radius * 0.6 && Math.sqrt((x*x)/3 + (cy_y*cy_y)*3 + (z*z)/3) <= radius * 1.4;
+          }
+          else if (theme.shape === 'willow') {
+            // Main canopy dome
+            const dome = Math.sqrt((x*x)/1.5 + (cy_y*cy_y)/0.8 + (z*z)/1.5) <= radius;
+            // Hanging vines generated via noise below the canopy
+            const vineDrop = hash(x, 0, z) > 0.6 ? (radius * 1.8) : 0;
+            const isVine = cy_y < 0 && cy_y > -vineDrop && Math.sqrt(x*x + z*z) <= radius * 0.95;
+            isValidCanopy = dome || isVine;
           }
         }
 
-        // Apply colors AND the flat qrColor for scanning mode
         if (isTrunk) {
           voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark });
         } else if (isValidCanopy) {
