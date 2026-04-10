@@ -37,6 +37,7 @@ function ForestItem({ link, setLinkToDelete }) {
   const [qrImg, setQrImg] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
 
+  // We keep the thumbnail generator for the modal, but remove it from the list view
   useEffect(() => {
     const generateThumbnail = async () => {
       try {
@@ -57,32 +58,18 @@ function ForestItem({ link, setLinkToDelete }) {
     <>
       <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
         
-        <div className="flex items-center gap-5 overflow-hidden w-full">
-          <button 
-            onClick={() => setShowQrModal(true)}
-            title="Click to view QR Code"
-            className="shrink-0 block bg-slate-50 p-1.5 rounded-2xl hover:scale-105 hover:shadow-md transition-all ring-1 ring-slate-900/5 cursor-pointer"
-          >
-            {qrImg ? (
-              <img src={qrImg} alt="QR Code" className="w-16 h-16 rounded-xl" />
-            ) : (
-              <div className="w-16 h-16 bg-slate-200 animate-pulse rounded-xl"></div>
-            )}
-          </button>
-
-          <div className="overflow-hidden w-full">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
-                {TREE_THEMES[link.treeType]?.name || 'Tree'}
-              </span>
-              <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
-                {link.title || 'Untitled Tree'}
-              </h3>
-            </div>
-            <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
-              {link.destinationUrl}
-            </a>
+        <div className="overflow-hidden w-full">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
+              {TREE_THEMES[link.treeType]?.name || 'Tree'}
+            </span>
+            <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
+              {link.title || 'Untitled Tree'}
+            </h3>
           </div>
+          <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
+            {link.destinationUrl}
+          </a>
         </div>
 
         <div className="flex gap-3 shrink-0 w-full sm:w-auto">
@@ -144,11 +131,9 @@ export default function Dashboard() {
   const [myLinks, setMyLinks] = useState([]);
   const [linkToDelete, setLinkToDelete] = useState(null);
 
-  // NEW STATES: For handling slug validation errors and suggestions
   const [slugError, setSlugError] = useState('');
   const [slugSuggestions, setSlugSuggestions] = useState([]);
 
-  // Clear errors when the user starts typing a new slug
   useEffect(() => {
     setSlugError('');
     setSlugSuggestions([]);
@@ -188,12 +173,10 @@ export default function Dashboard() {
       if (customSlug.trim()) {
         const baseSlug = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
         
-        // 1. Check if the exact requested slug is already taken
         const docRef = doc(db, 'qrs', baseSlug);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          // 2. Slug IS taken! Generate 3 guaranteed available suggestions
           const suggestions = [];
           let counter = 1;
           
@@ -206,17 +189,14 @@ export default function Dashboard() {
             counter++;
           }
           
-          // 3. Stop the generation process and display the suggestions to the user
           setSlugError('This custom link is already taken!');
           setSlugSuggestions(suggestions);
           setLoading(false);
           return; 
         } else {
-          // Slug is available
           finalId = baseSlug;
         }
       } else {
-        // No custom slug provided, generate a random one
         finalId = doc(collection(db, 'qrs')).id;
       }
 
@@ -297,18 +277,19 @@ export default function Dashboard() {
         </div>
 
         {activeTab === 'create' && (
-          <div className="space-y-12 animate-[fadeIn_0.5s_ease-out]">
+          <div className="space-y-8 animate-[fadeIn_0.5s_ease-out]">
             
+            {/* LARGE TITLE INPUT OUTSIDE THE WINDOW */}
+            <input 
+              type="text" 
+              placeholder="Name your tree..." 
+              value={linkTitle} 
+              onChange={(e) => setLinkTitle(e.target.value)}
+              className="w-full bg-transparent font-serif font-bold text-4xl sm:text-5xl text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none px-4 drop-shadow-sm"
+            />
+
             <div className="relative w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
               
-              <input 
-                type="text" 
-                placeholder="Name your tree..." 
-                value={linkTitle} 
-                onChange={(e) => setLinkTitle(e.target.value)}
-                className="absolute top-6 left-6 z-10 w-2/3 bg-transparent font-serif font-bold text-3xl text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none drop-shadow-md"
-              />
-
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10">
                 <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
@@ -399,7 +380,6 @@ export default function Dashboard() {
                   />
                 </div>
                 
-                {/* ERROR AND SUGGESTIONS UI */}
                 {slugError ? (
                   <div className="mt-3 ml-2 animate-[fadeIn_0.2s_ease-out]">
                     <p className="text-sm text-red-500 font-medium mb-2">{slugError}</p>
