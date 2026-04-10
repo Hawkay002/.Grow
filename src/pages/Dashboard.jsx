@@ -144,6 +144,16 @@ export default function Dashboard() {
   const [myLinks, setMyLinks] = useState([]);
   const [linkToDelete, setLinkToDelete] = useState(null);
 
+  // NEW STATES: For handling slug validation errors and suggestions
+  const [slugError, setSlugError] = useState('');
+  const [slugSuggestions, setSlugSuggestions] = useState([]);
+
+  // Clear errors when the user starts typing a new slug
+  useEffect(() => {
+    setSlugError('');
+    setSlugSuggestions([]);
+  }, [customSlug]);
+
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
@@ -169,29 +179,44 @@ export default function Dashboard() {
   async function handleGenerate(e) {
     e.preventDefault();
     setLoading(true);
+    setSlugError('');
+    setSlugSuggestions([]);
     
     try {
       let finalId = '';
 
       if (customSlug.trim()) {
         const baseSlug = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        finalId = baseSlug;
         
-        let isTaken = true;
-        let counter = 0;
+        // 1. Check if the exact requested slug is already taken
+        const docRef = doc(db, 'qrs', baseSlug);
+        const docSnap = await getDoc(docRef);
         
-        while (isTaken) {
-          const docRef = doc(db, 'qrs', finalId);
-          const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          // 2. Slug IS taken! Generate 3 guaranteed available suggestions
+          const suggestions = [];
+          let counter = 1;
           
-          if (docSnap.exists()) {
+          while (suggestions.length < 3 && counter < 50) {
+            const testSlug = `${baseSlug}-${counter}`;
+            const testSnap = await getDoc(doc(db, 'qrs', testSlug));
+            if (!testSnap.exists()) {
+              suggestions.push(testSlug);
+            }
             counter++;
-            finalId = `${baseSlug}-${counter}`;
-          } else {
-            isTaken = false; 
           }
+          
+          // 3. Stop the generation process and display the suggestions to the user
+          setSlugError('This custom link is already taken!');
+          setSlugSuggestions(suggestions);
+          setLoading(false);
+          return; 
+        } else {
+          // Slug is available
+          finalId = baseSlug;
         }
       } else {
+        // No custom slug provided, generate a random one
         finalId = doc(collection(db, 'qrs')).id;
       }
 
@@ -284,7 +309,6 @@ export default function Dashboard() {
                 className="absolute top-6 left-6 z-10 w-2/3 bg-transparent font-serif font-bold text-3xl text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none drop-shadow-md"
               />
 
-              {/* HORIZONTAL PAN CONTROLS (Left / Right) */}
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10">
                 <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
@@ -298,7 +322,6 @@ export default function Dashboard() {
                 </button>
               </div>
               
-              {/* VERTICAL PAN CONTROLS (Up / Down) */}
               <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10">
                 <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Up">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg>
@@ -375,7 +398,28 @@ export default function Dashboard() {
                     className="w-full px-5 py-4 focus:outline-none text-slate-700 bg-transparent transition-all"
                   />
                 </div>
-                <p className="text-xs text-slate-400 mt-2 ml-2">Leave blank to let nature generate a random ID.</p>
+                
+                {/* ERROR AND SUGGESTIONS UI */}
+                {slugError ? (
+                  <div className="mt-3 ml-2 animate-[fadeIn_0.2s_ease-out]">
+                    <p className="text-sm text-red-500 font-medium mb-2">{slugError}</p>
+                    <p className="text-xs text-slate-500 mb-2">Try one of these available links instead:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {slugSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => setCustomSlug(suggestion)}
+                          className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 mt-2 ml-2">Leave blank to let nature generate a random ID.</p>
+                )}
               </div>
 
               <button disabled={loading || !url} className="w-full bg-slate-900 text-white font-medium py-5 rounded-2xl hover:bg-slate-800 hover:shadow-xl transition-all disabled:opacity-50 mt-4">
