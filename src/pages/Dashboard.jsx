@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, addDoc, query, where, deleteDoc, doc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, deleteDoc, doc, serverTimestamp, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import QRCode from 'qrcode';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
@@ -33,7 +33,6 @@ function AnimatedVoxel({ v }) {
   );
 }
 
-// UPDATED: ForestItem now uses a Modal for the QR Code
 function ForestItem({ link, setLinkToDelete }) {
   const [qrImg, setQrImg] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -58,22 +57,35 @@ function ForestItem({ link, setLinkToDelete }) {
     <>
       <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
         
-        <div className="overflow-hidden w-full">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
-              {TREE_THEMES[link.treeType]?.name || 'Tree'}
-            </span>
-            <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
-              {link.title || 'Untitled Tree'}
-            </h3>
+        <div className="flex items-center gap-5 overflow-hidden w-full">
+          <button 
+            onClick={() => setShowQrModal(true)}
+            title="Click to view QR Code"
+            className="shrink-0 block bg-slate-50 p-1.5 rounded-2xl hover:scale-105 hover:shadow-md transition-all ring-1 ring-slate-900/5 cursor-pointer"
+          >
+            {qrImg ? (
+              <img src={qrImg} alt="QR Code" className="w-16 h-16 rounded-xl" />
+            ) : (
+              <div className="w-16 h-16 bg-slate-200 animate-pulse rounded-xl"></div>
+            )}
+          </button>
+
+          <div className="overflow-hidden w-full">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
+                {TREE_THEMES[link.treeType]?.name || 'Tree'}
+              </span>
+              <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
+                {link.title || 'Untitled Tree'}
+              </h3>
+            </div>
+            <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
+              {link.destinationUrl}
+            </a>
           </div>
-          <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
-            {link.destinationUrl}
-          </a>
         </div>
 
         <div className="flex gap-3 shrink-0 w-full sm:w-auto">
-          {/* NEW: Dedicated QR Code Button */}
           <button onClick={() => setShowQrModal(true)} className="flex-1 sm:flex-none text-center text-slate-600 hover:text-slate-900 font-medium text-sm bg-slate-50 hover:bg-slate-100 px-5 py-2.5 rounded-xl transition-colors">
             QR Code
           </button>
@@ -86,7 +98,6 @@ function ForestItem({ link, setLinkToDelete }) {
         </div>
       </div>
 
-      {/* NEW: QR Code Modal Overlay */}
       {showQrModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
@@ -123,7 +134,11 @@ export default function Dashboard() {
   
   const [linkTitle, setLinkTitle] = useState('');
   const [url, setUrl] = useState('');
+  const [customSlug, setCustomSlug] = useState('');
   const [treeType, setTreeType] = useState('cherryblossom');
+  
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
   
   const [recentlyCreated, setRecentlyCreated] = useState(null);
   const [myLinks, setMyLinks] = useState([]);
@@ -154,8 +169,33 @@ export default function Dashboard() {
   async function handleGenerate(e) {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      const docRef = await addDoc(collection(db, 'qrs'), {
+      let finalId = '';
+
+      if (customSlug.trim()) {
+        const baseSlug = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        finalId = baseSlug;
+        
+        let isTaken = true;
+        let counter = 0;
+        
+        while (isTaken) {
+          const docRef = doc(db, 'qrs', finalId);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            counter++;
+            finalId = `${baseSlug}-${counter}`;
+          } else {
+            isTaken = false; 
+          }
+        }
+      } else {
+        finalId = doc(collection(db, 'qrs')).id;
+      }
+
+      await setDoc(doc(db, 'qrs', finalId), {
         userId: currentUser.uid, 
         title: linkTitle || 'Untitled Tree',
         destinationUrl: url, 
@@ -163,7 +203,8 @@ export default function Dashboard() {
         createdAt: serverTimestamp(), 
         clicks: 0
       });
-      const shortLink = `${window.location.origin}/qr/${docRef.id}`;
+
+      const shortLink = `${window.location.origin}/qr/${finalId}`;
       
       const theme = TREE_THEMES[treeType];
       const qrDataUrl = await QRCode.toDataURL(shortLink, {
@@ -171,11 +212,17 @@ export default function Dashboard() {
       });
 
       setRecentlyCreated({ link: shortLink, img: qrDataUrl, title: linkTitle || 'Untitled Tree' });
+      
       setUrl(''); 
       setLinkTitle(''); 
+      setCustomSlug('');
+      setPanX(0);
+      setPanY(0);
     } catch (error) {
+      console.error(error);
       alert("Failed to grow link.");
     }
+    
     setLoading(false);
   }
 
@@ -190,7 +237,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200">
       
       {linkToDelete && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
             <h3 className="font-serif text-2xl text-slate-800 mb-2">Uproot this tree?</h3>
             <p className="text-slate-500 mb-8 text-sm">This action cannot be undone. The link will immediately stop working.</p>
@@ -226,8 +273,47 @@ export default function Dashboard() {
 
         {activeTab === 'create' && (
           <div className="space-y-12 animate-[fadeIn_0.5s_ease-out]">
-            <div className="w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
-              <Canvas shadows camera={{ position: [50, 75, 65], zoom: 8 }}>
+            
+            <div className="relative w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
+              
+              <input 
+                type="text" 
+                placeholder="Name your tree..." 
+                value={linkTitle} 
+                onChange={(e) => setLinkTitle(e.target.value)}
+                className="absolute top-6 left-6 z-10 w-2/3 bg-transparent font-serif font-bold text-3xl text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none drop-shadow-md"
+              />
+
+              {/* HORIZONTAL PAN CONTROLS (Left / Right) */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10">
+                <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <input 
+                  type="range" min="-30" max="30" value={panX} onChange={(e) => setPanX(Number(e.target.value))}
+                  className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-emerald-600" 
+                />
+                <button type="button" onClick={() => setPanX(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Right">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+              </div>
+              
+              {/* VERTICAL PAN CONTROLS (Up / Down) */}
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10">
+                <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Up">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg>
+                </button>
+                <input 
+                  type="range" orient="vertical" min="-30" max="30" value={panY} onChange={(e) => setPanY(Number(e.target.value))}
+                  className="h-24 sm:h-32 w-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-emerald-600"
+                  style={{ writingMode: 'vertical-lr', WebkitAppearance: 'slider-vertical' }} 
+                />
+                <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Down">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+              </div>
+
+              <Canvas shadows camera={{ position: [50, 75, 65], zoom: 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
@@ -236,27 +322,20 @@ export default function Dashboard() {
                     <AnimatedVoxel key={`preview-${i}`} v={v} />
                   ))}
                 </group>
-                <OrbitControls enableZoom={true} enablePan={true} autoRotate autoRotateSpeed={1.5} target={[0, 15, 0]} maxPolarAngle={Math.PI / 2} />
+                <OrbitControls 
+                  enableZoom={true} 
+                  enablePan={false} 
+                  enableRotate={false} 
+                  autoRotate 
+                  autoRotateSpeed={1.5} 
+                  target={[-panX, -panY + 15, 0]} 
+                  maxPolarAngle={Math.PI / 2} 
+                />
               </Canvas>
             </div>
 
             <form onSubmit={handleGenerate} className="max-w-2xl mx-auto space-y-8">
-              <div>
-                <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Tree Title</label>
-                <input 
-                  type="text" placeholder="e.g., My Portfolio, Event Tickets..." value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)}
-                  className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Destination Link</label>
-                <input 
-                  type="url" required placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)}
-                  className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
-                />
-              </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Botanical Species</label>
                 <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 custom-scrollbar">
@@ -275,6 +354,28 @@ export default function Dashboard() {
                     );
                   })}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Destination Link</label>
+                <input 
+                  type="url" required placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)}
+                  className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Custom URL Slug (Optional)</label>
+                <div className="flex rounded-2xl shadow-sm ring-1 ring-slate-900/5 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
+                  <span className="flex items-center pl-5 pr-2 text-slate-400 bg-slate-50/50 select-none border-r border-slate-100 text-sm font-medium">
+                    /qr/
+                  </span>
+                  <input 
+                    type="text" placeholder="my-awesome-link" value={customSlug} onChange={(e) => setCustomSlug(e.target.value)}
+                    className="w-full px-5 py-4 focus:outline-none text-slate-700 bg-transparent transition-all"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-2 ml-2">Leave blank to let nature generate a random ID.</p>
               </div>
 
               <button disabled={loading || !url} className="w-full bg-slate-900 text-white font-medium py-5 rounded-2xl hover:bg-slate-800 hover:shadow-xl transition-all disabled:opacity-50 mt-4">
