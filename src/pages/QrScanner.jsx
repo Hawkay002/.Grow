@@ -23,18 +23,22 @@ function CameraController({ viewMode, controlsRef }) {
     if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
+      // TOP-DOWN SCAN MODE
+      // Z=15 offsets the camera down the grid, pushing the QR code UP on the screen
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
     } 
     else if (isTransitioning) {
-      // OVERLAP FIX: Base camera sits higher (Y: 75) and target targets higher (Y: 15) 
-      // so the tree physically sits above the UI buttons in Free Roam mode!
-      state.camera.position.lerp(new THREE.Vector3(50, 75, 65), 0.1);
+      // FREE ROAM MODE
+      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
-      controlsRef.current.target.lerp(new THREE.Vector3(0, 15, 0), 0.1);
+      
+      // THE OVERLAP FIX: Target looks at Y=-12 (below the tree). 
+      // Because the camera looks down, the tree shifts UP on your screen, escaping the buttons!
+      controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
 
-      if (state.camera.position.distanceTo(new THREE.Vector3(50, 75, 65)) < 1) {
+      if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
          setIsTransitioning(false);
       }
     }
@@ -113,8 +117,8 @@ export default function QrScanner() {
     <div className="relative w-screen h-screen bg-slate-50 overflow-hidden font-sans">
       
       <Canvas shadows>
-        {/* Set initial load position higher to prevent overlap instantly on load */}
-        <OrthographicCamera makeDefault position={[50, 75, 65]} zoom={8} />
+        {/* Default position set to match Free Roam */}
+        <OrthographicCamera makeDefault position={[50, 60, 50]} zoom={8} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
         <Environment preset="city" />
@@ -131,7 +135,7 @@ export default function QrScanner() {
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
-          target={[0, 15, 0]} 
+          target={[0, -12, 0]} /* Default Target matches Y=-12 offset to shift tree UP instantly on load */
           maxPolarAngle={Math.PI / 2} 
         />
       </Canvas>
@@ -154,7 +158,6 @@ export default function QrScanner() {
 
         <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
           <h2 className="font-serif text-2xl text-slate-800 mb-6">Link Discovered</h2>
-          {/* BUTTON HOVER FIX: Added active scaling, shadow elevation, and smooth color changes */}
           <a href={data.destinationUrl} className="block w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200">
             Continue to Destination
           </a>
