@@ -33,6 +33,73 @@ function AnimatedVoxel({ v }) {
   );
 }
 
+// NEW: A dedicated component for each item in the Garden so it can generate its own QR thumbnail
+function ForestItem({ link, setLinkToDelete }) {
+  const [qrImg, setQrImg] = useState(null);
+
+  useEffect(() => {
+    const generateThumbnail = async () => {
+      try {
+        const shortLink = `${window.location.origin}/qr/${link.id}`;
+        const theme = TREE_THEMES[link.treeType] || TREE_THEMES.cherryblossom;
+        const imgUrl = await QRCode.toDataURL(shortLink, {
+          width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight }
+        });
+        setQrImg(imgUrl);
+      } catch (e) {
+        console.error("Failed to generate QR thumbnail", e);
+      }
+    };
+    generateThumbnail();
+  }, [link.id, link.treeType]);
+
+  return (
+    <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
+      
+      <div className="flex items-center gap-5 overflow-hidden w-full">
+        
+        {/* Clickable QR Thumbnail Button! */}
+        <a 
+          href={qrImg} 
+          download={`${link.title || 'voxly-tree'}.png`} 
+          title="Click to Download QR Code"
+          className="shrink-0 block bg-slate-50 p-1.5 rounded-2xl hover:scale-105 hover:shadow-md transition-all ring-1 ring-slate-900/5 cursor-pointer"
+        >
+          {qrImg ? (
+            <img src={qrImg} alt="QR Code" className="w-16 h-16 rounded-xl" />
+          ) : (
+            <div className="w-16 h-16 bg-slate-200 animate-pulse rounded-xl"></div>
+          )}
+        </a>
+
+        <div className="overflow-hidden w-full">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
+              {TREE_THEMES[link.treeType]?.name || 'Tree'}
+            </span>
+            <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
+              {link.title || 'Untitled Tree'}
+            </h3>
+          </div>
+          <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
+            {link.destinationUrl}
+          </a>
+        </div>
+      </div>
+
+      <div className="flex gap-3 shrink-0 w-full sm:w-auto">
+        <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none text-center text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl transition-colors">
+          View
+        </a>
+        <button onClick={() => setLinkToDelete(link.id)} className="flex-1 sm:flex-none text-center text-red-600 hover:text-red-800 font-medium text-sm bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl transition-colors">
+          Delete
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -54,7 +121,6 @@ export default function Dashboard() {
       return;
     }
 
-    // REAL-TIME UPDATE FIX: Switched from getDocs to onSnapshot
     const q = query(collection(db, 'qrs'), where("userId", "==", currentUser.uid));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const links = [];
@@ -127,7 +193,6 @@ export default function Dashboard() {
       )}
 
       <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
-        {/* CHANGED: App Name */}
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
         <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
           Sign Out
@@ -140,8 +205,9 @@ export default function Dashboard() {
           <button onClick={() => setActiveTab('create')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'create' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
             Cultivate
           </button>
+          {/* UPDATED TAB NAME */}
           <button onClick={() => setActiveTab('links')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'links' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
-            My Forest
+            My Garden
           </button>
         </div>
 
@@ -186,7 +252,6 @@ export default function Dashboard() {
                     return (
                       <button
                         key={id} type="button" onClick={() => setTreeType(id)}
-                        // UI FIX: Dynamically match the button border & background to the tree's leaf color!
                         style={isActive ? { borderColor: theme.leaf[0], backgroundColor: `${theme.leaf[0]}15`, color: theme.leaf[0] } : {}}
                         className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3 border-2
                           ${isActive ? 'shadow-md -translate-y-1' : 'bg-white border-transparent ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
@@ -203,38 +268,32 @@ export default function Dashboard() {
                 {loading ? 'Cultivating...' : 'Grow Interactive Code'}
               </button>
             </form>
+
+            {recentlyCreated && (
+              <div className="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
+                <h3 className="font-serif text-2xl text-emerald-900 mb-2">{recentlyCreated.title} is ready.</h3>
+                <p className="text-slate-500 text-sm mb-6">Scan to interact, or share the link below.</p>
+                
+                <img src={recentlyCreated.img} alt="Colored QR" className="w-48 h-48 mx-auto mb-6 rounded-xl shadow-sm" />
+                
+                <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="block text-emerald-600 font-medium mb-6 hover:underline truncate px-4">
+                  {recentlyCreated.link}
+                </a>
+                <a href={recentlyCreated.img} download="voxly-tree.png" className="block w-full bg-emerald-50 text-emerald-700 font-medium py-3 rounded-xl hover:bg-emerald-100 transition-colors">
+                  Download Image
+                </a>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'links' && (
           <div className="space-y-6">
             {myLinks.length === 0 ? (
-               <div className="text-center py-20 text-slate-400 font-medium">Your forest is currently empty.</div>
+               <div className="text-center py-20 text-slate-400 font-medium">Your garden is currently empty.</div>
             ) : (
               myLinks.map((link) => (
-                <div key={link.id} className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
-                  <div className="overflow-hidden w-full">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
-                        {TREE_THEMES[link.treeType]?.name || 'Tree'}
-                      </span>
-                      <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
-                        {link.title || 'Untitled Tree'}
-                      </h3>
-                    </div>
-                    <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
-                      {link.destinationUrl}
-                    </a>
-                  </div>
-                  <div className="flex gap-3 shrink-0 w-full sm:w-auto">
-                    <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none text-center text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl transition-colors">
-                      View
-                    </a>
-                    <button onClick={() => setLinkToDelete(link.id)} className="flex-1 sm:flex-none text-center text-red-600 hover:text-red-800 font-medium text-sm bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl transition-colors">
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                <ForestItem key={link.id} link={link} setLinkToDelete={setLinkToDelete} />
               ))
             )}
           </div>
