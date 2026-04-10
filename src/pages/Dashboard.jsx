@@ -147,6 +147,10 @@ export default function Dashboard() {
   const [slugError, setSlugError] = useState('');
   const [slugSuggestions, setSlugSuggestions] = useState([]);
 
+  // NEW: Ref to attach to the recently created card
+  const resultRef = useRef(null);
+
+  // Clear errors when the user starts typing a new slug
   useEffect(() => {
     setSlugError('');
     setSlugSuggestions([]);
@@ -167,6 +171,16 @@ export default function Dashboard() {
 
     return () => unsubscribe();
   }, [currentUser, navigate]);
+
+  // NEW: Automatically scroll to the generated card smoothly once it exists
+  useEffect(() => {
+    if (recentlyCreated && resultRef.current) {
+      // Adding a tiny delay ensures the DOM has fully painted the animation first
+      setTimeout(() => {
+        resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [recentlyCreated]);
 
   async function confirmDelete() {
     if (!linkToDelete) return;
@@ -302,12 +316,10 @@ export default function Dashboard() {
 
             <div className="relative w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden">
               
-              {/* HORIZONTAL PAN CONTROLS */}
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10">
                 <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
                 </button>
-                {/* CSS FIX: Removed accent-color, explicitly styled the webkit thumb to remove the green fill line */}
                 <input 
                   type="range" min="-30" max="30" value={panX} onChange={(e) => setPanX(Number(e.target.value))}
                   className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-emerald-600 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:rounded-full" 
@@ -317,8 +329,6 @@ export default function Dashboard() {
                 </button>
               </div>
               
-              {/* VERTICAL PAN CONTROLS - FIXED! */}
-              {/* Replaced buggy `slider-vertical` with pure CSS Rotation so Up is mathematically Up and Down is Down */}
               <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10">
                 <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Up">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg>
@@ -348,10 +358,10 @@ export default function Dashboard() {
                 <OrbitControls 
                   enableZoom={true} 
                   enablePan={false} 
-                  enableRotate={true} /* FIXED: Re-enabled touch/mouse rotation! */
+                  enableRotate={true} 
                   autoRotate 
                   autoRotateSpeed={1.5} 
-                  target={[-panX, -panY + 15, 0]} /* Mathematically aligns with the new rotated sliders */
+                  target={[-panX, -panY + 15, 0]} 
                   maxPolarAngle={Math.PI / 2} 
                 />
               </Canvas>
@@ -426,8 +436,9 @@ export default function Dashboard() {
               </button>
             </form>
 
+            {/* NEW: Attached the ref here so it scrolls into view when generated */}
             {recentlyCreated && (
-              <div className="max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
+              <div ref={resultRef} className="scroll-mt-8 max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
                 <h3 className="font-serif text-2xl text-emerald-900 mb-2">{recentlyCreated.title} is ready.</h3>
                 <p className="text-slate-500 text-sm mb-6">Scan to interact, or share the link below.</p>
                 
