@@ -53,11 +53,45 @@ function ForestItem({ link, setLinkToDelete }) {
     generateThumbnail();
   }, [link.id, link.treeType]);
 
+  // NEW: Advanced Native Share Handler for the Image File
+  const handleShare = async () => {
+    if (!navigator.share) {
+      alert("Sharing is not supported on this device/browser.");
+      return;
+    }
+    try {
+      // Convert the Base64 Data URL to a native Blob File
+      const res = await fetch(qrImg);
+      const blob = await res.blob();
+      const file = new File([blob], `${link.title || 'voxly-tree'}.png`, { type: blob.type });
+
+      // Check if the device allows file sharing (most modern mobile devices do)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: link.title || 'Grow-Voxly',
+          text: 'Scan to interact with my 3D tree!',
+          files: [file] // Sends the actual image to WhatsApp, etc.
+        });
+      } else {
+        // Fallback: Share the URL as text if image sharing is unsupported
+        await navigator.share({
+          title: link.title || 'Grow-Voxly',
+          text: 'Check out my interactive 3D tree!',
+          url: `${window.location.origin}/qr/${link.id}`
+        });
+      }
+    } catch (err) {
+      // Only log errors if it wasn't the user intentionally canceling the share tray
+      if (err.name !== 'AbortError') {
+        console.error("Error sharing", err);
+      }
+    }
+  };
+
   return (
     <>
       <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
         
-        {/* COMPLETELY REMOVED THE THUMBNAIL FROM THE LIST ITEM */}
         <div className="overflow-hidden w-full">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -98,9 +132,16 @@ function ForestItem({ link, setLinkToDelete }) {
             )}
 
             <div className="flex flex-col gap-3">
-              <a href={qrImg} download={`${link.title || 'voxly-tree'}.png`} className="w-full py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center">
-                Download Image
-              </a>
+              <div className="flex gap-3">
+                {/* NEW: Native Share Button with Icon */}
+                <button onClick={handleShare} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                  Share
+                </button>
+                <a href={qrImg} download={`${link.title || 'voxly-tree'}.png`} className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center">
+                  Save
+                </a>
+              </div>
               <button onClick={() => setShowQrModal(false)} className="w-full py-3 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
                 Close
               </button>
@@ -126,7 +167,7 @@ export default function Dashboard() {
   
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
-  const [showControls, setShowControls] = useState(true); // NEW: Toggle state for UI controls
+  const [showControls, setShowControls] = useState(true);
   
   const [recentlyCreated, setRecentlyCreated] = useState(null);
   const [myLinks, setMyLinks] = useState([]);
@@ -242,6 +283,35 @@ export default function Dashboard() {
     setLoading(false);
   }
 
+  // NEW: Share handler for the "Cultivate" success screen
+  const handleShareRecentlyCreated = async () => {
+    if (!navigator.share || !recentlyCreated) {
+      alert("Sharing is not supported on this device/browser.");
+      return;
+    }
+    try {
+      const res = await fetch(recentlyCreated.img);
+      const blob = await res.blob();
+      const file = new File([blob], `${recentlyCreated.title || 'voxly-tree'}.png`, { type: blob.type });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: recentlyCreated.title || 'Grow-Voxly',
+          text: 'Scan to interact with my 3D tree!',
+          files: [file]
+        });
+      } else {
+        await navigator.share({
+          title: recentlyCreated.title || 'Grow-Voxly',
+          text: 'Check out my interactive 3D tree!',
+          url: recentlyCreated.link
+        });
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error("Error sharing", err);
+    }
+  };
+
   const previewVoxels = useMemo(() => {
     const matrix = QRCode.create(url || "https://vox.ly", { errorCorrectionLevel: 'M' });
     return generateTree(treeType, matrix.modules.data, matrix.modules.size);
@@ -300,7 +370,6 @@ export default function Dashboard() {
 
             <div className="relative w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
               
-              {/* NEW: EYE BUTTON TO TOGGLE CONTROLS */}
               <button 
                 type="button" 
                 onClick={() => setShowControls(!showControls)}
@@ -309,15 +378,12 @@ export default function Dashboard() {
                 title={showControls ? "Hide Controls" : "Show Controls"}
               >
                 {showControls ? (
-                  // Eye Closed Icon (When showing, clicking it hides them)
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
                 ) : (
-                  // Eye Open Icon (When hidden, clicking it shows them)
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 )}
               </button>
 
-              {/* SLIDERS (Wrapped in conditional rendering) */}
               {showControls && (
                 <>
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 animate-[fadeInUp_0.2s_ease-out]">
@@ -452,9 +518,18 @@ export default function Dashboard() {
                 <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="block text-emerald-600 font-medium mb-6 hover:underline truncate px-4">
                   {recentlyCreated.link}
                 </a>
-                <a href={recentlyCreated.img} download="voxly-tree.png" className="block w-full bg-emerald-50 text-emerald-700 font-medium py-3 rounded-xl hover:bg-emerald-100 transition-colors">
-                  Download Image
-                </a>
+                
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-3">
+                    <button onClick={handleShareRecentlyCreated} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                      Share
+                    </button>
+                    <a href={recentlyCreated.img} download="voxly-tree.png" className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center">
+                      Save Image
+                    </a>
+                  </div>
+                </div>
               </div>
             )}
           </div>
