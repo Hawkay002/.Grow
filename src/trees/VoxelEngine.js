@@ -62,11 +62,11 @@ export function generateTree(treeType, qrData, qrSize) {
   // DYNAMIC TRUNK HEIGHT overrides
   let trunkHeight = Math.floor(7 * scale);
   if (theme.shape === 'willow') {
-    trunkHeight += Math.floor(3 * scale); // Need height so the vines have room to drop
+    trunkHeight += Math.floor(3 * scale); 
   } else if (theme.shape === 'baobab') {
     trunkHeight += Math.floor(6 * scale); 
   } else if (theme.name === 'socotra dragon') {
-    trunkHeight += Math.floor(5 * scale); // Massive height increase for the Dragon tree
+    trunkHeight += Math.floor(5 * scale); 
   }
 
   const radius = Math.floor(5 * scale);
@@ -120,13 +120,13 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
           } 
           else if (theme.shape === 'umbrella') {
-            // SOCOTRA DRAGON: True Umbrella shape (flat bottom, smooth domed top, wide spread)
-            isValidCanopy = cy_y >= 0 && cy_y <= radius * 0.8 && Math.sqrt((x*x)/3.0 + (cy_y*cy_y)*2.0 + (z*z)/3.0) <= radius * 1.5;
+            // SOCOTRA DRAGON: Round dome top, flat bottom
+            isValidCanopy = cy_y >= 0 && Math.sqrt((x*x)/3.0 + (cy_y*cy_y)*0.8 + (z*z)/3.0) <= radius * 1.6;
           } 
           else if (theme.shape === 'wide_ellipsoid') {
             isValidCanopy = Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/1 + (z*z)/2.5) <= radius;
           }
-          else if (theme.swirl === 'swirl') {
+          else if (theme.shape === 'swirl') {
             const swirlX = x - Math.sin(cy_y * 0.8) * (radius * 0.5);
             const swirlZ = z - Math.cos(cy_y * 0.8) * (radius * 0.5);
             isValidCanopy = Math.sqrt(swirlX*swirlX + (cy_y*cy_y) + swirlZ*swirlZ) <= radius * 1.25;
@@ -135,18 +135,18 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = cy_y >= 0 && cy_y <= radius * 1.2 && Math.sqrt((x*x)/1.5 + (cy_y*cy_y)*1.5 + (z*z)/1.5) <= radius * 1.5;
           }
           else if (theme.shape === 'willow') {
-            // WILLOW: Cloud stencil + Dropping Vines (Replaces Umbrella logic entirely)
+            // WILLOW: Bigger central cloud, fewer vines
             
-            // 1. Cloud Base (A bumpy, flattened dome)
+            // 1. Cloud Base (Bigger, taller, wider)
             const cloudNoise = hash(Math.floor(x/2), Math.floor(y/2), Math.floor(z/2));
-            const cloudRadius = radius * 1.3 + (cloudNoise > 0.5 ? 1 : -1);
-            const cloudDome = cy_y >= 0 && cy_y <= radius * 0.8 && Math.sqrt((x*x)/1.5 + (cy_y*cy_y)*2.5 + (z*z)/1.5) <= cloudRadius;
+            const cloudRadius = radius * 1.6 + (cloudNoise > 0.5 ? 1.5 : -1.5);
+            const cloudDome = cy_y >= -1 && cy_y <= radius * 1.2 && Math.sqrt((x*x)/1.8 + (cy_y*cy_y)*1.8 + (z*z)/1.8) <= cloudRadius;
 
-            // 2. Hanging Vines (Vines drop randomly from the cloud area)
+            // 2. Hanging Vines (Nerfed density)
             const vineNoise = hash(x, 0, z);
-            const dropLength = radius * 1.5 + (vineNoise * radius * 2.5); // Random lengths
-            // Dense vines! 60% of the surface area will drop a vine
-            const isVine = cy_y < 0 && cy_y >= -dropLength && vineNoise < 0.60 && Math.sqrt((x*x)/1.5 + (z*z)/1.5) <= radius * 1.25;
+            const dropLength = radius * 1.2 + (vineNoise * radius * 2.5);
+            // Lowered threshold to 0.20 -> much fewer vines
+            const isVine = cy_y < 0 && cy_y >= -dropLength && vineNoise < 0.20 && Math.sqrt((x*x)/1.5 + (z*z)/1.5) <= radius * 1.4;
 
             isValidCanopy = cloudDome || isVine;
           }
@@ -180,17 +180,15 @@ export function generateTree(treeType, qrData, qrSize) {
              }
           } 
           else if (theme.name === 'socotra dragon') {
-             // DRAGON TREE: Structural branches expanding to the canopy
              const angle = Math.atan2(z, x);
-             const branchFactor = Math.cos(5 * angle); // Creates 5 structural branches
+             const branchFactor = Math.cos(5 * angle); 
              const distToCenterXZ = Math.sqrt(x*x + z*z);
              
-             // As height (cy_y) goes up, the branch expands outward perfectly hitting the umbrella edge
-             const expectedBranchDist = (cy_y / (radius * 0.8)) * (radius * 1.3);
-             const isBranch = branchFactor > 0.6 && Math.abs(distToCenterXZ - expectedBranchDist) < 1.5 && cy_y >= 0 && cy_y <= radius * 0.6;
+             const expectedBranchDist = (cy_y / (radius * 1.0)) * (radius * 1.4);
+             const isBranch = branchFactor > 0.6 && Math.abs(distToCenterXZ - expectedBranchDist) < 1.5 && cy_y >= 0 && cy_y <= radius * 0.8;
              
-             // Leaves only grow at the very top flat layer of the canopy
-             const isLeafArea = cy_y > radius * 0.4;
+             // Deepened the leaf area so it covers the full dome
+             const isLeafArea = cy_y > radius * 0.1;
 
              if (isCore || isBranch) {
                 voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark });
@@ -199,7 +197,6 @@ export function generateTree(treeType, qrData, qrSize) {
              }
           }
           else if (theme.name === 'weeping willow') {
-             // WILLOW: Slightly denser generation so the vines don't look completely detached
              if (isCore || clusterNoise < 0.65) {
                 voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark });
              }
