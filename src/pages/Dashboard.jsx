@@ -33,9 +33,10 @@ function AnimatedVoxel({ v }) {
   );
 }
 
-// NEW: A dedicated component for each item in the Garden so it can generate its own QR thumbnail
+// UPDATED: ForestItem now uses a Modal for the QR Code
 function ForestItem({ link, setLinkToDelete }) {
   const [qrImg, setQrImg] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
     const generateThumbnail = async () => {
@@ -54,24 +55,9 @@ function ForestItem({ link, setLinkToDelete }) {
   }, [link.id, link.treeType]);
 
   return (
-    <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
-      
-      <div className="flex items-center gap-5 overflow-hidden w-full">
+    <>
+      <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
         
-        {/* Clickable QR Thumbnail Button! */}
-        <a 
-          href={qrImg} 
-          download={`${link.title || 'voxly-tree'}.png`} 
-          title="Click to Download QR Code"
-          className="shrink-0 block bg-slate-50 p-1.5 rounded-2xl hover:scale-105 hover:shadow-md transition-all ring-1 ring-slate-900/5 cursor-pointer"
-        >
-          {qrImg ? (
-            <img src={qrImg} alt="QR Code" className="w-16 h-16 rounded-xl" />
-          ) : (
-            <div className="w-16 h-16 bg-slate-200 animate-pulse rounded-xl"></div>
-          )}
-        </a>
-
         <div className="overflow-hidden w-full">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -85,18 +71,46 @@ function ForestItem({ link, setLinkToDelete }) {
             {link.destinationUrl}
           </a>
         </div>
+
+        <div className="flex gap-3 shrink-0 w-full sm:w-auto">
+          {/* NEW: Dedicated QR Code Button */}
+          <button onClick={() => setShowQrModal(true)} className="flex-1 sm:flex-none text-center text-slate-600 hover:text-slate-900 font-medium text-sm bg-slate-50 hover:bg-slate-100 px-5 py-2.5 rounded-xl transition-colors">
+            QR Code
+          </button>
+          <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none text-center text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl transition-colors">
+            View
+          </a>
+          <button onClick={() => setLinkToDelete(link.id)} className="flex-1 sm:flex-none text-center text-red-600 hover:text-red-800 font-medium text-sm bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl transition-colors">
+            Delete
+          </button>
+        </div>
       </div>
 
-      <div className="flex gap-3 shrink-0 w-full sm:w-auto">
-        <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none text-center text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl transition-colors">
-          View
-        </a>
-        <button onClick={() => setLinkToDelete(link.id)} className="flex-1 sm:flex-none text-center text-red-600 hover:text-red-800 font-medium text-sm bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl transition-colors">
-          Delete
-        </button>
-      </div>
+      {/* NEW: QR Code Modal Overlay */}
+      {showQrModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
+            <h3 className="font-serif text-2xl text-slate-800 mb-2">{link.title || 'QR Code'}</h3>
+            <p className="text-slate-500 mb-6 text-sm">Scan or download to share.</p>
+            
+            {qrImg ? (
+              <img src={qrImg} alt="QR Code" className="w-48 h-48 mx-auto mb-8 rounded-xl shadow-sm ring-1 ring-slate-900/5" />
+            ) : (
+              <div className="w-48 h-48 mx-auto mb-8 bg-slate-100 animate-pulse rounded-xl"></div>
+            )}
 
-    </div>
+            <div className="flex flex-col gap-3">
+              <a href={qrImg} download={`${link.title || 'voxly-tree'}.png`} className="w-full py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center">
+                Download Image
+              </a>
+              <button onClick={() => setShowQrModal(false)} className="w-full py-3 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -205,7 +219,6 @@ export default function Dashboard() {
           <button onClick={() => setActiveTab('create')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'create' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
             Cultivate
           </button>
-          {/* UPDATED TAB NAME */}
           <button onClick={() => setActiveTab('links')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'links' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
             My Garden
           </button>
