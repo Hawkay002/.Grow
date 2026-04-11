@@ -3,17 +3,18 @@ import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { Eye, EyeOff } from 'lucide-react'; // Added icons
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Added visibility state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (currentUser) navigate('/dashboard');
   }, [currentUser, navigate]);
@@ -83,17 +84,29 @@ export default function Login() {
           </div>
 
           <div>
-            {/* NEW: Forgot Password link aligned to the right above the input */}
             <div className="flex justify-between items-center mb-2 ml-1 mr-1">
               <label className="block text-sm font-medium text-slate-600">Password</label>
-              <Link to="/forgot-password" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
+              <Link to="/forgot-password" university className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
                 Forgot Password?
               </Link>
             </div>
-            <input 
-              type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
-            />
+            {/* Wrapper for the input and eye button */}
+            <div className="relative group">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                required 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700 pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button disabled={loading} className="w-full bg-slate-900 text-white font-medium py-4 rounded-xl hover:bg-slate-800 hover:shadow-lg transition-all disabled:opacity-50 mt-2">
@@ -104,7 +117,6 @@ export default function Login() {
         <div className="mt-8 text-center text-sm text-slate-500">
           Don't have an account? <Link to="/signup" className="text-emerald-600 font-bold hover:underline">Sign Up</Link>
         </div>
-
       </div>
     </div>
   );
