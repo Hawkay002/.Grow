@@ -1,7 +1,6 @@
-import nodemailer from 'nodemailer'; 
+import nodemailer from 'nodemailer';
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin (You will need to get your Service Account JSON from Firebase settings)
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -20,52 +19,82 @@ export default async function handler(req, res) {
   if (!email) return res.status(400).json({ error: 'Email is required' });
 
   try {
-    // 1. Generate the secure reset link using Firebase Admin
     const resetLink = await admin.auth().generatePasswordResetLink(email);
 
-    // 2. Set up Nodemailer with your Email and App Password
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // Or whatever email provider you use
+      service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER, // Your email address
-        pass: process.env.EMAIL_APP_PASSWORD, // Your 16-character App Password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD,
       },
     });
 
-    // 3. The Beautiful HTML Email Template
+    // Green Lucide 'Trees' icon safely URL-encoded for email clients
+    const treeIconSrc = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 10v.2A3 3 0 0 1 8.9 16v0H5v0h0a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z'/%3E%3Cpath d='M7 16v6'/%3E%3Cpath d='M13 19v3'/%3E%3Cpath d='M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L14 3l-1.4 2.5'/%3E%3C/svg%3E";
+
     const emailHtml = `
-      <div style="font-family: 'Georgia', serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px; border-radius: 24px; text-align: center;">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 20px;">
-          <path d="M10 10v.2A3 3 0 0 1 8.9 16v0H5v0h0a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/>
-          <path d="M7 16v6"/><path d="M13 19v3"/>
-          <path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L14 3l-1.4 2.5"/>
-        </svg>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          /* Importing Raleway for the body text */
+          @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap');
 
-        <h1 style="color: #064e3b; font-size: 28px; margin-bottom: 10px; font-weight: normal;">Grow-Voxly</h1>
-        
-        <div style="background-color: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); text-align: left;">
-          <p style="font-family: 'Arial', sans-serif; color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-            Hi <strong>${email}</strong>,
-          </p>
-          <p style="font-family: 'Arial', sans-serif; color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-            We received a request to uproot your old password. Click the button below to plant a new one and regain access to your forest.
-          </p>
+          /* Absolute URL to your hosted Aestera font file */
+          @font-face {
+            font-family: 'Aestera';
+            src: url('https://grow-voxly.vercel.app/fonts/Aestera.woff2') format('woff2'),
+                 url('https://grow-voxly.vercel.app/fonts/Aestera.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+          }
+
+          .email-body {
+            font-family: 'Raleway', sans-serif;
+            color: #475569;
+            font-size: 16px;
+            line-height: 1.6;
+          }
+
+          .heading {
+            font-family: 'Aestera', Georgia, serif;
+            color: #064e3b;
+            font-size: 32px;
+            font-weight: normal;
+            margin-bottom: 10px;
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px; border-radius: 24px; text-align: center;">
           
-          <div style="text-align: center;">
-            <a href="${resetLink}" style="display: inline-block; background-color: #059669; color: #ffffff; font-family: 'Arial', sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 12px;">
-              Reset Password
-            </a>
-          </div>
+          <img src="${treeIconSrc}" alt="Grow-Voxly Tree" width="64" height="64" style="margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
 
-          <p style="font-family: 'Arial', sans-serif; color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 30px; text-align: center;">
-            If you didn't request a password reset, you can safely ignore this email. Your forest is safe.
-          </p>
+          <h1 class="heading">Grow-Voxly</h1>
+          
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); text-align: left;">
+            <p class="email-body">
+              Hi <strong>${email}</strong>,
+            </p>
+            <p class="email-body" style="margin-bottom: 30px;">
+              We received a request to uproot your old password. Click the button below to plant a new one and regain access to your forest.
+            </p>
+            
+            <div style="text-align: center;">
+              <a href="${resetLink}" style="display: inline-block; background-color: #059669; color: #ffffff; font-family: 'Raleway', sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 12px;">
+                Reset Password
+              </a>
+            </div>
+
+            <p class="email-body" style="font-size: 13px; color: #94a3b8; margin-top: 30px; text-align: center;">
+              If you didn't request a password reset, you can safely ignore this email. Your forest is safe.
+            </p>
+          </div>
         </div>
-      </div>
+      </body>
+      </html>
     `;
 
-    // 4. Send the Email
     await transporter.sendMail({
       from: `"Grow-Voxly" <${process.env.EMAIL_USER}>`,
       to: email,
