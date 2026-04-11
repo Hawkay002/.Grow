@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer'; 
 import admin from 'firebase-admin';
 
 // Initialize Firebase Admin (You will need to get your Service Account JSON from Firebase settings)
