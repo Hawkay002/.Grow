@@ -8,8 +8,6 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
-
-// NEW: Lucide Icons and Confetti
 import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Box, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -88,13 +86,11 @@ function ForestItem({ link, setLinkToDelete }) {
   return (
     <>
       <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
-        
         <div className="overflow-hidden w-full">
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-lg font-serif font-bold text-slate-800 truncate">
               {link.title || 'Untitled Tree'}
             </h3>
-            {/* UPDATED: Shrunk the badge size for a cleaner look */}
             <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
               {TREE_THEMES[link.treeType]?.name || 'Tree'}
             </span>
@@ -104,7 +100,6 @@ function ForestItem({ link, setLinkToDelete }) {
           </a>
         </div>
 
-        {/* UPDATED: Buttons now use Lucide React icons */}
         <div className="flex gap-2 shrink-0 w-full sm:w-auto">
           <button onClick={() => setShowQrModal(true)} title="QR Code" className="flex-1 sm:flex-none flex items-center justify-center text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-3 rounded-xl transition-colors">
             <QrCode size={18} />
@@ -118,32 +113,25 @@ function ForestItem({ link, setLinkToDelete }) {
         </div>
       </div>
 
-      {/* UPDATED: Modal now has X close button and native icons */}
       {showQrModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
-            
             <button onClick={() => setShowQrModal(false)} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition-colors bg-slate-50 p-1.5 rounded-full">
               <X size={20} />
             </button>
-
             <h3 className="font-serif text-2xl text-slate-800 mb-2 mt-2">{link.title || 'QR Code'}</h3>
             <p className="text-slate-500 mb-6 text-sm">Scan or download to share.</p>
-            
             {qrImg ? (
               <img src={qrImg} alt="QR Code" className="w-48 h-48 mx-auto mb-8 rounded-xl shadow-sm ring-1 ring-slate-900/5" />
             ) : (
               <div className="w-48 h-48 mx-auto mb-8 bg-slate-100 animate-pulse rounded-xl"></div>
             )}
-
             <div className="flex gap-3">
               <button onClick={handleShare} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
-                <Share2 size={18} />
-                Share
+                <Share2 size={18} /> Share
               </button>
               <a href={qrImg} download={`${link.title || 'voxly-tree'}.png`} className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center gap-2">
-                <Download size={18} />
-                Save
+                <Download size={18} /> Save
               </a>
             </div>
           </div>
@@ -159,7 +147,6 @@ export default function Dashboard() {
 
   const [activeTab, setActiveTab] = useState('create');
   const [loading, setLoading] = useState(false);
-  
   const [linkTitle, setLinkTitle] = useState('');
   const [url, setUrl] = useState('');
   const [customSlug, setCustomSlug] = useState('');
@@ -168,7 +155,7 @@ export default function Dashboard() {
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [showControls, setShowControls] = useState(true);
-  const [viewMode, setViewMode] = useState('free'); // 'free' or 'top'
+  const [viewMode, setViewMode] = useState('free');
   const [linkCopied, setLinkCopied] = useState(false);
   
   const [recentlyCreated, setRecentlyCreated] = useState(null);
@@ -177,7 +164,6 @@ export default function Dashboard() {
 
   const [slugError, setSlugError] = useState('');
   const [slugSuggestions, setSlugSuggestions] = useState([]);
-
   const resultRef = useRef(null);
 
   useEffect(() => {
@@ -199,22 +185,18 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [currentUser, navigate]);
 
-  // Handle auto-scroll and confetti cannons on successful generation!
+  // UPDATED: Scroll smoothly, wait 800ms, then trigger confetti
   useEffect(() => {
     if (recentlyCreated && resultRef.current) {
       setTimeout(() => {
         resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        
-        // Confetti Cannons! Shoots up and fades halfway down
-        const duration = 2500; // 2.5 seconds before fading
-        const defaults = { startVelocity: 45, spread: 60, ticks: 150, zIndex: 100, gravity: 1.2 };
-
-        // Left Cannon
-        confetti({ ...defaults, particleCount: 70, angle: 60, origin: { x: 0, y: 1 } });
-        // Right Cannon
-        confetti({ ...defaults, particleCount: 70, angle: 120, origin: { x: 1, y: 1 } });
-        
-      }, 300);
+        setTimeout(() => {
+          const duration = 2500;
+          const defaults = { startVelocity: 45, spread: 60, ticks: 150, zIndex: 100, gravity: 1.2 };
+          confetti({ ...defaults, particleCount: 70, angle: 60, origin: { x: 0, y: 1 } });
+          confetti({ ...defaults, particleCount: 70, angle: 120, origin: { x: 1, y: 1 } });
+        }, 800); 
+      }, 100);
     }
   }, [recentlyCreated]);
 
@@ -229,11 +211,10 @@ export default function Dashboard() {
     setLoading(true);
     setSlugError('');
     setSlugSuggestions([]);
-    setLinkCopied(false); // Reset copy button
+    setLinkCopied(false);
     
     try {
       let finalId = '';
-
       if (customSlug.trim()) {
         const baseSlug = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
         const docRef = doc(db, 'qrs', baseSlug);
@@ -275,7 +256,6 @@ export default function Dashboard() {
       });
 
       setRecentlyCreated({ link: shortLink, img: qrDataUrl, title: linkTitle || 'Untitled Tree' });
-      
       setUrl(''); 
       setLinkTitle(''); 
       setCustomSlug('');
@@ -285,7 +265,6 @@ export default function Dashboard() {
       console.error(error);
       alert("Failed to grow link.");
     }
-    
     setLoading(false);
   }
 
@@ -325,7 +304,6 @@ export default function Dashboard() {
     return generateTree(treeType, matrix.modules.data, matrix.modules.size);
   }, [url, treeType]);
 
-  // CSS for custom slim scrollbar inside presets
   const scrollbarCSS = `
     .custom-slim-scrollbar::-webkit-scrollbar { height: 6px; }
     .custom-slim-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -345,12 +323,8 @@ export default function Dashboard() {
             <h3 className="font-serif text-2xl text-slate-800 mb-2">Uproot this tree?</h3>
             <p className="text-slate-500 mb-8 text-sm">This action cannot be undone. The link will immediately stop working.</p>
             <div className="flex gap-4">
-              <button onClick={() => setLinkToDelete(null)} className="flex-1 py-3 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
-                Cancel
-              </button>
-              <button onClick={confirmDelete} className="flex-1 py-3 font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors shadow-md">
-                Delete
-              </button>
+              <button onClick={() => setLinkToDelete(null)} className="flex-1 py-3 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Cancel</button>
+              <button onClick={confirmDelete} className="flex-1 py-3 font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors shadow-md">Delete</button>
             </div>
           </div>
         </div>
@@ -359,25 +333,18 @@ export default function Dashboard() {
       <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
         <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
-          <LogOut size={16} />
-          Sign Out
+          <LogOut size={16} /> Sign Out
         </button>
       </header>
 
       <main className="max-w-4xl mx-auto mt-16 px-6 pb-24">
-        
         <div className="flex gap-12 mb-12 border-b border-slate-200 px-4">
-          <button onClick={() => setActiveTab('create')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'create' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
-            Cultivate
-          </button>
-          <button onClick={() => setActiveTab('links')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'links' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>
-            My Garden
-          </button>
+          <button onClick={() => setActiveTab('create')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'create' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>Cultivate</button>
+          <button onClick={() => setActiveTab('links')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'links' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>My Garden</button>
         </div>
 
         {activeTab === 'create' && (
           <div className="space-y-8 animate-[fadeIn_0.5s_ease-out]">
-            
             <input 
               type="text" 
               placeholder="Name your tree..." 
@@ -388,31 +355,16 @@ export default function Dashboard() {
             />
 
             <div className="relative w-full h-[28rem] bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
-              
-              {/* VIEW TOGGLES (Free Roam vs Top View) */}
               <div className="absolute top-6 left-6 z-20 flex bg-white/80 backdrop-blur-md rounded-xl shadow-sm ring-1 ring-slate-900/5 p-1">
-                <button 
-                  type="button" onClick={() => setViewMode('free')} 
-                  className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'free' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}
-                >
+                <button type="button" onClick={() => setViewMode('free')} className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'free' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}>
                   <Box size={14} /> <span className="hidden sm:inline">Free Roam</span>
                 </button>
-                <button 
-                  type="button" onClick={() => { setViewMode('top'); setPanX(0); setPanY(0); }} 
-                  className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'top' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}
-                >
+                <button type="button" onClick={() => { setViewMode('top'); setPanX(0); setPanY(0); }} className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'top' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}>
                   <QrCode size={14} /> <span className="hidden sm:inline">Top View</span>
                 </button>
               </div>
 
-              {/* EYE TOGGLE BUTTON */}
-              <button 
-                type="button" 
-                onClick={() => setShowControls(!showControls)}
-                className={`absolute bottom-6 right-6 z-20 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-sm ring-1 ring-slate-900/5 transition-all
-                            ${showControls ? 'text-slate-500 hover:text-emerald-600' : 'text-emerald-600 bg-emerald-50/90'}`}
-                title={showControls ? "Hide Controls" : "Show Controls"}
-              >
+              <button type="button" onClick={() => setShowControls(!showControls)} className={`absolute bottom-6 right-6 z-20 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-sm ring-1 ring-slate-900/5 transition-all ${showControls ? 'text-slate-500 hover:text-emerald-600' : 'text-emerald-600 bg-emerald-50/90'}`} title={showControls ? "Hide Controls" : "Show Controls"}>
                 {showControls ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
                 ) : (
@@ -420,33 +372,18 @@ export default function Dashboard() {
                 )}
               </button>
 
-              {/* PAN SLIDERS WITH SMOOTH CSS TRANSITIONS */}
               <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls && viewMode === 'free' ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-4 invisible pointer-events-none'}`}>
-                <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <input 
-                  type="range" min="-30" max="30" value={panX} onChange={(e) => setPanX(Number(e.target.value))}
-                  className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full" 
-                />
-                <button type="button" onClick={() => setPanX(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Right">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
-                </button>
+                <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg></button>
+                <input type="range" min="-30" max="30" value={panX} onChange={(e) => setPanX(Number(e.target.value))} className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full" />
+                <button type="button" onClick={() => setPanX(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Right"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg></button>
               </div>
               
               <div className={`absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls && viewMode === 'free' ? 'opacity-100 translate-x-0 visible' : 'opacity-0 translate-x-4 invisible pointer-events-none'}`}>
-                <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Up">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg>
-                </button>
+                <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Up"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg></button>
                 <div className="relative w-4 h-24 sm:h-32 flex items-center justify-center my-2">
-                  <input 
-                    type="range" min="-30" max="30" value={panY} onChange={(e) => setPanY(Number(e.target.value))}
-                    className="absolute w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer -rotate-90 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full"
-                  />
+                  <input type="range" min="-30" max="30" value={panY} onChange={(e) => setPanY(Number(e.target.value))} className="absolute w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer -rotate-90 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full" />
                 </div>
-                <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
+                <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg></button>
               </div>
 
               <Canvas shadows camera={{ position: viewMode === 'top' ? [0, 80, 0] : [50, 60, 65], zoom: viewMode === 'top' ? 4.0 : 4.8 }}>
@@ -454,24 +391,18 @@ export default function Dashboard() {
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
                 <group rotation={[0, Date.now() * 0.0005, 0]}>
-                  {previewVoxels.map((v, i) => (
-                    <AnimatedVoxel key={`preview-${i}`} v={v} />
-                  ))}
+                  {previewVoxels.map((v, i) => <AnimatedVoxel key={`preview-${i}`} v={v} />)}
                 </group>
+                {/* UPDATED: Removed maxPolarAngle to allow free flipping and rotating */}
                 <OrbitControls 
-                  enableZoom={true} 
-                  enablePan={false} 
-                  enableRotate={viewMode === 'free'} 
-                  autoRotate={viewMode === 'free'}
-                  autoRotateSpeed={1.5} 
+                  enableZoom={true} enablePan={true} enableRotate={true} 
+                  autoRotate={viewMode === 'free'} autoRotateSpeed={1.5} 
                   target={viewMode === 'top' ? [0, 0, 0] : [-panX, -panY + 15, 0]} 
-                  maxPolarAngle={viewMode === 'top' ? 0 : Math.PI / 4.5} /* Free roam max angle lowered to ~40 degrees */
                 />
               </Canvas>
             </div>
 
             <form onSubmit={handleGenerate} className="max-w-2xl mx-auto space-y-8">
-              
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Botanical Species</label>
                 <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 custom-slim-scrollbar">
@@ -481,8 +412,7 @@ export default function Dashboard() {
                       <button
                         key={id} type="button" onClick={() => setTreeType(id)}
                         style={isActive ? { borderColor: theme.leaf[0], backgroundColor: `${theme.leaf[0]}15`, color: theme.leaf[0] } : {}}
-                        className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3 border-2
-                          ${isActive ? 'shadow-md -translate-y-1' : 'bg-white border-transparent ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
+                        className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3 border-2 ${isActive ? 'shadow-md -translate-y-1' : 'bg-white border-transparent ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
                       >
                         <div className="w-8 h-8 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
                         <span className="font-medium text-sm capitalize">{theme.name}</span>
@@ -494,38 +424,22 @@ export default function Dashboard() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Destination Link</label>
-                <input 
-                  type="url" required placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)}
-                  className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
-                />
+                <input type="url" required placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} className="w-full px-6 py-4 bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Custom URL Slug (Optional)</label>
                 <div className="flex rounded-2xl shadow-sm ring-1 ring-slate-900/5 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
-                  <span className="flex items-center pl-5 pr-2 text-slate-400 bg-slate-50/50 select-none border-r border-slate-100 text-sm font-medium">
-                    /qr/
-                  </span>
-                  <input 
-                    type="text" placeholder="my-awesome-link" value={customSlug} onChange={(e) => setCustomSlug(e.target.value)}
-                    className="w-full px-5 py-4 focus:outline-none text-slate-700 bg-transparent transition-all"
-                  />
+                  <span className="flex items-center pl-5 pr-2 text-slate-400 bg-slate-50/50 select-none border-r border-slate-100 text-sm font-medium">/qr/</span>
+                  <input type="text" placeholder="my-awesome-link" value={customSlug} onChange={(e) => setCustomSlug(e.target.value)} className="w-full px-5 py-4 focus:outline-none text-slate-700 bg-transparent transition-all" />
                 </div>
-                
                 {slugError ? (
                   <div className="mt-3 ml-2 animate-[fadeIn_0.2s_ease-out]">
                     <p className="text-sm text-red-500 font-medium mb-2">{slugError}</p>
                     <p className="text-xs text-slate-500 mb-2">Try one of these available links instead:</p>
                     <div className="flex gap-2 flex-wrap">
                       {slugSuggestions.map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          type="button"
-                          onClick={() => setCustomSlug(suggestion)}
-                          className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                        >
-                          {suggestion}
-                        </button>
+                        <button key={suggestion} type="button" onClick={() => setCustomSlug(suggestion)} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors shadow-sm">{suggestion}</button>
                       ))}
                     </div>
                   </div>
@@ -533,7 +447,6 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-400 mt-2 ml-2">Leave blank to let nature generate a random ID.</p>
                 )}
               </div>
-
               <button disabled={loading || !url} className="w-full bg-slate-900 text-white font-medium py-5 rounded-2xl hover:bg-slate-800 hover:shadow-xl transition-all disabled:opacity-50 mt-4">
                 {loading ? 'Cultivating...' : 'Grow Interactive Code'}
               </button>
@@ -543,14 +456,10 @@ export default function Dashboard() {
               <div ref={resultRef} className="scroll-mt-8 max-w-md mx-auto bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center animate-[fadeIn_0.5s_ease-out]">
                 <h3 className="font-serif text-2xl text-emerald-900 mb-2">{recentlyCreated.title} is ready.</h3>
                 <p className="text-slate-500 text-sm mb-6">Scan to interact, or share the link below.</p>
-                
                 <img src={recentlyCreated.img} alt="Colored QR" className="w-48 h-48 mx-auto mb-6 rounded-xl shadow-sm" />
                 
-                {/* NEW: Copy to Clipboard inline component */}
                 <div className="flex items-center justify-center gap-2 mb-6 w-full px-4 overflow-hidden">
-                  <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="text-emerald-600 font-medium hover:underline truncate">
-                    {recentlyCreated.link}
-                  </a>
+                  <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="text-emerald-600 font-medium hover:underline truncate">{recentlyCreated.link}</a>
                   <button onClick={copyToClipboard} className="text-slate-400 hover:text-emerald-600 transition-colors bg-slate-50 p-2 rounded-lg shrink-0">
                     {linkCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
                   </button>
@@ -559,12 +468,10 @@ export default function Dashboard() {
                 <div className="flex flex-col gap-3">
                   <div className="flex gap-3">
                     <button onClick={handleShareRecentlyCreated} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
-                      <Share2 size={18} />
-                      Share
+                      <Share2 size={18} /> Share
                     </button>
                     <a href={recentlyCreated.img} download="voxly-tree.png" className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center gap-2">
-                      <Download size={18} />
-                      Save
+                      <Download size={18} /> Save Image
                     </a>
                   </div>
                 </div>
@@ -578,9 +485,7 @@ export default function Dashboard() {
             {myLinks.length === 0 ? (
                <div className="text-center py-20 text-slate-400 font-medium">Your garden is currently empty.</div>
             ) : (
-              myLinks.map((link) => (
-                <ForestItem key={link.id} link={link} setLinkToDelete={setLinkToDelete} />
-              ))
+              myLinks.map((link) => <ForestItem key={link.id} link={link} setLinkToDelete={setLinkToDelete} />)
             )}
           </div>
         )}
