@@ -5,9 +5,13 @@ import { db } from '../firebase';
 import { collection, query, where, deleteDoc, doc, serverTimestamp, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import QRCode from 'qrcode';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
+import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
+
+// NEW: Lucide Icons and Confetti
+import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Box, Check } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 function AnimatedVoxel({ v }) {
   const materialRef = useRef();
@@ -66,7 +70,7 @@ function ForestItem({ link, setLinkToDelete }) {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: link.title || 'Grow-Voxly',
-          text: 'Scan to interact with my 3D tree!',
+          text: `Scan to interact with my 3D tree!\n\n${window.location.origin}/qr/${link.id}`,
           files: [file] 
         });
       } else {
@@ -77,23 +81,21 @@ function ForestItem({ link, setLinkToDelete }) {
         });
       }
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error("Error sharing", err);
-      }
+      if (err.name !== 'AbortError') console.error("Error sharing", err);
     }
   };
 
   return (
     <>
-      <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
+      <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
         
         <div className="overflow-hidden w-full">
           <div className="flex items-center gap-3 mb-2">
-            {/* UPDATED: Title first, then Badge. Added shrink-0 to badge to prevent squishing */}
             <h3 className="text-lg font-serif font-bold text-slate-800 truncate">
               {link.title || 'Untitled Tree'}
             </h3>
-            <span className="shrink-0 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
+            {/* UPDATED: Shrunk the badge size for a cleaner look */}
+            <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
               {TREE_THEMES[link.treeType]?.name || 'Tree'}
             </span>
           </div>
@@ -102,23 +104,30 @@ function ForestItem({ link, setLinkToDelete }) {
           </a>
         </div>
 
-        <div className="flex gap-3 shrink-0 w-full sm:w-auto">
-          <button onClick={() => setShowQrModal(true)} className="flex-1 sm:flex-none text-center text-slate-600 hover:text-slate-900 font-medium text-sm bg-slate-50 hover:bg-slate-100 px-5 py-2.5 rounded-xl transition-colors">
-            QR Code
+        {/* UPDATED: Buttons now use Lucide React icons */}
+        <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+          <button onClick={() => setShowQrModal(true)} title="QR Code" className="flex-1 sm:flex-none flex items-center justify-center text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-3 rounded-xl transition-colors">
+            <QrCode size={18} />
           </button>
-          <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none text-center text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-emerald-50 hover:bg-emerald-100 px-5 py-2.5 rounded-xl transition-colors">
-            View
+          <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" title="View" className="flex-1 sm:flex-none flex items-center justify-center text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 p-3 rounded-xl transition-colors">
+            <ExternalLink size={18} />
           </a>
-          <button onClick={() => setLinkToDelete(link.id)} className="flex-1 sm:flex-none text-center text-red-600 hover:text-red-800 font-medium text-sm bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl transition-colors">
-            Delete
+          <button onClick={() => setLinkToDelete(link.id)} title="Delete" className="flex-1 sm:flex-none flex items-center justify-center text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 p-3 rounded-xl transition-colors">
+            <Trash2 size={18} />
           </button>
         </div>
       </div>
 
+      {/* UPDATED: Modal now has X close button and native icons */}
       {showQrModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
-            <h3 className="font-serif text-2xl text-slate-800 mb-2">{link.title || 'QR Code'}</h3>
+          <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
+            
+            <button onClick={() => setShowQrModal(false)} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition-colors bg-slate-50 p-1.5 rounded-full">
+              <X size={20} />
+            </button>
+
+            <h3 className="font-serif text-2xl text-slate-800 mb-2 mt-2">{link.title || 'QR Code'}</h3>
             <p className="text-slate-500 mb-6 text-sm">Scan or download to share.</p>
             
             {qrImg ? (
@@ -127,19 +136,15 @@ function ForestItem({ link, setLinkToDelete }) {
               <div className="w-48 h-48 mx-auto mb-8 bg-slate-100 animate-pulse rounded-xl"></div>
             )}
 
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-3">
-                <button onClick={handleShare} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                  Share
-                </button>
-                <a href={qrImg} download={`${link.title || 'voxly-tree'}.png`} className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center">
-                  Save
-                </a>
-              </div>
-              <button onClick={() => setShowQrModal(false)} className="w-full py-3 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
-                Close
+            <div className="flex gap-3">
+              <button onClick={handleShare} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
+                <Share2 size={18} />
+                Share
               </button>
+              <a href={qrImg} download={`${link.title || 'voxly-tree'}.png`} className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center gap-2">
+                <Download size={18} />
+                Save
+              </a>
             </div>
           </div>
         </div>
@@ -163,6 +168,8 @@ export default function Dashboard() {
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [viewMode, setViewMode] = useState('free'); // 'free' or 'top'
+  const [linkCopied, setLinkCopied] = useState(false);
   
   const [recentlyCreated, setRecentlyCreated] = useState(null);
   const [myLinks, setMyLinks] = useState([]);
@@ -183,22 +190,31 @@ export default function Dashboard() {
       navigate('/login');
       return;
     }
-
     const q = query(collection(db, 'qrs'), where("userId", "==", currentUser.uid));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const links = [];
       querySnapshot.forEach((doc) => links.push({ id: doc.id, ...doc.data() }));
       setMyLinks(links.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
     });
-
     return () => unsubscribe();
   }, [currentUser, navigate]);
 
+  // Handle auto-scroll and confetti cannons on successful generation!
   useEffect(() => {
     if (recentlyCreated && resultRef.current) {
       setTimeout(() => {
         resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+        
+        // Confetti Cannons! Shoots up and fades halfway down
+        const duration = 2500; // 2.5 seconds before fading
+        const defaults = { startVelocity: 45, spread: 60, ticks: 150, zIndex: 100, gravity: 1.2 };
+
+        // Left Cannon
+        confetti({ ...defaults, particleCount: 70, angle: 60, origin: { x: 0, y: 1 } });
+        // Right Cannon
+        confetti({ ...defaults, particleCount: 70, angle: 120, origin: { x: 1, y: 1 } });
+        
+      }, 300);
     }
   }, [recentlyCreated]);
 
@@ -213,29 +229,25 @@ export default function Dashboard() {
     setLoading(true);
     setSlugError('');
     setSlugSuggestions([]);
+    setLinkCopied(false); // Reset copy button
     
     try {
       let finalId = '';
 
       if (customSlug.trim()) {
         const baseSlug = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        
         const docRef = doc(db, 'qrs', baseSlug);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
           const suggestions = [];
           let counter = 1;
-          
           while (suggestions.length < 3 && counter < 50) {
             const testSlug = `${baseSlug}-${counter}`;
             const testSnap = await getDoc(doc(db, 'qrs', testSlug));
-            if (!testSnap.exists()) {
-              suggestions.push(testSlug);
-            }
+            if (!testSnap.exists()) suggestions.push(testSlug);
             counter++;
           }
-          
           setSlugError('This custom link is already taken!');
           setSlugSuggestions(suggestions);
           setLoading(false);
@@ -257,7 +269,6 @@ export default function Dashboard() {
       });
 
       const shortLink = `${window.location.origin}/qr/${finalId}`;
-      
       const theme = TREE_THEMES[treeType];
       const qrDataUrl = await QRCode.toDataURL(shortLink, {
         width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight }
@@ -279,10 +290,7 @@ export default function Dashboard() {
   }
 
   const handleShareRecentlyCreated = async () => {
-    if (!navigator.share || !recentlyCreated) {
-      alert("Sharing is not supported on this device/browser.");
-      return;
-    }
+    if (!navigator.share || !recentlyCreated) return alert("Sharing is not supported on this device.");
     try {
       const res = await fetch(recentlyCreated.img);
       const blob = await res.blob();
@@ -291,7 +299,7 @@ export default function Dashboard() {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: recentlyCreated.title || 'Grow-Voxly',
-          text: 'Scan to interact with my 3D tree!',
+          text: `Scan to interact with my 3D tree!\n\n${recentlyCreated.link}`,
           files: [file]
         });
       } else {
@@ -306,16 +314,31 @@ export default function Dashboard() {
     }
   };
 
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(recentlyCreated.link);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
   const previewVoxels = useMemo(() => {
     const matrix = QRCode.create(url || "https://vox.ly", { errorCorrectionLevel: 'M' });
     return generateTree(treeType, matrix.modules.data, matrix.modules.size);
   }, [url, treeType]);
 
+  // CSS for custom slim scrollbar inside presets
+  const scrollbarCSS = `
+    .custom-slim-scrollbar::-webkit-scrollbar { height: 6px; }
+    .custom-slim-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-slim-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .custom-slim-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+  `;
+
   if (!currentUser) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200">
-      
+      <style>{scrollbarCSS}</style>
+
       {linkToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
@@ -335,7 +358,8 @@ export default function Dashboard() {
 
       <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
-        <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+        <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
+          <LogOut size={16} />
           Sign Out
         </button>
       </header>
@@ -359,11 +383,29 @@ export default function Dashboard() {
               placeholder="Name your tree..." 
               value={linkTitle} 
               onChange={(e) => setLinkTitle(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
               className="w-full bg-transparent font-serif font-bold text-4xl sm:text-5xl leading-normal py-4 text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none px-4 drop-shadow-sm"
             />
 
-            <div className="relative w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
+            <div className="relative w-full h-[28rem] bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
               
+              {/* VIEW TOGGLES (Free Roam vs Top View) */}
+              <div className="absolute top-6 left-6 z-20 flex bg-white/80 backdrop-blur-md rounded-xl shadow-sm ring-1 ring-slate-900/5 p-1">
+                <button 
+                  type="button" onClick={() => setViewMode('free')} 
+                  className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'free' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  <Box size={14} /> <span className="hidden sm:inline">Free Roam</span>
+                </button>
+                <button 
+                  type="button" onClick={() => { setViewMode('top'); setPanX(0); setPanY(0); }} 
+                  className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'top' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  <QrCode size={14} /> <span className="hidden sm:inline">Top View</span>
+                </button>
+              </div>
+
+              {/* EYE TOGGLE BUTTON */}
               <button 
                 type="button" 
                 onClick={() => setShowControls(!showControls)}
@@ -378,41 +420,36 @@ export default function Dashboard() {
                 )}
               </button>
 
-              {showControls && (
-                <>
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 animate-[fadeInUp_0.2s_ease-out]">
-                    <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
-                    </button>
-                    <input 
-                      type="range" min="-30" max="30" value={panX} onChange={(e) => setPanX(Number(e.target.value))}
-                      className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-emerald-600 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:rounded-full" 
-                    />
-                    <button type="button" onClick={() => setPanX(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Right">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
-                  </div>
-                  
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 animate-[fadeIn_0.2s_ease-out]">
-                    <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Up">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg>
-                    </button>
-                    
-                    <div className="relative w-4 h-24 sm:h-32 flex items-center justify-center my-2">
-                      <input 
-                        type="range" min="-30" max="30" value={panY} onChange={(e) => setPanY(Number(e.target.value))}
-                        className="absolute w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer -rotate-90 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:bg-emerald-600 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:rounded-full"
-                      />
-                    </div>
+              {/* PAN SLIDERS WITH SMOOTH CSS TRANSITIONS */}
+              <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls && viewMode === 'free' ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-4 invisible pointer-events-none'}`}>
+                <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <input 
+                  type="range" min="-30" max="30" value={panX} onChange={(e) => setPanX(Number(e.target.value))}
+                  className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full" 
+                />
+                <button type="button" onClick={() => setPanX(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Right">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+              </div>
+              
+              <div className={`absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls && viewMode === 'free' ? 'opacity-100 translate-x-0 visible' : 'opacity-0 translate-x-4 invisible pointer-events-none'}`}>
+                <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Up">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg>
+                </button>
+                <div className="relative w-4 h-24 sm:h-32 flex items-center justify-center my-2">
+                  <input 
+                    type="range" min="-30" max="30" value={panY} onChange={(e) => setPanY(Number(e.target.value))}
+                    className="absolute w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer -rotate-90 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full"
+                  />
+                </div>
+                <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+              </div>
 
-                    <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                  </div>
-                </>
-              )}
-
-              <Canvas shadows camera={{ position: [50, 75, 65], zoom: 4.8 }}>
+              <Canvas shadows camera={{ position: viewMode === 'top' ? [0, 80, 0] : [50, 60, 65], zoom: viewMode === 'top' ? 4.0 : 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
@@ -424,11 +461,11 @@ export default function Dashboard() {
                 <OrbitControls 
                   enableZoom={true} 
                   enablePan={false} 
-                  enableRotate={true} 
-                  autoRotate 
+                  enableRotate={viewMode === 'free'} 
+                  autoRotate={viewMode === 'free'}
                   autoRotateSpeed={1.5} 
-                  target={[-panX, -panY + 15, 0]} 
-                  maxPolarAngle={Math.PI / 2} 
+                  target={viewMode === 'top' ? [0, 0, 0] : [-panX, -panY + 15, 0]} 
+                  maxPolarAngle={viewMode === 'top' ? 0 : Math.PI / 4.5} /* Free roam max angle lowered to ~40 degrees */
                 />
               </Canvas>
             </div>
@@ -437,7 +474,7 @@ export default function Dashboard() {
               
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Botanical Species</label>
-                <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 custom-scrollbar">
+                <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 custom-slim-scrollbar">
                   {Object.entries(TREE_THEMES).map(([id, theme]) => {
                     const isActive = treeType === id;
                     return (
@@ -509,18 +546,25 @@ export default function Dashboard() {
                 
                 <img src={recentlyCreated.img} alt="Colored QR" className="w-48 h-48 mx-auto mb-6 rounded-xl shadow-sm" />
                 
-                <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="block text-emerald-600 font-medium mb-6 hover:underline truncate px-4">
-                  {recentlyCreated.link}
-                </a>
+                {/* NEW: Copy to Clipboard inline component */}
+                <div className="flex items-center justify-center gap-2 mb-6 w-full px-4 overflow-hidden">
+                  <a href={recentlyCreated.link} target="_blank" rel="noreferrer" className="text-emerald-600 font-medium hover:underline truncate">
+                    {recentlyCreated.link}
+                  </a>
+                  <button onClick={copyToClipboard} className="text-slate-400 hover:text-emerald-600 transition-colors bg-slate-50 p-2 rounded-lg shrink-0">
+                    {linkCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                  </button>
+                </div>
                 
                 <div className="flex flex-col gap-3">
                   <div className="flex gap-3">
                     <button onClick={handleShareRecentlyCreated} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                      <Share2 size={18} />
                       Share
                     </button>
-                    <a href={recentlyCreated.img} download="voxly-tree.png" className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center">
-                      Save Image
+                    <a href={recentlyCreated.img} download="voxly-tree.png" className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center gap-2">
+                      <Download size={18} />
+                      Save
                     </a>
                   </div>
                 </div>
