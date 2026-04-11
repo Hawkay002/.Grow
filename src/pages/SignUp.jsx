@@ -3,42 +3,36 @@ import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { Eye, EyeOff } from 'lucide-react'; // Added icons
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  // Separate visibility states for each field
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (currentUser) navigate('/dashboard');
   }, [currentUser, navigate]);
 
-  // Security: Password Strength & Strikethrough Logic
   const hasLength = password.length >= 8;
   const hasUpper = /[A-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
   const hasSpecial = /[^A-Za-z0-9]/.test(password);
-  
-  // Calculate score out of 4
   const strength = [hasLength, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    
-    if (password !== confirmPassword) {
-      return setError('Passwords do not match.');
-    }
-
-    if (strength < 4) {
-      return setError('Please meet all password requirements.');
-    }
+    if (password !== confirmPassword) return setError('Passwords do not match.');
+    if (strength < 4) return setError('Please meet all password requirements.');
 
     setLoading(true);
     try {
@@ -103,26 +97,29 @@ export default function SignUp() {
 
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">Password</label>
-            <input 
-              type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
-            />
+            <div className="relative group">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                required 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700 pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             
-            {/* Live Password Strength Meter */}
             <div className="mt-3 flex gap-1.5 px-1">
               {[1, 2, 3, 4].map((point) => (
-                <div 
-                  key={point} 
-                  className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                    strength >= point 
-                      ? (strength < 4 ? 'bg-amber-400' : 'bg-emerald-500') 
-                      : 'bg-slate-200'
-                  }`} 
-                />
+                <div key={point} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${strength >= point ? (strength < 4 ? 'bg-amber-400' : 'bg-emerald-500') : 'bg-slate-200'}`} />
               ))}
             </div>
             
-            {/* Dynamic Strikethrough Checklist */}
             <ul className="text-xs text-slate-400 mt-3 px-1 space-y-1.5">
               <li className={`transition-all duration-300 ${hasLength ? 'line-through text-emerald-600 opacity-70' : ''}`}>• 8+ characters</li>
               <li className={`transition-all duration-300 ${hasUpper ? 'line-through text-emerald-600 opacity-70' : ''}`}>• 1 uppercase letter</li>
@@ -133,14 +130,22 @@ export default function SignUp() {
 
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">Confirm Password</label>
-            <input 
-              type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 focus:outline-none focus:ring-2 transition-all text-slate-700 ${
-                confirmPassword && password !== confirmPassword 
-                  ? 'ring-red-400 focus:ring-red-500' 
-                  : 'ring-slate-900/5 focus:ring-emerald-500'
-              }`}
-            />
+            <div className="relative group">
+              <input 
+                type={showConfirmPassword ? "text" : "password"} 
+                required 
+                value={confirmPassword} 
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 focus:outline-none focus:ring-2 transition-all text-slate-700 pr-12 ${confirmPassword && password !== confirmPassword ? 'ring-red-400 focus:ring-red-500' : 'ring-slate-900/5 focus:ring-emerald-500'}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1"
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button disabled={loading} className="w-full bg-slate-900 text-white font-medium py-4 rounded-xl hover:bg-slate-800 hover:shadow-lg transition-all disabled:opacity-50 mt-2">
@@ -151,7 +156,6 @@ export default function SignUp() {
         <div className="mt-8 text-center text-sm text-slate-500">
           Already have a forest? <Link to="/login" className="text-emerald-600 font-bold hover:underline">Log In</Link>
         </div>
-
       </div>
     </div>
   );
