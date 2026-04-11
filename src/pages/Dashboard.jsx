@@ -185,13 +185,11 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [currentUser, navigate]);
 
-  // UPDATED: Scroll smoothly, wait 800ms, then trigger confetti
   useEffect(() => {
     if (recentlyCreated && resultRef.current) {
       setTimeout(() => {
         resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         setTimeout(() => {
-          const duration = 2500;
           const defaults = { startVelocity: 45, spread: 60, ticks: 150, zIndex: 100, gravity: 1.2 };
           confetti({ ...defaults, particleCount: 70, angle: 60, origin: { x: 0, y: 1 } });
           confetti({ ...defaults, particleCount: 70, angle: 120, origin: { x: 1, y: 1 } });
@@ -393,7 +391,6 @@ export default function Dashboard() {
                 <group rotation={[0, Date.now() * 0.0005, 0]}>
                   {previewVoxels.map((v, i) => <AnimatedVoxel key={`preview-${i}`} v={v} />)}
                 </group>
-                {/* UPDATED: Removed maxPolarAngle to allow free flipping and rotating */}
                 <OrbitControls 
                   enableZoom={true} enablePan={true} enableRotate={true} 
                   autoRotate={viewMode === 'free'} autoRotateSpeed={1.5} 
