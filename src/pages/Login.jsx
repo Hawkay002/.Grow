@@ -23,7 +23,6 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      // Security: .trim() prevents space-based bypasses and accidental failures
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       navigate('/dashboard');
     } catch (err) {
@@ -84,7 +83,13 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">Password</label>
+            {/* NEW: Forgot Password link aligned to the right above the input */}
+            <div className="flex justify-between items-center mb-2 ml-1 mr-1">
+              <label className="block text-sm font-medium text-slate-600">Password</label>
+              <Link to="/forgot-password" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
+                Forgot Password?
+              </Link>
+            </div>
             <input 
               type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
