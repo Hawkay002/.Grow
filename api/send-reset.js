@@ -29,18 +29,17 @@ export default async function handler(req, res) {
       },
     });
 
-    // Green Lucide 'Trees' icon safely URL-encoded for email clients
-    const treeIconSrc = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 10v.2A3 3 0 0 1 8.9 16v0H5v0h0a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z'/%3E%3Cpath d='M7 16v6'/%3E%3Cpath d='M13 19v3'/%3E%3Cpath d='M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L14 3l-1.4 2.5'/%3E%3C/svg%3E";
+    // UPDATED: Using a hosted PNG icon for better compatibility than encoded SVG
+    const treeIconUrl = "https://img.icons8.com/fluency/96/tree.png";
 
     const emailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8">
         <style>
-          /* Importing Raleway for the body text */
           @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap');
 
-          /* Absolute URL to your hosted Aestera font file */
           @font-face {
             font-family: 'Aestera';
             src: url('https://grow-voxly.vercel.app/fonts/Aestera.woff2') format('woff2'),
@@ -49,26 +48,36 @@ export default async function handler(req, res) {
             font-style: normal;
           }
 
+          /* Force text selection/highlight color to match button green */
+          ::selection { background: #059669; color: #ffffff; }
+          ::-moz-selection { background: #059669; color: #ffffff; }
+
           .email-body {
-            font-family: 'Raleway', sans-serif;
+            font-family: 'Raleway', Arial, sans-serif !important;
             color: #475569;
             font-size: 16px;
             line-height: 1.6;
           }
 
           .heading {
-            font-family: 'Aestera', Georgia, serif;
-            color: #064e3b;
+            font-family: 'Aestera', Georgia, serif !important;
+            color: #064e3b !important;
             font-size: 32px;
             font-weight: normal;
             margin-bottom: 10px;
+          }
+
+          /* Custom link color fix */
+          .green-link {
+            color: #059669 !important;
+            text-decoration: underline;
           }
         </style>
       </head>
       <body style="margin: 0; padding: 0; background-color: #f8fafc;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px; border-radius: 24px; text-align: center;">
           
-          <img src="${treeIconSrc}" alt="Grow-Voxly Tree" width="64" height="64" style="margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
+          <img src="${treeIconUrl}" alt="Grow-Voxly Tree" width="64" height="64" style="margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
 
           <h1 class="heading">Grow-Voxly</h1>
           
@@ -81,7 +90,7 @@ export default async function handler(req, res) {
             </p>
             
             <div style="text-align: center;">
-              <a href="${resetLink}" style="display: inline-block; background-color: #059669; color: #ffffff; font-family: 'Raleway', sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 12px;">
+              <a href="${resetLink}" style="display: inline-block; background-color: #059669; color: #ffffff; font-family: 'Raleway', sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);">
                 Reset Password
               </a>
             </div>
