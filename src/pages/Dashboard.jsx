@@ -53,27 +53,23 @@ function ForestItem({ link, setLinkToDelete }) {
     generateThumbnail();
   }, [link.id, link.treeType]);
 
-  // NEW: Advanced Native Share Handler for the Image File
   const handleShare = async () => {
     if (!navigator.share) {
       alert("Sharing is not supported on this device/browser.");
       return;
     }
     try {
-      // Convert the Base64 Data URL to a native Blob File
       const res = await fetch(qrImg);
       const blob = await res.blob();
       const file = new File([blob], `${link.title || 'voxly-tree'}.png`, { type: blob.type });
 
-      // Check if the device allows file sharing (most modern mobile devices do)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: link.title || 'Grow-Voxly',
           text: 'Scan to interact with my 3D tree!',
-          files: [file] // Sends the actual image to WhatsApp, etc.
+          files: [file] 
         });
       } else {
-        // Fallback: Share the URL as text if image sharing is unsupported
         await navigator.share({
           title: link.title || 'Grow-Voxly',
           text: 'Check out my interactive 3D tree!',
@@ -81,7 +77,6 @@ function ForestItem({ link, setLinkToDelete }) {
         });
       }
     } catch (err) {
-      // Only log errors if it wasn't the user intentionally canceling the share tray
       if (err.name !== 'AbortError') {
         console.error("Error sharing", err);
       }
@@ -133,7 +128,6 @@ function ForestItem({ link, setLinkToDelete }) {
 
             <div className="flex flex-col gap-3">
               <div className="flex gap-3">
-                {/* NEW: Native Share Button with Icon */}
                 <button onClick={handleShare} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                   Share
@@ -283,7 +277,6 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // NEW: Share handler for the "Cultivate" success screen
   const handleShareRecentlyCreated = async () => {
     if (!navigator.share || !recentlyCreated) {
       alert("Sharing is not supported on this device/browser.");
@@ -360,12 +353,13 @@ export default function Dashboard() {
         {activeTab === 'create' && (
           <div className="space-y-8 animate-[fadeIn_0.5s_ease-out]">
             
+            {/* UPDATED: Added py-4 and leading-normal to prevent Aestera font clipping */}
             <input 
               type="text" 
               placeholder="Name your tree..." 
               value={linkTitle} 
               onChange={(e) => setLinkTitle(e.target.value)}
-              className="w-full bg-transparent font-serif font-bold text-4xl sm:text-5xl text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none px-4 drop-shadow-sm"
+              className="w-full bg-transparent font-serif font-bold text-4xl sm:text-5xl leading-normal py-4 text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none px-4 drop-shadow-sm"
             />
 
             <div className="relative w-full h-96 bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
