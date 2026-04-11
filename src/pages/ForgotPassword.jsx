@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { auth } from '../firebase';
-import { sendPasswordResetEmail } from 'firebase/auth';
 import { Trees } from 'lucide-react';
 
 export default function ForgotPassword() {
@@ -17,12 +15,23 @@ export default function ForgotPassword() {
     setLoading(true);
     
     try {
-      // THIS IS THE FIREBASE MAGIC FUNCTION
-      await sendPasswordResetEmail(auth, email.trim());
+      // Calls your secure serverless function to send the custom HTML email
+      const response = await fetch('/api/send-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send reset email');
+      }
+      
       setMessage('Success! Check your inbox for the reset link.');
     } catch (err) {
       console.error(err);
-      setError('Failed to reset password. Make sure this email is registered.');
+      setError('Failed to send reset link. Ensure the email is registered.');
     }
     
     setLoading(false);
@@ -41,25 +50,43 @@ export default function ForgotPassword() {
           <p className="text-slate-500 text-sm">Enter your email to receive a secure reset link.</p>
         </div>
 
-        {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium mb-6 text-center">{error}</div>}
-        {message && <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl text-sm font-medium mb-6 text-center">{message}</div>}
+        {error && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium mb-6 text-center">
+            {error}
+          </div>
+        )}
+        
+        {message && (
+          <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl text-sm font-medium mb-6 text-center">
+            {message}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">Email Address</label>
             <input 
-              type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              type="email" 
+              required 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 ring-slate-900/5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-700"
             />
           </div>
 
-          <button disabled={loading} className="w-full bg-slate-900 text-white font-medium py-4 rounded-xl hover:bg-slate-800 transition-all disabled:opacity-50 mt-2">
+          <button 
+            disabled={loading} 
+            className="w-full bg-slate-900 text-white font-medium py-4 rounded-xl hover:bg-slate-800 transition-all disabled:opacity-50 mt-2"
+          >
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 
         <div className="mt-8 text-center text-sm text-slate-500">
-          Remembered your password? <Link to="/login" className="text-emerald-600 font-bold hover:underline">Log In</Link>
+          Remembered your password?{' '}
+          <Link to="/login" className="text-emerald-600 font-bold hover:underline transition-colors">
+            Log In
+          </Link>
         </div>
       </div>
     </div>
