@@ -15,7 +15,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
   const { email } = req.body;
-
   if (!email) return res.status(400).json({ error: 'Email is required' });
 
   try {
@@ -29,8 +28,8 @@ export default async function handler(req, res) {
       },
     });
 
-    // Your specific Lucide Trees icon, URL-encoded and forced to brand green (#059669)
-    const treeIconSrc = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z'/%3E%3Cpath d='M7 16v6'/%3E%3Cpath d='M13 19v3'/%3E%3Cpath d='M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5'/%3E%3C/svg%3E";
+    // Encoded SVG "DNA" - contains the actual path data for the Lucide Trees icon in #059669
+    const treeIconData = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z'/%3E%3Cpath d='M7 16v6'/%3E%3Cpath d='M13 19v3'/%3E%3Cpath d='M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5'/%3E%3C/svg%3E";
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -60,7 +59,7 @@ export default async function handler(req, res) {
             color: #064e3b !important;
             font-size: 32px;
             font-weight: normal;
-            margin-bottom: 10px;
+            margin: 0;
           }
 
           ::selection { background: #059669; color: #ffffff; }
@@ -69,11 +68,11 @@ export default async function handler(req, res) {
       <body style="margin: 0; padding: 0; background-color: #f8fafc;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px; border-radius: 24px; text-align: center;">
           
-          <img src="${treeIconSrc}" alt="Grow-Voxly Tree" width="64" height="64" style="margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
+          <img src="${treeIconData}" width="64" height="64" style="margin: 0 auto 20px auto; display: block;" alt="Grow-Voxly" />
 
           <h1 class="heading">Grow-Voxly</h1>
           
-          <div style="background-color: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); text-align: left;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); text-align: left; margin-top: 20px;">
             <p class="email-body">
               Hi <strong>${email}</strong>,
             </p>
