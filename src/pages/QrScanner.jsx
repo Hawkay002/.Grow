@@ -7,37 +7,62 @@ import { OrthographicCamera, Environment, OrbitControls } from '@react-three/dre
 import * as THREE from 'three';
 import QRCode from 'qrcode';
 import { generateTree } from '../trees/VoxelEngine';
-import { Box, QrCode, ChevronRight } from 'lucide-react'; 
+import { Box, QrCode, ChevronRight } from 'lucide-react'; // NEW ICONS
 
 function CameraController({ viewMode, controlsRef }) {
-  const [animating, setAnimating] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const prevMode = useRef(viewMode);
 
   useEffect(() => {
     if (prevMode.current !== viewMode) {
-      setAnimating(true);
-      prevMode.current = viewMode;
+       setIsTransitioning(true);
+       prevMode.current = viewMode;
     }
   }, [viewMode]);
 
   useFrame((state) => {
-    if (!controlsRef.current || !animating) return;
+    if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
-      const targetPos = new THREE.Vector3(0, 100, 0);
-      state.camera.position.lerp(targetPos, 0.08);
-      controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 0), 0.08);
+      // TOP-DOWN SCAN MODE
+      // Z=15 offsets the camera down the grid, pushing the QR code UP on the screen
+      state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
+      state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
+      controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
+    } 
+    else if (isTransitioning) {
+      // FREE ROAM MODE
+      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
+      state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
       
-      if (state.camera.position.distanceTo(targetPos) < 0.5) setAnimating(false);
-    } else {
-      const targetPos = new THREE.Vector3(50, 60, 50);
-      state.camera.position.lerp(targetPos, 0.08);
-      controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.08);
-      
-      if (state.camera.position.distanceTo(targetPos) < 0.5) setAnimating(false);
+      // THE OVERLAP FIX: Target looks at Y=-12 (below the tree). 
+      // Because the camera looks down, the tree shifts UP on your screen, escaping the buttons!
+      controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
+
+      if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
+         setIsTransitioning(false);
+      }
     }
   });
   return null;
+}
+
+function SpinningGroup({ viewMode, children }) {
+  const groupRef = useRef();
+  
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+
+    if (viewMode === 'tree') {
+      groupRef.current.rotation.y += delta * 0.15; 
+    } else {
+      const currentRot = groupRef.current.rotation.y;
+      const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
 }
 
 function AnimatedVoxel({ v, viewMode }) {
@@ -87,6 +112,7 @@ export default function QrScanner() {
     return generateTree(data.treeType, matrix.modules.data, matrix.modules.size);
   }, [data]);
 
+  // CSS for bouncing arrow
   const bounceAnimationCSS = `
     @keyframes bounce-horizontal {
       0%, 100% { transform: translateX(0); }
@@ -103,6 +129,7 @@ export default function QrScanner() {
     <div className="relative w-screen h-screen bg-slate-50 overflow-hidden font-sans">
       <style>{bounceAnimationCSS}</style>
 
+      {/* TOP PROMO BANNER with Aestera font */}
       <div className="absolute top-8 left-0 w-full flex justify-center pointer-events-none z-20 px-6 animate-[fadeInUp_0.5s_ease-out]">
         <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
           className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-sm font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
@@ -118,18 +145,18 @@ export default function QrScanner() {
         
         <CameraController viewMode={viewMode} controlsRef={controlsRef} />
         
-        <group>
+        <SpinningGroup viewMode={viewMode}>
           {voxels.map((v, i) => (
             <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} />
           ))}
-        </group>
+        </SpinningGroup>
         
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
-          enableRotate={true}
           target={[0, -12, 0]} 
+          /* Free Roam Angle restricted to ~40 degrees as requested */
           maxPolarAngle={viewMode === 'top' ? 0 : Math.PI / 4.5} 
         />
       </Canvas>
