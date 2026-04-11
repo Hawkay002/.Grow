@@ -1,3 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Aestera';
+  /* Make sure this path matches where you put the file in your public folder! */
+  /* If it's directly in public, use url('/Aestera.ttf') */
+  src: url('/fonts/Aestera.ttf') format('truetype'); 
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
