@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTree } from '@fortawesome/free-solid-svg-icons';
+import { Trees } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Landing() {
@@ -10,7 +9,11 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center font-sans px-6 text-center">
       <div className="max-w-2xl animate-[fadeInUp_0.5s_ease-out]">
-        <FontAwesomeIcon icon={faTree} className="text-6xl text-emerald-600 mb-8" />
+        
+        <div className="flex justify-center mb-8">
+          <Trees size={64} strokeWidth={1.5} className="text-emerald-600" />
+        </div>
+        
         <h1 className="text-5xl md:text-6xl font-serif text-slate-800 mb-6 leading-tight">
           Cultivate Your Links.
         </h1>
