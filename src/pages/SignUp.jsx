@@ -7,6 +7,7 @@ import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } f
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -18,29 +19,29 @@ export default function SignUp() {
     if (currentUser) navigate('/dashboard');
   }, [currentUser, navigate]);
 
-  // Security: Password Strength Calculator
-  const calculateStrength = (pass) => {
-    let score = 0;
-    if (pass.length >= 8) score += 1;
-    if (/[A-Z]/.test(pass)) score += 1;
-    if (/[0-9]/.test(pass)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-    return score;
-  };
-
-  const strength = calculateStrength(password);
+  // Security: Password Strength & Strikethrough Logic
+  const hasLength = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  
+  // Calculate score out of 4
+  const strength = [hasLength, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     
-    if (strength < 3) {
-      return setError('Please choose a stronger password.');
+    if (password !== confirmPassword) {
+      return setError('Passwords do not match.');
+    }
+
+    if (strength < 4) {
+      return setError('Please meet all password requirements.');
     }
 
     setLoading(true);
     try {
-      // Security: .trim() prevents space-based bypassing and sanitizes input
       await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
       navigate('/dashboard');
     } catch (err) {
@@ -114,15 +115,32 @@ export default function SignUp() {
                   key={point} 
                   className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
                     strength >= point 
-                      ? (strength < 3 ? 'bg-amber-400' : 'bg-emerald-500') 
+                      ? (strength < 4 ? 'bg-amber-400' : 'bg-emerald-500') 
                       : 'bg-slate-200'
                   }`} 
                 />
               ))}
             </div>
-            <p className="text-[11px] text-slate-400 mt-2 px-1 leading-relaxed">
-              For your safety, please include 8+ characters, an uppercase letter, a number, and a special character.
-            </p>
+            
+            {/* Dynamic Strikethrough Checklist */}
+            <ul className="text-xs text-slate-400 mt-3 px-1 space-y-1.5">
+              <li className={`transition-all duration-300 ${hasLength ? 'line-through text-emerald-600 opacity-70' : ''}`}>• 8+ characters</li>
+              <li className={`transition-all duration-300 ${hasUpper ? 'line-through text-emerald-600 opacity-70' : ''}`}>• 1 uppercase letter</li>
+              <li className={`transition-all duration-300 ${hasNumber ? 'line-through text-emerald-600 opacity-70' : ''}`}>• 1 number</li>
+              <li className={`transition-all duration-300 ${hasSpecial ? 'line-through text-emerald-600 opacity-70' : ''}`}>• 1 special character</li>
+            </ul>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">Confirm Password</label>
+            <input 
+              type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+              className={`w-full px-5 py-3.5 bg-slate-50 rounded-xl ring-1 focus:outline-none focus:ring-2 transition-all text-slate-700 ${
+                confirmPassword && password !== confirmPassword 
+                  ? 'ring-red-400 focus:ring-red-500' 
+                  : 'ring-slate-900/5 focus:ring-emerald-500'
+              }`}
+            />
           </div>
 
           <button disabled={loading} className="w-full bg-slate-900 text-white font-medium py-4 rounded-xl hover:bg-slate-800 hover:shadow-lg transition-all disabled:opacity-50 mt-2">
