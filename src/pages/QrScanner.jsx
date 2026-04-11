@@ -7,59 +7,41 @@ import { OrthographicCamera, Environment, OrbitControls } from '@react-three/dre
 import * as THREE from 'three';
 import QRCode from 'qrcode';
 import { generateTree } from '../trees/VoxelEngine';
-import { Box, QrCode, ChevronRight } from 'lucide-react'; // NEW: Added Lucide Icons
+import { Box, QrCode, ChevronRight } from 'lucide-react'; 
 
+// UPDATED: CameraController now yields control to the user after transitioning
 function CameraController({ viewMode, controlsRef }) {
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [animating, setAnimating] = useState(false);
   const prevMode = useRef(viewMode);
 
   useEffect(() => {
     if (prevMode.current !== viewMode) {
-       setIsTransitioning(true);
-       prevMode.current = viewMode;
+      setAnimating(true);
+      prevMode.current = viewMode;
     }
   }, [viewMode]);
 
   useFrame((state) => {
-    if (!controlsRef.current) return;
+    if (!controlsRef.current || !animating) return;
 
     if (viewMode === 'qr') {
-      // TOP-DOWN SCAN MODE
-      state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
-      state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
-      controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
-    } 
-    else if (isTransitioning) {
-      // FREE ROAM MODE
-      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
-      state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
+      // Perfect Top-Down View Calibration
+      const targetPos = new THREE.Vector3(0, 100, 0);
+      state.camera.position.lerp(targetPos, 0.08);
+      controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 0), 0.08);
       
-      controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
-
-      if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
-         setIsTransitioning(false);
-      }
+      // Stop animating once close, giving the user back free interaction
+      if (state.camera.position.distanceTo(targetPos) < 0.5) setAnimating(false);
+    } else {
+      // Free Roam - ~40 degrees polar angle position
+      const targetPos = new THREE.Vector3(50, 60, 50);
+      state.camera.position.lerp(targetPos, 0.08);
+      controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.08);
+      
+      if (state.camera.position.distanceTo(targetPos) < 0.5) setAnimating(false);
     }
   });
   return null;
-}
-
-function SpinningGroup({ viewMode, children }) {
-  const groupRef = useRef();
-  
-  useFrame((state, delta) => {
-    if (!groupRef.current) return;
-
-    if (viewMode === 'tree') {
-      groupRef.current.rotation.y += delta * 0.15; 
-    } else {
-      const currentRot = groupRef.current.rotation.y;
-      const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(currentRot, targetRot, 0.08);
-    }
-  });
-
-  return <group ref={groupRef}>{children}</group>;
 }
 
 function AnimatedVoxel({ v, viewMode }) {
@@ -109,7 +91,6 @@ export default function QrScanner() {
     return generateTree(data.treeType, matrix.modules.data, matrix.modules.size);
   }, [data]);
 
-  // NEW: Inline style for the horizontal bouncing arrow
   const bounceAnimationCSS = `
     @keyframes bounce-horizontal {
       0%, 100% { transform: translateX(0); }
@@ -126,7 +107,6 @@ export default function QrScanner() {
     <div className="relative w-screen h-screen bg-slate-50 overflow-hidden font-sans">
       <style>{bounceAnimationCSS}</style>
 
-      {/* NEW: Promo banner moved to the TOP, added frosted glass effect and Aestera font */}
       <div className="absolute top-8 left-0 w-full flex justify-center pointer-events-none z-20 px-6 animate-[fadeInUp_0.5s_ease-out]">
         <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
           className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-sm font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
@@ -142,25 +122,25 @@ export default function QrScanner() {
         
         <CameraController viewMode={viewMode} controlsRef={controlsRef} />
         
-        <SpinningGroup viewMode={viewMode}>
+        {/* REMOVED SpinningGroup so the user isn't fighting a constant auto-spin */}
+        <group>
           {voxels.map((v, i) => (
             <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} />
           ))}
-        </SpinningGroup>
+        </group>
         
+        {/* UPDATED: Full freedom allowed for OrbitControls */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
+          enableRotate={true}
           target={[0, -12, 0]} 
-          // UPDATED: Free roam angle restricted to roughly 40 degrees (Math.PI / 4.5)
-          maxPolarAngle={viewMode === 'top' ? 0 : Math.PI / 4.5} 
         />
       </Canvas>
 
       <div className="absolute bottom-10 sm:bottom-20 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
         
-        {/* UPDATED: Added Icons to View Toggles */}
         <div className="mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
           <button onClick={() => setViewMode('tree')} className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'tree' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
             <Box size={16} /> Free Roam
@@ -172,8 +152,6 @@ export default function QrScanner() {
 
         <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
           <h2 className="font-serif text-2xl text-slate-800 mb-6">Link Discovered</h2>
-          
-          {/* UPDATED: Added bouncing ChevronRight icon to the continue button */}
           <a href={data.destinationUrl} className="flex items-center justify-center gap-2 w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200 group">
             Continue to Destination
             <ChevronRight size={20} className="animate-bounce-horizontal text-emerald-400" />
