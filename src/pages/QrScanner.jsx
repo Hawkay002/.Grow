@@ -9,7 +9,6 @@ import QRCode from 'qrcode';
 import { generateTree } from '../trees/VoxelEngine';
 import { Box, QrCode, ChevronRight } from 'lucide-react'; 
 
-// UPDATED: CameraController now yields control to the user after transitioning
 function CameraController({ viewMode, controlsRef }) {
   const [animating, setAnimating] = useState(false);
   const prevMode = useRef(viewMode);
@@ -25,15 +24,12 @@ function CameraController({ viewMode, controlsRef }) {
     if (!controlsRef.current || !animating) return;
 
     if (viewMode === 'qr') {
-      // Perfect Top-Down View Calibration
       const targetPos = new THREE.Vector3(0, 100, 0);
       state.camera.position.lerp(targetPos, 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 0), 0.08);
       
-      // Stop animating once close, giving the user back free interaction
       if (state.camera.position.distanceTo(targetPos) < 0.5) setAnimating(false);
     } else {
-      // Free Roam - ~40 degrees polar angle position
       const targetPos = new THREE.Vector3(50, 60, 50);
       state.camera.position.lerp(targetPos, 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.08);
@@ -122,20 +118,19 @@ export default function QrScanner() {
         
         <CameraController viewMode={viewMode} controlsRef={controlsRef} />
         
-        {/* REMOVED SpinningGroup so the user isn't fighting a constant auto-spin */}
         <group>
           {voxels.map((v, i) => (
             <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} />
           ))}
         </group>
         
-        {/* UPDATED: Full freedom allowed for OrbitControls */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
           enableRotate={true}
           target={[0, -12, 0]} 
+          maxPolarAngle={viewMode === 'top' ? 0 : Math.PI / 4.5} 
         />
       </Canvas>
 
