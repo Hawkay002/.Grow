@@ -89,12 +89,13 @@ function ForestItem({ link, setLinkToDelete }) {
         
         <div className="overflow-hidden w-full">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
-              {TREE_THEMES[link.treeType]?.name || 'Tree'}
-            </span>
-            <h3 className="text-lg font-serif font-medium text-slate-800 truncate">
+            {/* UPDATED: Title first, then Badge. Added shrink-0 to badge to prevent squishing */}
+            <h3 className="text-lg font-serif font-bold text-slate-800 truncate">
               {link.title || 'Untitled Tree'}
             </h3>
+            <span className="shrink-0 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
+              {TREE_THEMES[link.treeType]?.name || 'Tree'}
+            </span>
           </div>
           <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
             {link.destinationUrl}
@@ -353,7 +354,6 @@ export default function Dashboard() {
         {activeTab === 'create' && (
           <div className="space-y-8 animate-[fadeIn_0.5s_ease-out]">
             
-            {/* UPDATED: Added py-4 and leading-normal to prevent Aestera font clipping */}
             <input 
               type="text" 
               placeholder="Name your tree..." 
