@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Landing from './pages/Landing'; // We imported the new Landing page here
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import QrScanner from './pages/QrScanner';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import ForgotPassword from './pages/ForgotPassword'; // NEW: Imported the ForgotPassword page
 
 // A simple wrapper to protect the root route
 function PrivateRoute({ children }) {
@@ -18,9 +19,13 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Landing />} /> {/* The root domain now safely loads the Landing page! */}
+          <Route path="/" element={<Landing />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          
+          {/* NEW: Added the route so the blank screen is fixed! */}
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          
           <Route path="/qr/:id" element={<QrScanner />} />
 
           {/* Protected Routes */}
