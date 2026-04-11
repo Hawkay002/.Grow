@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react'; 
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -7,7 +7,7 @@ import { OrthographicCamera, Environment, OrbitControls } from '@react-three/dre
 import * as THREE from 'three';
 import QRCode from 'qrcode';
 import { generateTree } from '../trees/VoxelEngine';
-import { Box, QrCode, ChevronRight } from 'lucide-react'; // NEW ICONS
+import { Box, QrCode, ChevronRight } from 'lucide-react';
 
 function CameraController({ viewMode, controlsRef }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -24,22 +24,18 @@ function CameraController({ viewMode, controlsRef }) {
     if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
-      // TOP-DOWN SCAN MODE
-      // Z=15 offsets the camera down the grid, pushing the QR code UP on the screen
+      // TOP-DOWN SCAN MODE (Original working vectors)
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
     } 
     else if (isTransitioning) {
-      // FREE ROAM MODE
-      state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
+      // FREE ROAM MODE (Adjusted position for a clean 35-40 degree viewing angle)
+      state.camera.position.lerp(new THREE.Vector3(45, 75, 45), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
-      
-      // THE OVERLAP FIX: Target looks at Y=-12 (below the tree). 
-      // Because the camera looks down, the tree shifts UP on your screen, escaping the buttons!
       controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
 
-      if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
+      if (state.camera.position.distanceTo(new THREE.Vector3(45, 75, 45)) < 1) {
          setIsTransitioning(false);
       }
     }
@@ -112,7 +108,6 @@ export default function QrScanner() {
     return generateTree(data.treeType, matrix.modules.data, matrix.modules.size);
   }, [data]);
 
-  // CSS for bouncing arrow
   const bounceAnimationCSS = `
     @keyframes bounce-horizontal {
       0%, 100% { transform: translateX(0); }
@@ -129,7 +124,6 @@ export default function QrScanner() {
     <div className="relative w-screen h-screen bg-slate-50 overflow-hidden font-sans">
       <style>{bounceAnimationCSS}</style>
 
-      {/* TOP PROMO BANNER with Aestera font */}
       <div className="absolute top-8 left-0 w-full flex justify-center pointer-events-none z-20 px-6 animate-[fadeInUp_0.5s_ease-out]">
         <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
           className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-sm font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
@@ -138,7 +132,8 @@ export default function QrScanner() {
       </div>
       
       <Canvas shadows>
-        <OrthographicCamera makeDefault position={[50, 60, 50]} zoom={8} />
+        {/* Set default starting position to the new 35-40 degree coordinate */}
+        <OrthographicCamera makeDefault position={[45, 75, 45]} zoom={8} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
         <Environment preset="city" />
@@ -151,13 +146,13 @@ export default function QrScanner() {
           ))}
         </SpinningGroup>
         
+        {/* Unrestricted free interaction restored! */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
           target={[0, -12, 0]} 
-          /* Free Roam Angle restricted to ~40 degrees as requested */
-          maxPolarAngle={viewMode === 'top' ? 0 : Math.PI / 4.5} 
+          maxPolarAngle={Math.PI / 2} 
         />
       </Canvas>
 
