@@ -28,8 +28,8 @@ export default async function handler(req, res) {
       },
     });
 
-    // Encoded SVG "DNA" - contains the actual path data for the Lucide Trees icon in #059669
-    const treeIconData = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z'/%3E%3Cpath d='M7 16v6'/%3E%3Cpath d='M13 19v3'/%3E%3Cpath d='M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5'/%3E%3C/svg%3E";
+    // POINT TO YOUR HOSTED GREEN IMAGE
+    const treeIconUrl = "https://grow-voxly.vercel.app/trees.png";
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -41,38 +41,40 @@ export default async function handler(req, res) {
 
           @font-face {
             font-family: 'Aestera';
-            src: url('https://grow-voxly.vercel.app/fonts/Aestera.woff2') format('woff2'),
-                 url('https://grow-voxly.vercel.app/fonts/Aestera.ttf') format('truetype');
+            src: url('https://grow-voxly.vercel.app/fonts/Aestera.woff2') format('woff2');
             font-weight: normal;
             font-style: normal;
           }
 
           .email-body {
             font-family: 'Raleway', Arial, sans-serif !important;
-            color: #475569;
-            font-size: 16px;
-            line-height: 1.6;
+            color: #475569 !important;
+            font-size: 16px !important;
+            line-height: 1.6 !important;
           }
 
           .heading {
             font-family: 'Aestera', Georgia, serif !important;
             color: #064e3b !important;
-            font-size: 32px;
-            font-weight: normal;
-            margin: 0;
+            font-size: 32px !important;
+            margin: 0 !important;
           }
 
-          ::selection { background: #059669; color: #ffffff; }
+          /* This ensures the green highlight you asked for */
+          .btn::selection, .body-content::selection {
+            background-color: #059669 !important;
+            color: #ffffff !important;
+          }
         </style>
       </head>
       <body style="margin: 0; padding: 0; background-color: #f8fafc;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px; border-radius: 24px; text-align: center;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px; text-align: center;">
           
-          <img src="${treeIconData}" width="64" height="64" style="margin: 0 auto 20px auto; display: block;" alt="Grow-Voxly" />
+          <img src="${treeIconUrl}" width="64" height="64" style="margin: 0 auto 20px auto; display: block;" alt="Grow-Voxly" />
 
           <h1 class="heading">Grow-Voxly</h1>
           
-          <div style="background-color: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); text-align: left; margin-top: 20px;">
+          <div class="body-content" style="background-color: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; margin-top: 25px; border: 1px solid #eef2f6;">
             <p class="email-body">
               Hi <strong>${email}</strong>,
             </p>
@@ -81,12 +83,12 @@ export default async function handler(req, res) {
             </p>
             
             <div style="text-align: center;">
-              <a href="${resetLink}" style="display: inline-block; background-color: #059669; color: #ffffff; font-family: 'Raleway', sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);">
+              <a href="${resetLink}" class="btn" style="display: inline-block; background-color: #059669; color: #ffffff; font-family: 'Raleway', sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 12px;">
                 Reset Password
               </a>
             </div>
 
-            <p class="email-body" style="font-size: 13px; color: #94a3b8; margin-top: 30px; text-align: center;">
+            <p class="email-body" style="font-size: 13px !important; color: #94a3b8 !important; margin-top: 30px; text-align: center;">
               If you didn't request a password reset, you can safely ignore this email. Your forest is safe.
             </p>
           </div>
