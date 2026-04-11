@@ -7,6 +7,7 @@ import { OrthographicCamera, Environment, OrbitControls } from '@react-three/dre
 import * as THREE from 'three';
 import QRCode from 'qrcode';
 import { generateTree } from '../trees/VoxelEngine';
+import { Box, QrCode, ChevronRight } from 'lucide-react'; // NEW: Added Lucide Icons
 
 function CameraController({ viewMode, controlsRef }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -24,7 +25,6 @@ function CameraController({ viewMode, controlsRef }) {
 
     if (viewMode === 'qr') {
       // TOP-DOWN SCAN MODE
-      // Z=15 offsets the camera down the grid, pushing the QR code UP on the screen
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
@@ -34,8 +34,6 @@ function CameraController({ viewMode, controlsRef }) {
       state.camera.position.lerp(new THREE.Vector3(50, 60, 50), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
       
-      // THE OVERLAP FIX: Target looks at Y=-12 (below the tree). 
-      // Because the camera looks down, the tree shifts UP on your screen, escaping the buttons!
       controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
 
       if (state.camera.position.distanceTo(new THREE.Vector3(50, 60, 50)) < 1) {
@@ -111,13 +109,32 @@ export default function QrScanner() {
     return generateTree(data.treeType, matrix.modules.data, matrix.modules.size);
   }, [data]);
 
+  // NEW: Inline style for the horizontal bouncing arrow
+  const bounceAnimationCSS = `
+    @keyframes bounce-horizontal {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(4px); }
+    }
+    .animate-bounce-horizontal {
+      animation: bounce-horizontal 1s ease-in-out infinite;
+    }
+  `;
+
   if (!data) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-serif text-2xl text-slate-400">Growing...</div>;
 
   return (
     <div className="relative w-screen h-screen bg-slate-50 overflow-hidden font-sans">
+      <style>{bounceAnimationCSS}</style>
+
+      {/* NEW: Promo banner moved to the TOP, added frosted glass effect and Aestera font */}
+      <div className="absolute top-8 left-0 w-full flex justify-center pointer-events-none z-20 px-6 animate-[fadeInUp_0.5s_ease-out]">
+        <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
+          className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-sm font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
+          Grow your own on Grow-Voxly ✨
+        </a>
+      </div>
       
       <Canvas shadows>
-        {/* Default position set to match Free Roam */}
         <OrthographicCamera makeDefault position={[50, 60, 50]} zoom={8} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
@@ -135,31 +152,31 @@ export default function QrScanner() {
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
-          target={[0, -12, 0]} /* Default Target matches Y=-12 offset to shift tree UP instantly on load */
-          maxPolarAngle={Math.PI / 2} 
+          target={[0, -12, 0]} 
+          // UPDATED: Free roam angle restricted to roughly 40 degrees (Math.PI / 4.5)
+          maxPolarAngle={viewMode === 'top' ? 0 : Math.PI / 4.5} 
         />
       </Canvas>
 
-      <div className="absolute bottom-20 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
+      <div className="absolute bottom-10 sm:bottom-20 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
         
-        <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
-          className="pointer-events-auto mb-4 px-5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-emerald-100 hover:shadow-md transition-all">
-          Grow your own on Grow-Voxly ✨
-        </a>
-
+        {/* UPDATED: Added Icons to View Toggles */}
         <div className="mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
-          <button onClick={() => setViewMode('tree')} className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'tree' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
-            Free Roam
+          <button onClick={() => setViewMode('tree')} className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'tree' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
+            <Box size={16} /> Free Roam
           </button>
-          <button onClick={() => setViewMode('qr')} className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'qr' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
-            Top-Down Scan
+          <button onClick={() => setViewMode('qr')} className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'qr' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
+            <QrCode size={16} /> Top-Down Scan
           </button>
         </div>
 
         <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
           <h2 className="font-serif text-2xl text-slate-800 mb-6">Link Discovered</h2>
-          <a href={data.destinationUrl} className="block w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200">
+          
+          {/* UPDATED: Added bouncing ChevronRight icon to the continue button */}
+          <a href={data.destinationUrl} className="flex items-center justify-center gap-2 w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200 group">
             Continue to Destination
+            <ChevronRight size={20} className="animate-bounce-horizontal text-emerald-400" />
           </a>
         </div>
       </div>
