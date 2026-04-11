@@ -7,8 +7,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        serif: ['"Playfair Display"', 'serif'],
+        // Updated to your new font pairings
+        sans: ['"Raleway"', 'sans-serif'],
+        serif: ['Aestera', 'serif'],
       },
       animation: {
         'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
