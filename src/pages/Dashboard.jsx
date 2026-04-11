@@ -8,7 +8,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
-import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Box, Check } from 'lucide-react';
+import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 function AnimatedVoxel({ v }) {
@@ -155,7 +155,6 @@ export default function Dashboard() {
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [showControls, setShowControls] = useState(true);
-  const [viewMode, setViewMode] = useState('free');
   const [linkCopied, setLinkCopied] = useState(false);
   
   const [recentlyCreated, setRecentlyCreated] = useState(null);
@@ -353,15 +352,8 @@ export default function Dashboard() {
             />
 
             <div className="relative w-full h-[28rem] bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
-              <div className="absolute top-6 left-6 z-20 flex bg-white/80 backdrop-blur-md rounded-xl shadow-sm ring-1 ring-slate-900/5 p-1">
-                <button type="button" onClick={() => setViewMode('free')} className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'free' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}>
-                  <Box size={14} /> <span className="hidden sm:inline">Free Roam</span>
-                </button>
-                <button type="button" onClick={() => { setViewMode('top'); setPanX(0); setPanY(0); }} className={`p-2 rounded-lg transition-all flex items-center gap-2 text-xs font-bold ${viewMode === 'top' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}>
-                  <QrCode size={14} /> <span className="hidden sm:inline">Top View</span>
-                </button>
-              </div>
-
+              
+              {/* EYE ICON: Toggles visibility of the sliders */}
               <button type="button" onClick={() => setShowControls(!showControls)} className={`absolute bottom-6 right-6 z-20 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-sm ring-1 ring-slate-900/5 transition-all ${showControls ? 'text-slate-500 hover:text-emerald-600' : 'text-emerald-600 bg-emerald-50/90'}`} title={showControls ? "Hide Controls" : "Show Controls"}>
                 {showControls ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
@@ -370,13 +362,13 @@ export default function Dashboard() {
                 )}
               </button>
 
-              <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls && viewMode === 'free' ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-4 invisible pointer-events-none'}`}>
+              <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-4 invisible pointer-events-none'}`}>
                 <button type="button" onClick={() => setPanX(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Left"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg></button>
                 <input type="range" min="-30" max="30" value={panX} onChange={(e) => setPanX(Number(e.target.value))} className="w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full" />
                 <button type="button" onClick={() => setPanX(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1" title="Move Right"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg></button>
               </div>
               
-              <div className={`absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls && viewMode === 'free' ? 'opacity-100 translate-x-0 visible' : 'opacity-0 translate-x-4 invisible pointer-events-none'}`}>
+              <div className={`absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/80 backdrop-blur-md px-2 py-4 rounded-full shadow-sm ring-1 ring-slate-900/5 z-10 transition-all duration-300 ease-in-out ${showControls ? 'opacity-100 translate-x-0 visible' : 'opacity-0 translate-x-4 invisible pointer-events-none'}`}>
                 <button type="button" onClick={() => setPanY(p => Math.min(30, p + 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Up"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 15l7-7 7 7"></path></svg></button>
                 <div className="relative w-4 h-24 sm:h-32 flex items-center justify-center my-2">
                   <input type="range" min="-30" max="30" value={panY} onChange={(e) => setPanY(Number(e.target.value))} className="absolute w-24 sm:w-32 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer -rotate-90 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-600 [&::-webkit-slider-thumb]:rounded-full" />
@@ -384,17 +376,21 @@ export default function Dashboard() {
                 <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg></button>
               </div>
 
-              <Canvas shadows camera={{ position: viewMode === 'top' ? [0, 80, 0] : [50, 60, 65], zoom: viewMode === 'top' ? 4.0 : 4.8 }}>
+              <Canvas shadows camera={{ position: [50, 75, 65], zoom: 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
                 <group rotation={[0, Date.now() * 0.0005, 0]}>
                   {previewVoxels.map((v, i) => <AnimatedVoxel key={`preview-${i}`} v={v} />)}
                 </group>
+                {/* PREVIEW WINDOW CONTROLS: Pan disabled. Zoom and Rotate enabled. */}
                 <OrbitControls 
-                  enableZoom={true} enablePan={true} enableRotate={true} 
-                  autoRotate={viewMode === 'free'} autoRotateSpeed={1.5} 
-                  target={viewMode === 'top' ? [0, 0, 0] : [-panX, -panY + 15, 0]} 
+                  enablePan={false} 
+                  enableZoom={true} 
+                  enableRotate={true} 
+                  autoRotate 
+                  autoRotateSpeed={1.5} 
+                  target={[-panX, -panY + 15, 0]} 
                 />
               </Canvas>
             </div>
