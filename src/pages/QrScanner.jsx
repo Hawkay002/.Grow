@@ -6,7 +6,8 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
-import { generateTree } from '../trees/VoxelEngine';
+// IMPORT TREE_THEMES to access the botanical names
+import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
 import { Box, QrCode, ChevronRight } from 'lucide-react';
 
 function CameraController({ viewMode, controlsRef }) {
@@ -24,13 +25,11 @@ function CameraController({ viewMode, controlsRef }) {
     if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
-      // TOP-DOWN SCAN MODE (Original working vectors)
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
     } 
     else if (isTransitioning) {
-      // FREE ROAM MODE (Adjusted position for a clean 35-40 degree viewing angle)
       state.camera.position.lerp(new THREE.Vector3(45, 75, 45), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
       controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
@@ -80,7 +79,7 @@ function AnimatedVoxel({ v, viewMode }) {
   });
 
   return (
-    <mesh position={v.pos} castShadow={!v.isBase} receiveShadow>
+    <mesh position={v.pos} scale={v.scale || 1} castShadow={!v.isBase} receiveShadow>
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial ref={materialRef} color={v.color} roughness={0.9} />
     </mesh>
@@ -116,6 +115,10 @@ export default function QrScanner() {
     .animate-bounce-horizontal {
       animation: bounce-horizontal 1s ease-in-out infinite;
     }
+    /* Embed Aestera font class for the botanical name */
+    .font-aestera {
+      font-family: 'Aestera', Georgia, serif;
+    }
   `;
 
   if (!data) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-serif text-2xl text-slate-400">Growing...</div>;
@@ -132,7 +135,6 @@ export default function QrScanner() {
       </div>
       
       <Canvas shadows>
-        {/* Set default starting position to the new 35-40 degree coordinate */}
         <OrthographicCamera makeDefault position={[45, 75, 45]} zoom={8} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
@@ -146,7 +148,6 @@ export default function QrScanner() {
           ))}
         </SpinningGroup>
         
-        {/* Unrestricted free interaction restored! */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
@@ -158,7 +159,7 @@ export default function QrScanner() {
 
       <div className="absolute bottom-10 sm:bottom-20 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
         
-        <div className="mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
+        <div className="mb-4 sm:mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
           <button onClick={() => setViewMode('tree')} className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'tree' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
             <Box size={16} /> Free Roam
           </button>
@@ -167,13 +168,20 @@ export default function QrScanner() {
           </button>
         </div>
 
-        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
-          <h2 className="font-serif text-2xl text-slate-800 mb-6">Link Discovered</h2>
+        {/* Updated Card Content */}
+        <div className="bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
+          <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">
+            Link Discovered
+          </p>
+          <h2 className="font-aestera text-3xl sm:text-4xl text-slate-800 mb-6 capitalize tracking-wide font-normal">
+            {TREE_THEMES[data.treeType]?.name || 'Botanical Species'}
+          </h2>
           <a href={data.destinationUrl} className="flex items-center justify-center gap-2 w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200 group">
             Continue to Destination
             <ChevronRight size={20} className="animate-bounce-horizontal text-emerald-400" />
           </a>
         </div>
+
       </div>
     </div>
   );
