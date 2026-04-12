@@ -159,7 +159,12 @@ export default function QrScanner() {
 
       <div className="absolute bottom-10 sm:bottom-20 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
         
-        <div className="mb-4 sm:mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
+        {/* Floating Botanical Name */}
+        <h2 className="font-aestera text-3xl sm:text-4xl text-slate-800 mb-4 capitalize tracking-wide font-normal drop-shadow-md">
+          {TREE_THEMES[data.treeType]?.name || 'Botanical Species'}
+        </h2>
+
+        <div className="mb-6 pointer-events-auto flex bg-white/80 backdrop-blur-md rounded-full p-1.5 shadow-sm ring-1 ring-slate-900/5">
           <button onClick={() => setViewMode('tree')} className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${viewMode === 'tree' ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}>
             <Box size={16} /> Free Roam
           </button>
@@ -168,14 +173,9 @@ export default function QrScanner() {
           </button>
         </div>
 
-        {/* Updated Card Content */}
-        <div className="bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
-          <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">
-            Link Discovered
-          </p>
-          <h2 className="font-aestera text-3xl sm:text-4xl text-slate-800 mb-6 capitalize tracking-wide font-normal">
-            {TREE_THEMES[data.treeType]?.name || 'Botanical Species'}
-          </h2>
+        {/* Original Restored Card Content */}
+        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
+          <h2 className="font-serif text-2xl text-slate-800 mb-6">Link Discovered</h2>
           <a href={data.destinationUrl} className="flex items-center justify-center gap-2 w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200 group">
             Continue to Destination
             <ChevronRight size={20} className="animate-bounce-horizontal text-emerald-400" />
