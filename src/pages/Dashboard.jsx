@@ -403,12 +403,28 @@ export default function Dashboard() {
                     const isActive = treeType === id;
                     return (
                       <button
-                        key={id} type="button" onClick={() => setTreeType(id)}
-                        style={isActive ? { borderColor: theme.leaf[0], backgroundColor: `${theme.leaf[0]}15`, color: theme.leaf[0] } : {}}
-                        className={`flex-1 min-w-[120px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3 border-2 ${isActive ? 'shadow-md -translate-y-1' : 'bg-white border-transparent ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'}`}
+                        key={id} 
+                        type="button" 
+                        onClick={() => setTreeType(id)}
+                        style={isActive ? { 
+                          borderColor: theme.leaf[0], 
+                          backgroundColor: `${theme.leaf[0]}15`, 
+                          color: theme.leaf[0] 
+                        } : {}}
+                        className={`flex-1 min-w-[130px] py-4 rounded-2xl transition-all flex flex-col items-center gap-3 border-2 ${
+                          isActive 
+                            ? 'shadow-md -translate-y-1' 
+                            : 'bg-white border-transparent ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'
+                        }`}
                       >
-                        <div className="w-8 h-8 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
-                        <span className="font-medium text-sm capitalize">{theme.name}</span>
+                        {/* Theme Color Preview Circle */}
+                        <div className="flex gap-1">
+                          <div className="w-6 h-6 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
+                          {theme.flower && (
+                             <div className="w-6 h-6 rounded-full shadow-inner border-2 border-white -ml-2" style={{ backgroundColor: theme.flower[0] }}></div>
+                          )}
+                        </div>
+                        <span className="font-medium text-xs capitalize text-center px-2">{theme.name}</span>
                       </button>
                     );
                   })}
