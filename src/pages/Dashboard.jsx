@@ -8,7 +8,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
-import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Check } from 'lucide-react';
+import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Check, Camera } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 function AnimatedVoxel({ v }) {
@@ -28,7 +28,7 @@ function AnimatedVoxel({ v }) {
   });
 
   return (
-    <mesh position={v.pos} castShadow={!v.isBase} receiveShadow>
+    <mesh position={v.pos} scale={v.scale || 1} castShadow={!v.isBase} receiveShadow>
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial ref={materialRef} color={v.color} roughness={0.9} />
     </mesh>
@@ -203,6 +203,17 @@ export default function Dashboard() {
     setLinkToDelete(null);
   }
 
+  const handleCapture = () => {
+    const canvas = document.querySelector('#tree-preview-wrapper canvas');
+    if (canvas) {
+      const dataURL = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `${linkTitle || 'voxly-tree-preview'}.png`;
+      link.href = dataURL;
+      link.click();
+    }
+  };
+
   async function handleGenerate(e) {
     e.preventDefault();
     setLoading(true);
@@ -351,8 +362,18 @@ export default function Dashboard() {
               className="w-full bg-transparent font-serif font-bold text-4xl sm:text-5xl leading-normal py-4 text-emerald-950 placeholder:text-emerald-900/30 focus:outline-none px-4 drop-shadow-sm"
             />
 
-            <div className="relative w-full h-[28rem] bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
+            <div id="tree-preview-wrapper" className="relative w-full h-[28rem] bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
               
+              {/* IMAGE CAPTURE BUTTON */}
+              <button 
+                type="button" 
+                onClick={handleCapture} 
+                className="absolute top-6 left-6 z-20 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-sm ring-1 ring-slate-900/5 transition-all text-slate-500 hover:text-emerald-600" 
+                title="Capture Image"
+              >
+                <Camera size={20} />
+              </button>
+
               {/* EYE ICON: Toggles visibility of the sliders */}
               <button type="button" onClick={() => setShowControls(!showControls)} className={`absolute bottom-6 right-6 z-20 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-sm ring-1 ring-slate-900/5 transition-all ${showControls ? 'text-slate-500 hover:text-emerald-600' : 'text-emerald-600 bg-emerald-50/90'}`} title={showControls ? "Hide Controls" : "Show Controls"}>
                 {showControls ? (
@@ -376,14 +397,14 @@ export default function Dashboard() {
                 <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg></button>
               </div>
 
-              <Canvas shadows camera={{ position: [50, 75, 65], zoom: 4.8 }}>
+              {/* Added gl={{ preserveDrawingBuffer: true }} to allow image capture */}
+              <Canvas shadows gl={{ preserveDrawingBuffer: true }} camera={{ position: [50, 75, 65], zoom: 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
                 <group rotation={[0, Date.now() * 0.0005, 0]}>
                   {previewVoxels.map((v, i) => <AnimatedVoxel key={`preview-${i}`} v={v} />)}
                 </group>
-                {/* PREVIEW WINDOW CONTROLS: Pan disabled. Zoom and Rotate enabled. */}
                 <OrbitControls 
                   enablePan={false} 
                   enableZoom={true} 
@@ -417,7 +438,6 @@ export default function Dashboard() {
                             : 'bg-white border-transparent ring-1 ring-slate-900/5 text-slate-500 hover:bg-slate-50 hover:-translate-y-0.5'
                         }`}
                       >
-                        {/* Theme Color Preview Circle */}
                         <div className="flex gap-1">
                           <div className="w-6 h-6 rounded-full shadow-inner" style={{ backgroundColor: theme.leaf[0] }}></div>
                           {theme.flower && (
