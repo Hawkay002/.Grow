@@ -78,7 +78,7 @@ export function generateTree(treeType, qrData, qrSize) {
   } else if (theme.name === 'socotra dragon') {
     trunkHeight += Math.floor(5 * scale); 
   } else if (theme.shape === 'cactus') {
-    trunkHeight = 1; // Cactus pads start right near the ground
+    trunkHeight = 1; 
   }
 
   const radius = Math.floor(5 * scale);
@@ -87,13 +87,11 @@ export function generateTree(treeType, qrData, qrSize) {
   const getLeafColor = () => theme.leaf[Math.floor(Math.random() * theme.leaf.length)];
   const getFlowerColor = () => theme.flower[Math.floor(Math.random() * theme.flower.length)];
 
-  // Pre-calculate Prickly Pear Cladodes (Pads) & Flower anchor points
   const cactusPads = [];
   if (theme.shape === 'cactus') {
     const s = Math.max(1, scale * 1.2);
     const addPad = (cx, cy, cz, r, axis) => {
       const flowers = [];
-      // 3 Flowers per pad: Top center, and two on the upper edges
       flowers.push({ fx: cx, fy: cy + r * 0.85, fz: cz });
       if (axis === 'z') {
           flowers.push({ fx: cx - r * 0.7, fy: cy + r * 0.4, fz: cz });
@@ -105,12 +103,12 @@ export function generateTree(treeType, qrData, qrSize) {
       cactusPads.push({ cx, cy, cz, r, axis, flowers });
     };
 
-    addPad(0, 3*s, 0, 4*s, 'z'); // Trunk pad
-    addPad(-3*s, 8*s, 1.5*s, 3.5*s, 'x'); // Tier 1 L
-    addPad(3*s, 7.5*s, -1.5*s, 3.5*s, 'x'); // Tier 1 R
-    addPad(-5*s, 13*s, 0, 3*s, 'z'); // Tier 2 L
-    addPad(1*s, 12.5*s, -3.5*s, 2.5*s, 'z'); // Tier 2 M
-    addPad(5*s, 12*s, 2*s, 3*s, 'z'); // Tier 2 R
+    addPad(0, 3*s, 0, 4*s, 'z'); 
+    addPad(-3*s, 8*s, 1.5*s, 3.5*s, 'x'); 
+    addPad(3*s, 7.5*s, -1.5*s, 3.5*s, 'x'); 
+    addPad(-5*s, 13*s, 0, 3*s, 'z'); 
+    addPad(1*s, 12.5*s, -3.5*s, 2.5*s, 'z'); 
+    addPad(5*s, 12*s, 2*s, 3*s, 'z'); 
   }
 
   for (let y = 1; y <= bounds * 2.5; y++) {
@@ -125,7 +123,8 @@ export function generateTree(treeType, qrData, qrSize) {
 
         let isTrunk = false;
         let isFlower = false;
-        let vScale = 1; // Default voxel scale
+        let isPadEdge = false; // Tracks if the voxel forms the border of a cactus pad
+        let vScale = 1; 
         const cy_y = y - trunkHeight;
 
         if (y <= trunkHeight && theme.shape !== 'cactus') {
@@ -192,14 +191,16 @@ export function generateTree(treeType, qrData, qrSize) {
                const dy = cy_y - p.cy;
                const dz = z - p.cz;
                
-               // Ellipsoid formula to squash pads severely on one axis
                const dist = p.axis === 'z' 
                    ? Math.sqrt((dx*dx)/2.5 + (dy*dy)/1.2 + (dz*dz)*4.0) 
                    : Math.sqrt((dx*dx)*4.0 + (dy*dy)/1.2 + (dz*dz)/2.5);
                    
-               if (dist <= p.r) inPad = true;
+               if (dist <= p.r) {
+                   inPad = true;
+                   // Detect if this voxel is on the outer shell of the pad (border detection)
+                   if (dist > p.r - 0.95) isPadEdge = true; 
+               }
                
-               // Complex flower geometry matching top edges
                for (let f of p.flowers) {
                    const fdx = Math.abs(x - f.fx);
                    const fdy = Math.abs(cy_y - f.fy);
@@ -209,19 +210,19 @@ export function generateTree(treeType, qrData, qrSize) {
                    if (fDist < 1.2) {
                        isFlower = true;
                        isValidCanopy = true;
-                       vScale = 1.5; // Massive core cube
+                       vScale = 1.5; 
                    } else if (fDist < 2.0 && (fdx < 0.8 || fdy < 0.8 || fdz < 0.8)) {
                        isFlower = true;
                        isValidCanopy = true;
-                       vScale = 0.6; // Tiny petal cubes
+                       vScale = 0.6; 
                    }
                }
             }
             
-            // Add tiny cactus spikes if not a flower
             if (inPad && !isFlower && hash(x,y,z) > 0.95) {
                vScale = 0.4;
                isValidCanopy = true; 
+               isPadEdge = true; // Make spikes dark green too
             } else if (inPad && !isFlower) {
                isValidCanopy = true;
             }
@@ -240,7 +241,9 @@ export function generateTree(treeType, qrData, qrSize) {
           if (isFlower) {
             voxels.push({ pos: [x, y, z], color: getFlowerColor(), qrColor: theme.qrDark, scale: vScale });
           } else if (theme.shape === 'cactus') {
-             voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark, scale: vScale });
+             // Use the dark trunk color for the borders of the pads
+             const padColor = isPadEdge ? theme.trunk : getLeafColor();
+             voxels.push({ pos: [x, y, z], color: padColor, qrColor: theme.qrDark, scale: vScale });
           } else if (theme.name === 'baobab') {
              const angle = Math.atan2(z, x);
              const branchFactor = Math.cos(4 * angle);
