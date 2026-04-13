@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 import QrScanner from './pages/QrScanner';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -37,6 +38,14 @@ function App() {
               </PrivateRoute>
             } 
           />
+          <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } 
+      />
         </Routes>
       </Router>
     </AuthProvider>
@@ -44,3 +53,6 @@ function App() {
 }
 
 export default App;
+
+
+// inside your <Routes>
