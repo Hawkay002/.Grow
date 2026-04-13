@@ -322,7 +322,7 @@ export default function Dashboard() {
   if (!currentUser) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200 flex flex-col relative">
       <style>{scrollbarCSS}</style>
 
       {linkToDelete && (
@@ -338,14 +338,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      <header className="max-w-6xl mx-auto pt-8 px-6 flex justify-between items-center">
+      <header className="max-w-6xl mx-auto w-full pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
         <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
           <LogOut size={16} /> Sign Out
         </button>
       </header>
 
-      <main className="max-w-4xl mx-auto mt-16 px-6 pb-24">
+      <main className="max-w-4xl mx-auto w-full mt-16 px-6 pb-20 flex-grow">
         <div className="flex gap-12 mb-12 border-b border-slate-200 px-4">
           <button onClick={() => setActiveTab('create')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'create' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>Cultivate</button>
           <button onClick={() => setActiveTab('links')} className={`pb-4 text-lg font-medium transition-all ${activeTab === 'links' ? 'text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-400 hover:text-slate-600'}`}>My Garden</button>
@@ -374,7 +374,6 @@ export default function Dashboard() {
                 <Camera size={20} />
               </button>
 
-              {/* EYE ICON: Toggles visibility of the sliders */}
               <button type="button" onClick={() => setShowControls(!showControls)} className={`absolute bottom-6 right-6 z-20 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-sm ring-1 ring-slate-900/5 transition-all ${showControls ? 'text-slate-500 hover:text-emerald-600' : 'text-emerald-600 bg-emerald-50/90'}`} title={showControls ? "Hide Controls" : "Show Controls"}>
                 {showControls ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
@@ -397,7 +396,6 @@ export default function Dashboard() {
                 <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg></button>
               </div>
 
-              {/* Added gl={{ preserveDrawingBuffer: true }} to allow image capture */}
               <Canvas shadows dpr={[2, 4]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ position: [50, 75, 65], zoom: 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
@@ -519,6 +517,13 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* DASHBOARD FOOTER */}
+      <footer className="w-full pb-8 text-center mt-auto">
+        <p className="text-sm text-slate-400 font-medium">
+          Crafted by <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-700 hover:underline font-bold transition-colors">Shovith</a>
+        </p>
+      </footer>
     </div>
   );
 }
