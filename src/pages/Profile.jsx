@@ -3,21 +3,29 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { deleteUser } from 'firebase/auth';
-import { ArrowLeft, LogOut, Trash2, AlertTriangle, User } from 'lucide-react';
+import { deleteUser, updateProfile } from 'firebase/auth'; 
+import { ArrowLeft, LogOut, Trash2, AlertTriangle, Edit2 } from 'lucide-react';
+// IMPORT the new Avatar Picker and the avatars array
+import { AvatarPicker, avatars } from '../components/avatar-picker';
 
 export default function Profile() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [error, setError] = useState('');
 
   if (!currentUser) {
     navigate('/login');
     return null;
   }
+
+  // Look up the user's saved avatar ID (defaults to 1: Emerald Oak if they haven't picked one)
+  const currentAvatarId = currentUser.photoURL ? parseInt(currentUser.photoURL) : 1;
+  const currentAvatar = avatars.find(a => a.id === currentAvatarId) || avatars[0];
 
   async function handleSignOut() {
     try {
@@ -26,6 +34,21 @@ export default function Profile() {
     } catch (error) {
       console.error('Failed to log out', error);
     }
+  }
+
+  // Saves the selected Avatar ID directly to the user's Firebase Auth profile
+  async function handleSaveAvatar(newId) {
+    setIsSavingAvatar(true);
+    setError('');
+    try {
+      await updateProfile(currentUser, {
+        photoURL: newId.toString()
+      });
+      setShowAvatarPicker(false);
+    } catch (err) {
+      setError('Failed to update avatar: ' + err.message);
+    }
+    setIsSavingAvatar(false);
   }
 
   async function handleDeleteAccount() {
@@ -48,7 +71,6 @@ export default function Profile() {
       
       navigate('/signup');
     } catch (err) {
-      // Firebase requires a recent login to delete an account for security
       if (err.code === 'auth/requires-recent-login') {
         setError('For security reasons, please log out and log back in to verify your identity before deleting your account.');
       } else {
@@ -61,8 +83,20 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col relative">
       
+      {/* AVATAR PICKER OVERLAY */}
+      {showAvatarPicker && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <AvatarPicker 
+            currentAvatarId={currentAvatarId}
+            onSave={handleSaveAvatar}
+            onCancel={() => setShowAvatarPicker(false)}
+            isSaving={isSavingAvatar}
+          />
+        </div>
+      )}
+
       {/* DELETE CONFIRMATION MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -109,7 +143,7 @@ export default function Profile() {
         
         <div className="text-center mb-10">
           <h1 className="text-4xl font-serif font-medium text-emerald-900 tracking-wide mb-2">Profile</h1>
-          <p className="text-slate-500">Manage your digital identity.</p>
+          <p className="text-slate-500">Manage your botanical identity.</p>
         </div>
 
         {error && (
@@ -121,13 +155,24 @@ export default function Profile() {
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 mb-8">
           <div className="flex flex-col items-center">
             
-            {/* AVATAR PLACEHOLDER (Ready for your preset logic) */}
-            <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4 ring-4 ring-emerald-50 shadow-inner">
-              <User size={40} />
+            {/* DYNAMIC AVATAR DISPLAY */}
+            <div className="relative mb-4 group">
+              <div className="w-28 h-28 bg-slate-50 rounded-[2rem] flex items-center justify-center ring-1 ring-slate-900/5 shadow-inner overflow-hidden transition-transform duration-300 group-hover:scale-105">
+                 <div className="w-full h-full p-3 flex items-center justify-center">
+                    {currentAvatar.svg}
+                 </div>
+              </div>
+              <button 
+                onClick={() => setShowAvatarPicker(true)}
+                className="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-2.5 rounded-full shadow-md hover:bg-emerald-700 hover:scale-110 active:scale-95 transition-all ring-4 ring-white"
+                title="Change Avatar"
+              >
+                <Edit2 size={16} />
+              </button>
             </div>
             
-            <h2 className="text-xl font-bold text-slate-800">{currentUser.email}</h2>
-            <p className="text-sm text-slate-400 mt-1 uppercase tracking-widest font-semibold">Cultivator</p>
+            <h2 className="text-xl font-bold text-slate-800 mt-2">{currentUser.email}</h2>
+            <p className="text-sm text-slate-400 mt-1 uppercase tracking-widest font-semibold">{currentAvatar.alt} Cultivator</p>
           </div>
         </div>
 
