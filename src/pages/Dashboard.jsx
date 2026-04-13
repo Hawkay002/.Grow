@@ -345,8 +345,14 @@ export default function Dashboard() {
 
       <header className="max-w-6xl mx-auto w-full pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
-        <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
-          <LogOut size={16} /> Sign Out
+        
+        {/* CHANGED: Replaced LogOut with Profile Access Point */}
+        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-full shadow-sm ring-1 ring-slate-900/5 hover:shadow-md hover:ring-emerald-100 transition-all group">
+          <div className="w-7 h-7 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 group-hover:bg-emerald-100 transition-colors">
+            {/* Added an import for User at the top of your Dashboard if it isn't there: import { User } from 'lucide-react'; */}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span className="text-sm font-bold text-slate-600 group-hover:text-emerald-700">Profile</span>
         </button>
       </header>
 
