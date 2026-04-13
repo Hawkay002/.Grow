@@ -398,7 +398,7 @@ export default function Dashboard() {
               </div>
 
               {/* Added gl={{ preserveDrawingBuffer: true }} to allow image capture */}
-              <Canvas shadows gl={{ preserveDrawingBuffer: true }} camera={{ position: [50, 75, 65], zoom: 4.8 }}>
+              <Canvas shadows dpr={[2, 4]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ position: [50, 75, 65], zoom: 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
