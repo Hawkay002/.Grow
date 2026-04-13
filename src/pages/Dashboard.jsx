@@ -87,28 +87,33 @@ function ForestItem({ link, setLinkToDelete }) {
     <>
       <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
         <div className="overflow-hidden w-full">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-serif font-bold text-slate-800 truncate">
-              {link.title || 'Untitled Tree'}
-            </h3>
-            <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-              {TREE_THEMES[link.treeType]?.name || 'Tree'}
-            </span>
+          <div className="flex items-center justify-between mb-2 gap-3">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <h3 className="text-lg font-serif font-bold text-slate-800 truncate">
+                {link.title || 'Untitled Tree'}
+              </h3>
+              <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                {TREE_THEMES[link.treeType]?.name || 'Tree'}
+              </span>
+            </div>
+            
+            {/* UPDATED: Circular Visit Button on the same line as the title */}
+            <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" title="Visit Tree" className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
+              <ExternalLink size={16} />
+            </a>
           </div>
           <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
             {link.destinationUrl}
           </a>
         </div>
 
+        {/* UPDATED: Buttons with text labels */}
         <div className="flex gap-2 shrink-0 w-full sm:w-auto">
-          <button onClick={() => setShowQrModal(true)} title="QR Code" className="flex-1 sm:flex-none flex items-center justify-center text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 p-3 rounded-xl transition-colors">
-            <QrCode size={18} />
+          <button onClick={() => setShowQrModal(true)} title="QR Code" className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 px-4 py-2.5 rounded-xl transition-colors">
+            <QrCode size={16} /> QR Code
           </button>
-          <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" title="View" className="flex-1 sm:flex-none flex items-center justify-center text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 p-3 rounded-xl transition-colors">
-            <ExternalLink size={18} />
-          </a>
-          <button onClick={() => setLinkToDelete(link.id)} title="Delete" className="flex-1 sm:flex-none flex items-center justify-center text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 p-3 rounded-xl transition-colors">
-            <Trash2 size={18} />
+          <button onClick={() => setLinkToDelete(link.id)} title="Delete" className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-sm font-medium text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-4 py-2.5 rounded-xl transition-colors">
+            <Trash2 size={16} /> Delete
           </button>
         </div>
       </div>
@@ -364,7 +369,6 @@ export default function Dashboard() {
 
             <div id="tree-preview-wrapper" className="relative w-full h-[28rem] bg-white/50 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-900/5 overflow-hidden group">
               
-              {/* IMAGE CAPTURE BUTTON */}
               <button 
                 type="button" 
                 onClick={handleCapture} 
@@ -518,7 +522,6 @@ export default function Dashboard() {
         )}
       </main>
 
-      {/* DASHBOARD FOOTER */}
       <footer className="w-full pb-8 text-center mt-auto">
         <p className="text-sm text-slate-400 font-medium">
           Crafted by <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-700 hover:underline font-bold transition-colors">Shovith</a>
