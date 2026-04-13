@@ -129,7 +129,7 @@ export default function QrScanner() {
 
       <div className="absolute top-8 left-0 w-full flex justify-center pointer-events-none z-20 px-6 animate-[fadeInUp_0.5s_ease-out]">
         <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
-          className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-sm font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
+          className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-xs font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
           Grow your own trees on Grow-Voxly ✨
         </a>
       </div>
