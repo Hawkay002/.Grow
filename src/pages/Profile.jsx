@@ -157,14 +157,17 @@ export default function Profile() {
             
             {/* DYNAMIC AVATAR DISPLAY */}
             <div className="relative mb-4 group">
-              <div className="w-28 h-28 bg-slate-50 rounded-[2rem] flex items-center justify-center ring-1 ring-slate-900/5 shadow-inner overflow-hidden transition-transform duration-300 group-hover:scale-105">
-                 <div className="w-full h-full p-3 flex items-center justify-center">
-                    {currentAvatar.svg}
-                 </div>
+              {/* Note: Changed rounded-[2rem] to rounded-full to match circular avatars */}
+              <div className="w-28 h-28 bg-slate-100 rounded-full flex items-center justify-center ring-4 ring-white shadow-lg overflow-hidden transition-transform duration-300 group-hover:scale-105">
+                 <img 
+                    src={currentAvatar.src} 
+                    alt={currentAvatar.alt} 
+                    className="w-full h-full object-cover" 
+                 />
               </div>
               <button 
                 onClick={() => setShowAvatarPicker(true)}
-                className="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-2.5 rounded-full shadow-md hover:bg-emerald-700 hover:scale-110 active:scale-95 transition-all ring-4 ring-white"
+                className="absolute bottom-0 right-0 bg-emerald-600 text-white p-2.5 rounded-full shadow-md hover:bg-emerald-700 hover:scale-110 active:scale-95 transition-all ring-4 ring-white"
                 title="Change Avatar"
               >
                 <Edit2 size={16} />
