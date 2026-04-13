@@ -9,6 +9,7 @@ import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
 import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Check, Camera } from 'lucide-react';
+import { avatars } from '../components/avatar-picker';
 import confetti from 'canvas-confetti';
 
 function AnimatedVoxel({ v }) {
@@ -346,13 +347,23 @@ export default function Dashboard() {
       <header className="max-w-6xl mx-auto w-full pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
         
-        {/* CHANGED: Replaced LogOut with Profile Access Point */}
-        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-full shadow-sm ring-1 ring-slate-900/5 hover:shadow-md hover:ring-emerald-100 transition-all group">
-          <div className="w-7 h-7 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 group-hover:bg-emerald-100 transition-colors">
-            {/* Added an import for User at the top of your Dashboard if it isn't there: import { User } from 'lucide-react'; */}
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <span className="text-sm font-bold text-slate-600 group-hover:text-emerald-700">Profile</span>
+        {/* ICON-ONLY PROFILE BUTTON */}
+        <button 
+          onClick={() => navigate('/profile')} 
+          title="Profile"
+          className="w-10 h-10 rounded-full shadow-sm ring-2 ring-white hover:shadow-md hover:ring-emerald-100 transition-all bg-slate-100 overflow-hidden group flex items-center justify-center"
+        >
+          {currentUser?.photoURL ? (
+            <img 
+              src={avatars.find(a => a.id === parseInt(currentUser.photoURL))?.src || avatars[0].src} 
+              alt="Profile" 
+              className="w-full h-full object-cover" 
+            />
+          ) : (
+            <div className="w-full h-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+              <User size={18} />
+            </div>
+          )}
         </button>
       </header>
 
