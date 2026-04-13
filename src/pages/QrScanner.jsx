@@ -6,7 +6,6 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
-// IMPORT TREE_THEMES to access the botanical names
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
 import { Box, QrCode, ChevronRight } from 'lucide-react';
 
@@ -115,7 +114,6 @@ export default function QrScanner() {
     .animate-bounce-horizontal {
       animation: bounce-horizontal 1s ease-in-out infinite;
     }
-    /* Embed Aestera font class for the botanical name */
     .font-aestera {
       font-family: 'Aestera', Georgia, serif;
     }
@@ -157,9 +155,8 @@ export default function QrScanner() {
         />
       </Canvas>
 
-      <div className="absolute bottom-10 sm:bottom-20 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6">
+      <div className="absolute bottom-10 sm:bottom-16 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6 pb-6">
         
-        {/* Floating Botanical Name */}
         <h2 className="font-aestera text-3xl sm:text-4xl text-slate-800 mb-4 capitalize tracking-wide font-normal drop-shadow-md">
           {TREE_THEMES[data.treeType]?.name || 'Botanical Species'}
         </h2>
@@ -173,7 +170,6 @@ export default function QrScanner() {
           </button>
         </div>
 
-        {/* Original Restored Card Content */}
         <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] ring-1 ring-slate-900/5 text-center pointer-events-auto max-w-sm w-full">
           <h2 className="font-serif text-2xl text-slate-800 mb-6">Link Discovered</h2>
           <a href={data.destinationUrl} className="flex items-center justify-center gap-2 w-full bg-slate-900 text-white font-medium py-4 rounded-2xl hover:bg-slate-700 hover:shadow-xl active:scale-[0.98] transition-all duration-200 group">
@@ -181,8 +177,15 @@ export default function QrScanner() {
             <ChevronRight size={20} className="animate-bounce-horizontal text-emerald-400" />
           </a>
         </div>
-
       </div>
+
+      {/* SCANNER FOOTER */}
+      <div className="absolute bottom-2 sm:bottom-4 left-0 w-full text-center z-30 pointer-events-none">
+        <p className="text-xs text-slate-400 font-medium pointer-events-auto backdrop-blur-md bg-white/30 inline-block px-3 py-1 rounded-full shadow-sm ring-1 ring-slate-900/5">
+          Crafted by <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer" className="text-emerald-700 hover:text-emerald-900 font-bold hover:underline transition-colors">Shovith</a>
+        </p>
+      </div>
+
     </div>
   );
 }
