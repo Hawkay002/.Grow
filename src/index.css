@@ -11,5 +11,6 @@
   src: url('/fonts/Aestera.ttf') format('truetype'); 
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  /* CHANGED: 'block' hides text briefly until Aestera loads, preventing the ugly font snap */
+  font-display: block; 
 }
