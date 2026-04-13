@@ -6,7 +6,7 @@ import Profile from './pages/Profile';
 import QrScanner from './pages/QrScanner';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
-import ForgotPassword from './pages/ForgotPassword'; // NEW: Imported the ForgotPassword page
+import ForgotPassword from './pages/ForgotPassword';
 
 // A simple wrapper to protect the root route
 function PrivateRoute({ children }) {
@@ -23,10 +23,7 @@ function App() {
           <Route path="/" element={<Landing />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
-          
-          {/* NEW: Added the route so the blank screen is fixed! */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          
           <Route path="/qr/:id" element={<QrScanner />} />
 
           {/* Protected Routes */}
@@ -39,13 +36,13 @@ function App() {
             } 
           />
           <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } 
-      />
+            path="/profile" 
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            } 
+          />
         </Routes>
       </Router>
     </AuthProvider>
@@ -53,6 +50,3 @@ function App() {
 }
 
 export default App;
-
-
-// inside your <Routes>
