@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+// ADDED: updateDoc and increment for the analytics counter
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -93,9 +94,19 @@ export default function QrScanner() {
 
   useEffect(() => {
     async function loadData() {
-      const docSnap = await getDoc(doc(db, 'qrs', id));
+      const docRef = doc(db, 'qrs', id);
+      const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) return;
       setData(docSnap.data());
+
+      // NEW: Increment the click counter every time the tree is viewed!
+      try {
+        await updateDoc(docRef, {
+          clicks: increment(1) 
+        });
+      } catch (err) {
+        console.warn("Could not increment analytics", err);
+      }
     }
     loadData();
   }, [id]);
