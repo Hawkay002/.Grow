@@ -144,10 +144,16 @@ export default function Dashboard() {
       }
 
       // GRAB THE CANVAS IMAGE SNAPSHOT
-      const canvas = document.getElementById('tree-preview-canvas');
+      // FIXED: Specifically select the <canvas> element inside the wrapper
+      const canvas = document.querySelector('#tree-preview-wrapper canvas');
       let previewImageData = null;
       if (canvas) {
-        previewImageData = canvas.toDataURL('image/webp', 0.5); 
+        try {
+          previewImageData = canvas.toDataURL('image/webp', 0.5); 
+        } catch (e) {
+          console.warn("Could not capture 3D snapshot due to WebGL context", e);
+          // If it fails, previewImageData stays null and the database uses the fallback image
+        }
       }
 
       await setDoc(doc(db, 'qrs', finalId), {
