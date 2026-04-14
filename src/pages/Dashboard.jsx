@@ -8,7 +8,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
-import { LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Check, Camera } from 'lucide-react';
+import { User, LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, Check, Camera, Link as LinkIcon } from 'lucide-react';
 import { avatars } from '../components/avatar-picker';
 import confetti from 'canvas-confetti';
 
@@ -33,117 +33,6 @@ function AnimatedVoxel({ v }) {
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial ref={materialRef} color={v.color} roughness={0.9} />
     </mesh>
-  );
-}
-
-function ForestItem({ link, setLinkToDelete }) {
-  const [qrImg, setQrImg] = useState(null);
-  const [showQrModal, setShowQrModal] = useState(false);
-
-  useEffect(() => {
-    const generateThumbnail = async () => {
-      try {
-        const shortLink = `${window.location.origin}/qr/${link.id}`;
-        const theme = TREE_THEMES[link.treeType] || TREE_THEMES.cherryblossom;
-        const imgUrl = await QRCode.toDataURL(shortLink, {
-          width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight }
-        });
-        setQrImg(imgUrl);
-      } catch (e) {
-        console.error("Failed to generate QR thumbnail", e);
-      }
-    };
-    generateThumbnail();
-  }, [link.id, link.treeType]);
-
-  const handleShare = async () => {
-    if (!navigator.share) {
-      alert("Sharing is not supported on this device/browser.");
-      return;
-    }
-    try {
-      const res = await fetch(qrImg);
-      const blob = await res.blob();
-      const file = new File([blob], `${link.title || 'voxly-tree'}.png`, { type: blob.type });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: link.title || 'Grow-Voxly',
-          text: `Scan to interact with my 3D tree!\n\n${window.location.origin}/qr/${link.id}`,
-          files: [file] 
-        });
-      } else {
-        await navigator.share({
-          title: link.title || 'Grow-Voxly',
-          text: 'Check out my interactive 3D tree!',
-          url: `${window.location.origin}/qr/${link.id}`
-        });
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') console.error("Error sharing", err);
-    }
-  };
-
-  return (
-    <>
-      <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm ring-1 ring-slate-900/5 flex flex-col sm:flex-row items-start sm:items-center justify-between transition-all hover:shadow-md gap-4">
-        <div className="overflow-hidden w-full">
-          <div className="flex items-center justify-between mb-2 gap-3">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <h3 className="text-lg font-serif font-bold text-slate-800 truncate">
-                {link.title || 'Untitled Tree'}
-              </h3>
-              <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                {TREE_THEMES[link.treeType]?.name || 'Tree'}
-              </span>
-            </div>
-            
-            {/* UPDATED: Circular Visit Button on the same line as the title */}
-            <a href={`${window.location.origin}/qr/${link.id}`} target="_blank" rel="noreferrer" title="Visit Tree" className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
-              <ExternalLink size={16} />
-            </a>
-          </div>
-          <a href={link.destinationUrl} target="_blank" rel="noreferrer" className="text-sm text-slate-500 block hover:text-emerald-600 transition-colors truncate">
-            {link.destinationUrl}
-          </a>
-        </div>
-
-        {/* UPDATED: Buttons with text labels */}
-        <div className="flex gap-2 shrink-0 w-full sm:w-auto">
-          <button onClick={() => setShowQrModal(true)} title="QR Code" className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 px-4 py-2.5 rounded-xl transition-colors">
-            <QrCode size={16} /> QR Code
-          </button>
-          <button onClick={() => setLinkToDelete(link.id)} title="Delete" className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-sm font-medium text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-4 py-2.5 rounded-xl transition-colors">
-            <Trash2 size={16} /> Delete
-          </button>
-        </div>
-      </div>
-
-      {showQrModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
-            <button onClick={() => setShowQrModal(false)} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition-colors bg-slate-50 p-1.5 rounded-full">
-              <X size={20} />
-            </button>
-            <h3 className="font-serif text-2xl text-slate-800 mb-2 mt-2">{link.title || 'QR Code'}</h3>
-            <p className="text-slate-500 mb-6 text-sm">Scan or download to share.</p>
-            {qrImg ? (
-              <img src={qrImg} alt="QR Code" className="w-48 h-48 mx-auto mb-8 rounded-xl shadow-sm ring-1 ring-slate-900/5" />
-            ) : (
-              <div className="w-48 h-48 mx-auto mb-8 bg-slate-100 animate-pulse rounded-xl"></div>
-            )}
-            <div className="flex gap-3">
-              <button onClick={handleShare} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
-                <Share2 size={18} /> Share
-              </button>
-              <a href={qrImg} download={`${link.title || 'voxly-tree'}.png`} className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md block text-center flex items-center justify-center gap-2">
-                <Download size={18} /> Save
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
   );
 }
 
@@ -210,7 +99,7 @@ export default function Dashboard() {
   }
 
   const handleCapture = () => {
-    const canvas = document.querySelector('#tree-preview-wrapper canvas');
+    const canvas = document.querySelector('#tree-preview-canvas');
     if (canvas) {
       const dataURL = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -254,11 +143,19 @@ export default function Dashboard() {
         finalId = doc(collection(db, 'qrs')).id;
       }
 
+      // GRAB THE CANVAS IMAGE SNAPSHOT
+      const canvas = document.getElementById('tree-preview-canvas');
+      let previewImageData = null;
+      if (canvas) {
+        previewImageData = canvas.toDataURL('image/webp', 0.5); 
+      }
+
       await setDoc(doc(db, 'qrs', finalId), {
         userId: currentUser.uid, 
         title: linkTitle || 'Untitled Tree',
         destinationUrl: url, 
         treeType, 
+        previewImage: previewImageData, // STORE IT DIRECTLY IN THE PAYLOAD
         createdAt: serverTimestamp(), 
         clicks: 0
       });
@@ -311,6 +208,22 @@ export default function Dashboard() {
     navigator.clipboard.writeText(recentlyCreated.link);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const downloadQR = async (qr) => {
+    try {
+      const shortLink = `${window.location.origin}/qr/${qr.slug || qr.id}`;
+      const theme = TREE_THEMES[qr.treeType] || TREE_THEMES.cherryblossom;
+      const imgUrl = await QRCode.toDataURL(shortLink, {
+        width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight }
+      });
+      const link = document.createElement('a');
+      link.download = `${qr.title || 'voxly-tree'}-qr.png`;
+      link.href = imgUrl;
+      link.click();
+    } catch (error) {
+      console.error("Failed to download QR code", error);
+    }
   };
 
   const previewVoxels = useMemo(() => {
@@ -417,7 +330,8 @@ export default function Dashboard() {
                 <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg></button>
               </div>
 
-              <Canvas shadows dpr={[2, 4]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ position: [50, 75, 65], zoom: 4.8 }}>
+              {/* ID ASSIGNED FOR SNAPSHOT ACQUISITION */}
+              <Canvas id="tree-preview-canvas" shadows dpr={[2, 4]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ position: [50, 75, 65], zoom: 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
@@ -528,12 +442,123 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* THE NEW CSS GRID: 2-COLUMN GARDEN VIEW */}
         {activeTab === 'links' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
             {myLinks.length === 0 ? (
                <div className="text-center py-20 text-slate-400 font-medium">Your garden is currently empty.</div>
             ) : (
-              myLinks.map((link) => <ForestItem key={link.id} link={link} setLinkToDelete={setLinkToDelete} />)
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                {myLinks.map((qr) => {
+                  
+                  const PREVIEW_IMAGES = {
+                    oak: "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=600&q=80",
+                    pine: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80",
+                    cherryblossom: "https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?auto=format&fit=crop&w=600&q=80",
+                    maple: "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=600&q=80",
+                    cactus: "https://images.unsplash.com/photo-1437964706703-40b90bdf563b?auto=format&fit=crop&w=600&q=80",
+                    baobab: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80",
+                    birch: "https://images.unsplash.com/photo-1462143338528-eca9936a4d09?auto=format&fit=crop&w=600&q=80",
+                    default: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80"
+                  };
+
+                  const previewSrc = qr.previewImage || PREVIEW_IMAGES[qr.treeType] || PREVIEW_IMAGES.default;
+                  const publicUrl = `${window.location.origin}/qr/${qr.slug || qr.id}`;
+
+                  return (
+                    <div 
+                      key={qr.id} 
+                      className="group bg-white rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 ring-1 ring-slate-900/5 flex flex-col"
+                    >
+                      {/* TOP HALF: IMAGE BANNER */}
+                      <div className="relative h-48 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
+                        <img 
+                          src={previewSrc} 
+                          alt={qr.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                        />
+                        
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>
+
+                        {/* TOP RIGHT: The Link Circle */}
+                        <a 
+                          href={publicUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          title="Visit 3D Tree"
+                          className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-emerald-600 p-3 rounded-full shadow-lg hover:bg-emerald-600 hover:text-white hover:scale-110 active:scale-95 transition-all ring-1 ring-black/5 z-10"
+                        >
+                          <ExternalLink size={18} strokeWidth={2.5} />
+                        </a>
+
+                        {/* BOTTOM LEFT: Tree Type Badge */}
+                        <div className="absolute bottom-4 left-4 bg-white/20 backdrop-blur-md border border-white/30 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm capitalize tracking-wide flex items-center gap-1.5 pointer-events-none">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                          {TREE_THEMES[qr.treeType]?.name || qr.treeType}
+                        </div>
+                      </div>
+
+                      {/* BOTTOM HALF: CONTENT & CONTROLS */}
+                      <div className="p-6 flex flex-col flex-grow bg-white">
+                        <h3 className="text-xl font-serif font-bold text-slate-800 mb-1 truncate">{qr.title}</h3>
+                        
+                        {/* Destination URL */}
+                        <div className="flex items-center gap-2 text-slate-500 mb-6">
+                           <LinkIcon size={14} className="flex-shrink-0" />
+                           <p className="text-sm truncate">{qr.destinationUrl}</p>
+                        </div>
+
+                        <div className="mt-auto">
+                          {/* Quick Analytics */}
+                          <div className="flex items-center justify-between mb-4 px-4 py-3 bg-slate-50 rounded-2xl ring-1 ring-slate-900/5">
+                             <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Scans</span>
+                                <span className="text-lg font-bold text-emerald-700">{qr.clicks || 0}</span>
+                             </div>
+                             <div className="h-8 w-px bg-slate-200"></div>
+                             <div className="flex flex-col text-right">
+                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Planted</span>
+                                <span className="text-sm font-medium text-slate-600">
+                                   {qr.createdAt?.toDate ? qr.createdAt.toDate().toLocaleDateString() : 'Just now'}
+                                </span>
+                             </div>
+                          </div>
+
+                          {/* Action Buttons Row */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => downloadQR(qr)} 
+                                title="Download QR Code"
+                                className="p-2.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors ring-1 ring-slate-200 hover:ring-emerald-200"
+                              >
+                                <Download size={18} />
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(publicUrl);
+                                }} 
+                                title="Copy Link"
+                                className="p-2.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors ring-1 ring-slate-200 hover:ring-emerald-200"
+                              >
+                                <Copy size={18} />
+                              </button>
+                            </div>
+
+                            <button 
+                              onClick={() => setLinkToDelete(qr.id)} 
+                              title="Delete Tree"
+                              className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors ring-1 ring-slate-200 hover:ring-red-200"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
