@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [recentlyCreated, setRecentlyCreated] = useState(null);
   const [myLinks, setMyLinks] = useState([]);
   const [linkToDelete, setLinkToDelete] = useState(null);
+  const [selectedQrForModal, setSelectedQrForModal] = useState(null);
 
   const [slugError, setSlugError] = useState('');
   const [slugSuggestions, setSlugSuggestions] = useState([]);
@@ -99,7 +100,7 @@ export default function Dashboard() {
   }
 
   const handleCapture = () => {
-    const canvas = document.querySelector('#tree-preview-canvas');
+    const canvas = document.querySelector('#tree-preview-wrapper canvas');
     if (canvas) {
       const dataURL = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -143,16 +144,13 @@ export default function Dashboard() {
         finalId = doc(collection(db, 'qrs')).id;
       }
 
-      // GRAB THE CANVAS IMAGE SNAPSHOT
-      // FIXED: Specifically select the <canvas> element inside the wrapper
       const canvas = document.querySelector('#tree-preview-wrapper canvas');
       let previewImageData = null;
       if (canvas) {
         try {
           previewImageData = canvas.toDataURL('image/webp', 0.5); 
         } catch (e) {
-          console.warn("Could not capture 3D snapshot due to WebGL context", e);
-          // If it fails, previewImageData stays null and the database uses the fallback image
+          console.warn("Could not capture 3D snapshot", e);
         }
       }
 
@@ -161,7 +159,7 @@ export default function Dashboard() {
         title: linkTitle || 'Untitled Tree',
         destinationUrl: url, 
         treeType, 
-        previewImage: previewImageData, // STORE IT DIRECTLY IN THE PAYLOAD
+        previewImage: previewImageData,
         createdAt: serverTimestamp(), 
         clicks: 0
       });
@@ -250,6 +248,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200 flex flex-col relative">
       <style>{scrollbarCSS}</style>
 
+      {/* DELETE MODAL */}
       {linkToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
@@ -263,10 +262,43 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* THE RESTORED QR MODAL */}
+      {selectedQrForModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
+            <button onClick={() => setSelectedQrForModal(null)} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition-colors bg-slate-50 p-1.5 rounded-full">
+              <X size={20} />
+            </button>
+            
+            <h3 className="font-serif text-2xl text-slate-800 mb-2 mt-2">{selectedQrForModal.title}</h3>
+            <p className="text-slate-500 mb-6 text-sm">Scan or download to share.</p>
+            
+            <img src={selectedQrForModal.qrImgUrl} alt="QR Code" className="w-48 h-48 mx-auto mb-8 rounded-xl shadow-sm ring-1 ring-slate-900/5" />
+            
+            <div className="flex gap-3">
+              <button onClick={async () => {
+                if (!navigator.share) return alert("Sharing is not supported here.");
+                try {
+                  const res = await fetch(selectedQrForModal.qrImgUrl);
+                  const blob = await res.blob();
+                  const file = new File([blob], `${selectedQrForModal.title}-qr.png`, { type: blob.type });
+                  await navigator.share({ title: selectedQrForModal.title, text: 'Check out my 3D tree!', files: [file] });
+                } catch(e) { console.error(e) }
+              }} className="flex-1 py-3 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center justify-center gap-2">
+                <Share2 size={18} /> Share
+              </button>
+              
+              <a href={selectedQrForModal.qrImgUrl} download={`${selectedQrForModal.title}-qr.png`} className="flex-1 py-3 font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-md flex items-center justify-center gap-2">
+                <Download size={18} /> Save
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="max-w-6xl mx-auto w-full pt-8 px-6 flex justify-between items-center">
         <h1 className="text-3xl font-serif font-medium text-emerald-900 tracking-wide">Grow-Voxly</h1>
         
-        {/* ICON-ONLY PROFILE BUTTON */}
         <button 
           onClick={() => navigate('/profile')} 
           title="Profile"
@@ -336,7 +368,6 @@ export default function Dashboard() {
                 <button type="button" onClick={() => setPanY(p => Math.max(-30, p - 2))} className="text-slate-500 hover:text-emerald-600 transition-colors p-1 z-10" title="Move Down"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg></button>
               </div>
 
-              {/* ID ASSIGNED FOR SNAPSHOT ACQUISITION */}
               <Canvas id="tree-preview-canvas" shadows dpr={[2, 4]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ position: [50, 75, 65], zoom: 4.8 }}>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
@@ -448,7 +479,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* THE NEW CSS GRID: 2-COLUMN GARDEN VIEW */}
+        {/* THE GARDEN GRID */}
         {activeTab === 'links' && (
           <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
             {myLinks.length === 0 ? (
@@ -481,7 +512,8 @@ export default function Dashboard() {
                         <img 
                           src={previewSrc} 
                           alt={qr.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                          // FIXED: Uses object-contain for custom snapshots so they don't get chopped off
+                          className={`w-full h-full transition-transform duration-700 ease-out group-hover:scale-105 ${qr.previewImage ? 'object-contain scale-125 pt-4' : 'object-cover'}`} 
                         />
                         
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>
@@ -508,14 +540,12 @@ export default function Dashboard() {
                       <div className="p-6 flex flex-col flex-grow bg-white">
                         <h3 className="text-xl font-serif font-bold text-slate-800 mb-1 truncate">{qr.title}</h3>
                         
-                        {/* Destination URL */}
                         <div className="flex items-center gap-2 text-slate-500 mb-6">
                            <LinkIcon size={14} className="flex-shrink-0" />
                            <p className="text-sm truncate">{qr.destinationUrl}</p>
                         </div>
 
                         <div className="mt-auto">
-                          {/* Quick Analytics */}
                           <div className="flex items-center justify-between mb-4 px-4 py-3 bg-slate-50 rounded-2xl ring-1 ring-slate-900/5">
                              <div className="flex flex-col">
                                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Scans</span>
@@ -530,20 +560,22 @@ export default function Dashboard() {
                              </div>
                           </div>
 
-                          {/* Action Buttons Row */}
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex gap-2">
+                              {/* RESTORED: The QR Modal Button */}
                               <button 
-                                onClick={() => downloadQR(qr)} 
-                                title="Download QR Code"
-                                className="p-2.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors ring-1 ring-slate-200 hover:ring-emerald-200"
-                              >
-                                <Download size={18} />
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  navigator.clipboard.writeText(publicUrl);
+                                onClick={async () => {
+                                  const theme = TREE_THEMES[qr.treeType] || TREE_THEMES.cherryblossom;
+                                  const imgUrl = await QRCode.toDataURL(publicUrl, { width: 300, margin: 2, color: { dark: theme.qrDark, light: theme.qrLight } });
+                                  setSelectedQrForModal({ title: qr.title, qrImgUrl: imgUrl, publicUrl });
                                 }} 
+                                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 rounded-xl transition-colors ring-1 ring-slate-200 hover:ring-emerald-200"
+                              >
+                                <QrCode size={16} /> QR Code
+                              </button>
+                              
+                              <button 
+                                onClick={() => navigator.clipboard.writeText(publicUrl)} 
                                 title="Copy Link"
                                 className="p-2.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors ring-1 ring-slate-200 hover:ring-emerald-200"
                               >
