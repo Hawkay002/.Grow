@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react'; 
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebase';
 // ADDED: updateDoc and increment for the analytics counter
