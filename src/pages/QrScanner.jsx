@@ -4,8 +4,6 @@ import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
-// IMPORT WEBXR COMPONENTS
-import { ARButton, XR, useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
@@ -14,8 +12,6 @@ import { Box, QrCode, ChevronRight } from 'lucide-react';
 function CameraController({ viewMode, controlsRef }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const prevMode = useRef(viewMode);
-  // Get XR state to disable custom camera movements while in AR
-  const { isPresenting } = useXR();
 
   useEffect(() => {
     if (prevMode.current !== viewMode) {
@@ -25,8 +21,7 @@ function CameraController({ viewMode, controlsRef }) {
   }, [viewMode]);
 
   useFrame((state) => {
-    // If we are in AR, let the phone handle the camera. Don't interfere!
-    if (!controlsRef.current || isPresenting) return;
+    if (!controlsRef.current) return;
 
     if (viewMode === 'qr') {
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
@@ -46,34 +41,14 @@ function CameraController({ viewMode, controlsRef }) {
   return null;
 }
 
-// NEW: Dynamically scales the tree down so it fits on a desk in AR mode
-function TreeContainer({ children }) {
-  const { isPresenting } = useXR();
-  
-  // If in AR mode: Scale down to 3%, lower it slightly, and push it 1.5 meters in front of the camera
-  // If in Web mode: Keep original 100% scale and center position
-  const targetScale = isPresenting ? 0.03 : 1;
-  const targetPosition = isPresenting ? [0, -0.5, -1.5] : [0, 0, 0];
-
-  return (
-    <group scale={targetScale} position={targetPosition}>
-      {children}
-    </group>
-  );
-}
-
 function SpinningGroup({ viewMode, children }) {
   const groupRef = useRef();
-  const { isPresenting } = useXR();
   
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Slow down rotation slightly in AR so users can walk around it easier
-    const rotationSpeed = isPresenting ? 0.05 : 0.15;
-
     if (viewMode === 'tree') {
-      groupRef.current.rotation.y += delta * rotationSpeed; 
+      groupRef.current.rotation.y += delta * 0.15; 
     } else {
       const currentRot = groupRef.current.rotation.y;
       const targetRot = Math.round(currentRot / (Math.PI * 2)) * (Math.PI * 2);
@@ -142,23 +117,6 @@ export default function QrScanner() {
     .font-aestera {
       font-family: 'Aestera', Georgia, serif;
     }
-    /* Custom styles for the injected AR Button */
-    #ARButton {
-      position: absolute !important;
-      bottom: auto !important;
-      top: 100px !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      background: #059669 !important;
-      border-radius: 9999px !important;
-      padding: 12px 24px !important;
-      font-family: inherit !important;
-      font-weight: bold !important;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
-      border: 1px solid #34d399 !important;
-      opacity: 0.9 !important;
-      z-index: 50 !important;
-    }
   `;
 
   if (!data) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-serif text-2xl text-slate-400">Growing...</div>;
@@ -167,43 +125,34 @@ export default function QrScanner() {
     <div className="relative w-screen h-screen bg-slate-50 overflow-hidden font-sans">
       <style>{bounceAnimationCSS}</style>
 
-      {/* AR BUTTON INJECTION */}
-      {/* This renders the default WebXR "Enter AR" button if the device supports it */}
-      <ARButton />
-
       <div className="absolute top-8 left-0 w-full flex justify-center pointer-events-none z-20 px-6 animate-[fadeInUp_0.5s_ease-out]">
         <a href="https://grow-voxly.vercel.app" target="_blank" rel="noreferrer"
-          className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-sm font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
+          className="pointer-events-auto px-6 py-3 bg-white/80 backdrop-blur-md text-emerald-800 border border-emerald-100 rounded-full text-xs font-serif font-bold shadow-sm hover:bg-white hover:text-emerald-900 hover:shadow-md transition-all">
           Grow your own trees on Grow-Voxly ✨
         </a>
       </div>
       
       <Canvas shadows>
-        {/* XR WRAPPER ENABLES AR */}
-        <XR>
-          <OrthographicCamera makeDefault position={[45, 75, 45]} zoom={8} />
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
-          <Environment preset="city" />
-          
-          <CameraController viewMode={viewMode} controlsRef={controlsRef} />
-          
-          <TreeContainer>
-            <SpinningGroup viewMode={viewMode}>
-              {voxels.map((v, i) => (
-                <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} />
-              ))}
-            </SpinningGroup>
-          </TreeContainer>
-          
-          <OrbitControls 
-            ref={controlsRef}
-            enableZoom={true} 
-            enablePan={true} 
-            target={[0, -12, 0]} 
-            maxPolarAngle={Math.PI / 2} 
-          />
-        </XR>
+        <OrthographicCamera makeDefault position={[45, 75, 45]} zoom={8} />
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
+        <Environment preset="city" />
+        
+        <CameraController viewMode={viewMode} controlsRef={controlsRef} />
+        
+        <SpinningGroup viewMode={viewMode}>
+          {voxels.map((v, i) => (
+            <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} />
+          ))}
+        </SpinningGroup>
+        
+        <OrbitControls 
+          ref={controlsRef}
+          enableZoom={true} 
+          enablePan={true} 
+          target={[0, -12, 0]} 
+          maxPolarAngle={Math.PI / 2} 
+        />
       </Canvas>
 
       <div className="absolute bottom-10 sm:bottom-16 left-0 w-full flex flex-col items-center pointer-events-none z-10 px-6 pb-6">
