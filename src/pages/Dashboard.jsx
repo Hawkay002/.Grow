@@ -502,15 +502,15 @@ export default function Dashboard() {
                 {myLinks.map((qr) => {
                   
                   const PREVIEW_IMAGES = {
-                    cherryblossom: "https://images.unsplash.com/photo-1522226115097-9430c69d8eb8?auto=format&fit=crop&w=600&q=80",
-                    pine: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80",
-                    socotradragon: "https://images.unsplash.com/photo-1558470598-a5ffa964e4ea?auto=format&fit=crop&w=600&q=80",
-                    maple: "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=600&q=80",
-                    juniper: "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=600&q=80",
-                    baobab: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80",
-                    weepingwillow: "https://images.unsplash.com/photo-1600171350036-7c1ea5174092?auto=format&fit=crop&w=600&q=80",
-                    pricklypearcactus: "https://images.unsplash.com/photo-1437964706703-40b90bdf563b?auto=format&fit=crop&w=600&q=80",
-                    southernmagnolia: "https://images.unsplash.com/photo-1589139850125-c631e892c90c?auto=format&fit=crop&w=600&q=80",
+                    cherryblossom: "https://unsplash.com/photos/pink-flowers-McsNra2VRQQ",
+                    pine: "https://unsplash.com/photos/a-forest-filled-with-lots-of-tall-green-trees-ojFeqwArP2Y",
+                    socotradragon: "https://unsplash.com/photos/a-strange-looking-tree-in-the-middle-of-a-rocky-area-siq3xkHUhSg",
+                    maple: "https://unsplash.com/photos/beautiful-vibrant-maple-tree-during-autumn-with-wooden-resting-chairs-and-fallen-leaves-gpviBaY_E_A",
+                    juniper: "https://unsplash.com/photos/a-tree-growing-out-of-the-rocks-in-the-desert-BjK9FvgB3K8",
+                    baobab: "https://unsplash.com/photos/a-bao-tree-in-the-middle-of-a-field-rbO3N8m7Ka4",
+                    weepingwillow: "https://unsplash.com/photos/green-grass-field-and-trees-near-lake-during-daytime-LBZiGuxxe-8",
+                    pricklypearcactus: "https://unsplash.com/photos/green-cactus-plants-6ZeLo8O7lU0",
+                    southernmagnolia: "https://unsplash.com/photos/a-single-white-magnolia-flower-among-green-leaves-p0wSelMmRtI",
                     default: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80"
                   };
 
