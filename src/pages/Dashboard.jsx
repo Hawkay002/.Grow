@@ -502,17 +502,17 @@ export default function Dashboard() {
                 {myLinks.map((qr) => {
                   
                   const PREVIEW_IMAGES = {
-    cherryblossom: "https://images.unsplash.com/photo-McsNra2VRQQ?auto=format&fit=crop&w=600&q=80",
-    pine: "https://images.unsplash.com/photo-ojFeqwArP2Y?auto=format&fit=crop&w=600&q=80",
-    socotradragon: "https://images.unsplash.com/photo-siq3xkHUhSg?auto=format&fit=crop&w=600&q=80",
-    maple: "https://images.unsplash.com/photo-gpviBaY_E_A?auto=format&fit=crop&w=600&q=80",
-    juniper: "https://images.unsplash.com/photo-BjK9FvgB3K8?auto=format&fit=crop&w=600&q=80",
-    baobab: "https://images.unsplash.com/photo-rbO3N8m7Ka4?auto=format&fit=crop&w=600&q=80",
-    weepingwillow: "https://images.unsplash.com/photo-LBZiGuxxe-8?auto=format&fit=crop&w=600&q=80",
-    pricklypearcactus: "https://images.unsplash.com/photo-6ZeLo8O7lU0?auto=format&fit=crop&w=600&q=80",
-    southernmagnolia: "https://images.unsplash.com/photo-p0wSelMmRtI?auto=format&fit=crop&w=600&q=80",
-    default: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80"
-};
+                    cherryblossom: "https://images.unsplash.com/photo-McsNra2VRQQ?auto=format&fit=crop&w=600&q=80",
+                    pine: "https://images.unsplash.com/photo-ojFeqwArP2Y?auto=format&fit=crop&w=600&q=80",
+                    socotradragon: "https://images.unsplash.com/photo-siq3xkHUhSg?auto=format&fit=crop&w=600&q=80",
+                    maple: "https://images.unsplash.com/photo-gpviBaY_E_A?auto=format&fit=crop&w=600&q=80",
+                    juniper: "https://images.unsplash.com/photo-BjK9FvgB3K8?auto=format&fit=crop&w=600&q=80",
+                    baobab: "https://images.unsplash.com/photo-rbO3N8m7Ka4?auto=format&fit=crop&w=600&q=80",
+                    weepingwillow: "https://images.unsplash.com/photo-LBZiGuxxe-8?auto=format&fit=crop&w=600&q=80",
+                    pricklypearcactus: "https://images.unsplash.com/photo-6ZeLo8O7lU0?auto=format&fit=crop&w=600&q=80",
+                    southernmagnolia: "https://images.unsplash.com/photo-p0wSelMmRtI?auto=format&fit=crop&w=600&q=80",
+                    default: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80"
+                  };
 
                   const previewSrc = qr.previewImage || PREVIEW_IMAGES[qr.treeType] || PREVIEW_IMAGES.default;
                   const publicUrl = `${window.location.origin}/qr/${qr.slug || qr.id}`;
