@@ -262,7 +262,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* THE RESTORED QR MODAL */}
+      {/* THE RESTORED & FIXED QR MODAL */}
       {selectedQrForModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
@@ -501,6 +501,7 @@ export default function Dashboard() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                 {myLinks.map((qr) => {
                   
+                  // FIXED: Uses direct Unsplash image URLs mapped to your requested tree names
                   const PREVIEW_IMAGES = {
                     cherryblossom: "https://images.unsplash.com/photo-McsNra2VRQQ?auto=format&fit=crop&w=600&q=80",
                     pine: "https://images.unsplash.com/photo-ojFeqwArP2Y?auto=format&fit=crop&w=600&q=80",
