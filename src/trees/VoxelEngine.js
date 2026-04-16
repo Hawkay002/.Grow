@@ -158,7 +158,12 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
           } 
           else if (theme.shape === 'umbrella') {
-            isValidCanopy = cy_y >= 0 && Math.sqrt((x*x)/3.0 + (cy_y*cy_y)*0.8 + (z*z)/3.0) <= radius * 1.6;
+            // Give the Socotra Dragon extra bounding space so the flat wide canopy fits
+            if (theme.name === 'socotra dragon') {
+                isValidCanopy = cy_y >= -2 && cy_y <= radius * 1.5 && Math.sqrt(x*x + z*z) <= radius * 2.8;
+            } else {
+                isValidCanopy = cy_y >= 0 && Math.sqrt((x*x)/3.0 + (cy_y*cy_y)*0.8 + (z*z)/3.0) <= radius * 1.6;
+            }
           } 
           else if (theme.shape === 'wide_ellipsoid') {
             isValidCanopy = Math.sqrt((x*x)/2.5 + (cy_y*cy_y)/1 + (z*z)/2.5) <= radius;
@@ -261,16 +266,39 @@ export function generateTree(treeType, qrData, qrSize) {
           } 
           else if (theme.name === 'socotra dragon') {
              const angle = Math.atan2(z, x);
-             const branchFactor = Math.cos(5 * angle); 
              const distToCenterXZ = Math.sqrt(x*x + z*z);
-             const expectedBranchDist = (cy_y / (radius * 1.0)) * (radius * 1.4);
-             const isBranch = branchFactor > 0.6 && Math.abs(distToCenterXZ - expectedBranchDist) < 1.5 && cy_y >= 0 && cy_y <= radius * 0.8;
-             const isLeafArea = cy_y > radius * 0.1;
+             const maxH = radius * 1.2;
+             const maxRadius = radius * 2.4;
 
-             if (isCore || isBranch) {
+             // Normalized height (0 to 1) dictates how far the branch flares out
+             const nY = Math.max(0, Math.min(1, cy_y / maxH));
+
+             // Create an upward curving bowl/flare shape (x = y^0.7 curve)
+             const branchProfile = maxRadius * Math.pow(nY, 0.7);
+
+             // Create an intertangled mesh using intersecting sine waves based on angle and height
+             const numBranches = 10 + Math.floor(radius);
+             const twist = nY * 3.5;
+             const spiral1 = Math.cos(numBranches * angle + twist);
+             const spiral2 = Math.cos(numBranches * angle - twist);
+             
+             // Branch exists if it falls on the spiral mesh AND is close to the outer profile envelope
+             const isBranchMesh = (spiral1 > 0.25 || spiral2 > 0.25);
+             const distFromProfile = Math.abs(distToCenterXZ - branchProfile);
+             const isBranch = isBranchMesh && distFromProfile < 1.8 && cy_y >= 0 && cy_y < maxH * 0.95;
+
+             // Canopy forms a dense, flat roof sitting strictly ON TOP of the branches
+             const isTopCanopy = cy_y >= maxH * 0.85 && cy_y <= maxH * 1.1 && distToCenterXZ <= maxRadius;
+             // Add a tiny bit of canopy padding down the outer rim so it isn't a sharp cylinder
+             const isRimCanopy = cy_y >= maxH * 0.7 && cy_y < maxH * 0.85 && distToCenterXZ <= branchProfile + 2.0 && distToCenterXZ >= branchProfile - 1.0;
+             
+             const isLeafArea = isTopCanopy || isRimCanopy;
+             const isCoreBase = Math.sqrt(x*x + z*z) < 2.5 && cy_y < radius * 0.4;
+
+             if (isCoreBase || isBranch) {
                  voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark, scale: vScale });
              } else if (isLeafArea && clusterNoise < 0.85) {
-                voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark, scale: vScale });
+                 voxels.push({ pos: [x, y, z], color: getLeafColor(), qrColor: theme.qrDark, scale: vScale });
              }
           }
           else {
