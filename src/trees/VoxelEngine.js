@@ -158,7 +158,6 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
           } 
           else if (theme.shape === 'umbrella') {
-            // UPDATED: Increased vertical bounds significantly so the thicker, curved dome doesn't get clipped
             if (theme.name === 'socotra dragon') {
                 isValidCanopy = cy_y >= -2 && cy_y <= radius * 3.5 && Math.sqrt(x*x + z*z) <= radius * 3.0;
             } else {
@@ -187,7 +186,8 @@ export function generateTree(treeType, qrData, qrSize) {
           }
           else if (theme.shape === 'magnolia') {
             isValidCanopy = Math.sqrt((x*x)/2.2 + (cy_y*cy_y)/1.2 + (z*z)/2.2) <= radius * 1.3;
-            if (isValidCanopy && hash(x,y,z) > 0.94) isFlower = true;
+            // Increased threshold slightly so the new detailed clusters have room to breathe
+            if (isValidCanopy && hash(x,y,z) > 0.96) isFlower = true;
           }
           else if (theme.shape === 'cactus') {
             let inPad = false;
@@ -243,7 +243,28 @@ export function generateTree(treeType, qrData, qrSize) {
           const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
           if (isFlower) {
-            voxels.push({ pos: [x, y, z], color: getFlowerColor(), qrColor: theme.qrDark, scale: vScale });
+            // NEW: Detailed pixel-art flower cluster for Magnolia
+            if (theme.shape === 'magnolia') {
+               const fScale = 0.35 * vScale;
+               const baseColor = getFlowerColor();
+               
+               // Center Stamen (Yellow)
+               voxels.push({ pos: [x, y, z], color: '#facc15', qrColor: theme.qrDark, scale: fScale * 1.1 });
+               
+               // Surrounding Petals (cupping upwards like the pixel art reference)
+               const petals = [
+                   [0.35, 0.1, 0], [-0.35, 0.1, 0], [0, 0.1, 0.35], [0, 0.1, -0.35], // Inner cross
+                   [0.25, 0.25, 0.25], [-0.25, 0.25, -0.25], [0.25, 0.25, -0.25], [-0.25, 0.25, 0.25] // Raised corners
+               ];
+               
+               petals.forEach(([dx, dy, dz]) => {
+                   const pColor = Math.random() > 0.6 ? getFlowerColor() : baseColor;
+                   voxels.push({ pos: [x + dx, y + dy, z + dz], color: pColor, qrColor: theme.qrDark, scale: fScale });
+               });
+            } else {
+               // Standard single-block flower for other trees (like Cactus)
+               voxels.push({ pos: [x, y, z], color: getFlowerColor(), qrColor: theme.qrDark, scale: vScale });
+            }
           } else if (theme.shape === 'cactus') {
              const padColor = isPadEdge ? theme.trunk : getLeafColor();
              voxels.push({ pos: [x, y, z], color: padColor, qrColor: theme.qrDark, scale: vScale });
@@ -282,9 +303,8 @@ export function generateTree(treeType, qrData, qrSize) {
              const distFromProfile = Math.abs(distToCenterXZ - branchProfile);
              const isBranch = isBranchMesh && distFromProfile < 1.8 && cy_y >= 0 && cy_y < maxH * 0.95;
 
-             // UPDATED: Thicker canopy (2-3 more layers) with a gentle curve
-             const canopyBase = maxH * 0.75; // Lowered slightly to add thickness at the base
-             const canopyHeight = maxH * 0.9; // Increased height to add 2-3 more layers of gentle curve
+             const canopyBase = maxH * 0.75; 
+             const canopyHeight = maxH * 0.9; 
              
              const isTopCanopy = cy_y >= canopyBase && 
                  (Math.pow(distToCenterXZ / maxRadius, 2) + Math.pow((cy_y - canopyBase) / canopyHeight, 2) <= 1);
