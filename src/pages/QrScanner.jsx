@@ -9,7 +9,6 @@ import QRCode from 'qrcode';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
 import { Box, QrCode, ChevronRight } from 'lucide-react';
 
-// FIXED: Passed isTransitioning state to ensure OrbitControls syncs properly
 function CameraController({ viewMode, controlsRef, isTransitioning, setIsTransitioning }) {
   const prevMode = useRef(viewMode);
 
@@ -27,15 +26,14 @@ function CameraController({ viewMode, controlsRef, isTransitioning, setIsTransit
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
-      controlsRef.current.update(); // Keep controls aware of the move
+      controlsRef.current.update(); 
     } 
     else if (isTransitioning) {
       state.camera.position.lerp(new THREE.Vector3(45, 75, 45), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
       controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
-      controlsRef.current.update(); // Keep controls aware of the move
+      controlsRef.current.update(); 
 
-      // FIXED: Force exact mathematical snap at the end to prevent floating-point drift
       if (state.camera.position.distanceTo(new THREE.Vector3(45, 75, 45)) < 1) {
          state.camera.position.set(45, 75, 45);
          state.camera.up.set(0, 1, 0);
@@ -66,7 +64,8 @@ function SpinningGroup({ viewMode, children }) {
   return <group ref={groupRef}>{children}</group>;
 }
 
-function AnimatedVoxel({ v, viewMode }) {
+// UPDATED: Dynamically swapping the 3D geometry shape
+function AnimatedVoxel({ v, viewMode, shape = 'cube' }) {
   const materialRef = useRef();
   const targetColor = useMemo(() => new THREE.Color(), []);
   const black = useMemo(() => new THREE.Color('#000000'), []);
@@ -86,7 +85,10 @@ function AnimatedVoxel({ v, viewMode }) {
 
   return (
     <mesh position={v.pos} scale={v.scale || 1} castShadow={!v.isBase} receiveShadow>
-      <boxGeometry args={[1, 1, 1]} />
+      {shape === 'sphere' && <sphereGeometry args={[0.65, 16, 16]} />}
+      {shape === 'hexagon' && <cylinderGeometry args={[0.65, 0.65, 1, 6]} />}
+      {shape === 'diamond' && <octahedronGeometry args={[0.75]} />}
+      {shape === 'cube' && <boxGeometry args={[1, 1, 1]} />}
       <meshStandardMaterial ref={materialRef} color={v.color} roughness={0.9} />
     </mesh>
   );
@@ -97,7 +99,6 @@ export default function QrScanner() {
   const [data, setData] = useState(null);
   const [viewMode, setViewMode] = useState('tree'); 
   
-  // NEW: Lifted transitioning state up so we can disable OrbitControls during flight
   const [isTransitioning, setIsTransitioning] = useState(false);
   const controlsRef = useRef();
 
@@ -166,11 +167,11 @@ export default function QrScanner() {
         
         <SpinningGroup viewMode={viewMode}>
           {voxels.map((v, i) => (
-            <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} />
+            // Passes the saved shape from the database down to the Voxel
+            <AnimatedVoxel key={`voxel-${i}`} v={v} viewMode={viewMode} shape={data.voxelShape || 'cube'} />
           ))}
         </SpinningGroup>
         
-        {/* FIXED: OrbitControls dynamically disables when the camera is flying! */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
