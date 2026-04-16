@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebase';
-// ADDED: updateDoc and increment for the analytics counter
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrthographicCamera, Environment, OrbitControls } from '@react-three/drei';
@@ -10,8 +9,8 @@ import QRCode from 'qrcode';
 import { generateTree, TREE_THEMES } from '../trees/VoxelEngine';
 import { Box, QrCode, ChevronRight } from 'lucide-react';
 
-function CameraController({ viewMode, controlsRef }) {
-  const [isTransitioning, setIsTransitioning] = useState(false);
+// FIXED: Passed isTransitioning state to ensure OrbitControls syncs properly
+function CameraController({ viewMode, controlsRef, isTransitioning, setIsTransitioning }) {
   const prevMode = useRef(viewMode);
 
   useEffect(() => {
@@ -19,7 +18,7 @@ function CameraController({ viewMode, controlsRef }) {
        setIsTransitioning(true);
        prevMode.current = viewMode;
     }
-  }, [viewMode]);
+  }, [viewMode, setIsTransitioning]);
 
   useFrame((state) => {
     if (!controlsRef.current) return;
@@ -28,13 +27,20 @@ function CameraController({ viewMode, controlsRef }) {
       state.camera.position.lerp(new THREE.Vector3(0, 100, 15), 0.08);
       state.camera.up.lerp(new THREE.Vector3(0, 0, -1), 0.08);
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 15), 0.08);
+      controlsRef.current.update(); // Keep controls aware of the move
     } 
     else if (isTransitioning) {
       state.camera.position.lerp(new THREE.Vector3(45, 75, 45), 0.1);
       state.camera.up.lerp(new THREE.Vector3(0, 1, 0), 0.1);
       controlsRef.current.target.lerp(new THREE.Vector3(0, -12, 0), 0.1);
+      controlsRef.current.update(); // Keep controls aware of the move
 
+      // FIXED: Force exact mathematical snap at the end to prevent floating-point drift
       if (state.camera.position.distanceTo(new THREE.Vector3(45, 75, 45)) < 1) {
+         state.camera.position.set(45, 75, 45);
+         state.camera.up.set(0, 1, 0);
+         controlsRef.current.target.set(0, -12, 0);
+         controlsRef.current.update();
          setIsTransitioning(false);
       }
     }
@@ -90,6 +96,9 @@ export default function QrScanner() {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [viewMode, setViewMode] = useState('tree'); 
+  
+  // NEW: Lifted transitioning state up so we can disable OrbitControls during flight
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const controlsRef = useRef();
 
   useEffect(() => {
@@ -99,7 +108,6 @@ export default function QrScanner() {
       if (!docSnap.exists()) return;
       setData(docSnap.data());
 
-      // NEW: Increment the click counter every time the tree is viewed!
       try {
         await updateDoc(docRef, {
           clicks: increment(1) 
@@ -149,7 +157,12 @@ export default function QrScanner() {
         <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
         <Environment preset="city" />
         
-        <CameraController viewMode={viewMode} controlsRef={controlsRef} />
+        <CameraController 
+          viewMode={viewMode} 
+          controlsRef={controlsRef} 
+          isTransitioning={isTransitioning}
+          setIsTransitioning={setIsTransitioning}
+        />
         
         <SpinningGroup viewMode={viewMode}>
           {voxels.map((v, i) => (
@@ -157,10 +170,12 @@ export default function QrScanner() {
           ))}
         </SpinningGroup>
         
+        {/* FIXED: OrbitControls dynamically disables when the camera is flying! */}
         <OrbitControls 
           ref={controlsRef}
           enableZoom={true} 
           enablePan={true} 
+          enabled={viewMode === 'tree' && !isTransitioning}
           target={[0, -12, 0]} 
           maxPolarAngle={Math.PI / 2} 
         />
@@ -190,7 +205,6 @@ export default function QrScanner() {
         </div>
       </div>
 
-      {/* SCANNER FOOTER */}
       <div className="absolute bottom-2 sm:bottom-4 left-0 w-full text-center z-30 pointer-events-none">
         <p className="text-xs text-slate-400 font-medium pointer-events-auto backdrop-blur-md bg-white/30 inline-block px-3 py-1 rounded-full shadow-sm ring-1 ring-slate-900/5">
           Crafted by <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer" className="text-emerald-700 hover:text-emerald-900 font-bold hover:underline transition-colors">Shovith</a>
