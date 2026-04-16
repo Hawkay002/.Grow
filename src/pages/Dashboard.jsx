@@ -12,7 +12,7 @@ import { User, LogOut, Copy, Download, QrCode, ExternalLink, Trash2, X, Share2, 
 import { avatars } from '../components/avatar-picker';
 import confetti from 'canvas-confetti';
 
-// NEW: Custom Canvas Engine to draw QR codes using custom shapes
+// FIXED: Protected Finder Patterns for Scannability
 async function generateCustomQR(link, theme, shape) {
   const qrc = QRCode.create(link, { errorCorrectionLevel: 'M' });
   const size = qrc.modules.size;
@@ -40,26 +40,35 @@ async function generateCustomQR(link, theme, shape) {
         const cx = x + cellSize / 2;
         const cy = y + cellSize / 2;
         
+        // ISOLATE FINDER PATTERNS (The 3 large corner squares: 7x7 modules each)
+        const isFinderPattern = 
+          (row < 7 && col < 7) || 
+          (row < 7 && col >= size - 7) || 
+          (row >= size - 7 && col < 7);
+        
         ctx.beginPath();
-        if (shape === 'sphere') {
-          ctx.arc(cx, cy, cellSize/2 * 0.85, 0, Math.PI * 2);
+        
+        // Force Finder Patterns to be solid squares so the camera can lock on
+        if (isFinderPattern || shape === 'cube') {
+          ctx.rect(x, y, cellSize, cellSize);
+        } else if (shape === 'sphere') {
+          ctx.arc(cx, cy, cellSize/2 * 0.95, 0, Math.PI * 2);
         } else if (shape === 'hexagon') {
           for (let i = 0; i < 6; i++) {
             const angle = (Math.PI / 3) * i + (Math.PI / 6);
-            const px = cx + (cellSize/2 * 0.95) * Math.cos(angle);
-            const py = cy + (cellSize/2 * 0.95) * Math.sin(angle);
+            const px = cx + (cellSize/2 * 1.05) * Math.cos(angle);
+            const py = cy + (cellSize/2 * 1.05) * Math.sin(angle);
             if (i === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
         } else if (shape === 'diamond') {
-          ctx.moveTo(cx, y + cellSize * 0.1);
-          ctx.lineTo(x + cellSize * 0.9, cy);
-          ctx.lineTo(cx, y + cellSize * 0.9);
-          ctx.lineTo(x + cellSize * 0.1, cy);
-        } else { 
-          // Default Cube
-          ctx.rect(x, y, cellSize, cellSize);
+          // Draw a diamond that fully touches the cell edges to maximize scan density
+          ctx.moveTo(cx, y);
+          ctx.lineTo(x + cellSize, cy);
+          ctx.lineTo(cx, y + cellSize);
+          ctx.lineTo(x, cy);
         }
+        
         ctx.closePath();
         ctx.fill();
       }
@@ -68,7 +77,6 @@ async function generateCustomQR(link, theme, shape) {
   return canvas.toDataURL('image/png');
 }
 
-// UPDATED: Dynamically swapping the 3D geometry shape
 function AnimatedVoxel({ v, shape = 'cube' }) {
   const materialRef = useRef();
   const targetColor = useMemo(() => new THREE.Color(), []);
@@ -107,7 +115,6 @@ export default function Dashboard() {
   const [customSlug, setCustomSlug] = useState('');
   const [treeType, setTreeType] = useState('cherryblossom');
   
-  // NEW: State for selected 3D/2D particle shape
   const [voxelShape, setVoxelShape] = useState('cube');
   
   const [panX, setPanX] = useState(0);
@@ -222,7 +229,7 @@ export default function Dashboard() {
         title: linkTitle || 'Untitled Tree',
         destinationUrl: url, 
         treeType, 
-        voxelShape, // Saved to DB
+        voxelShape, 
         previewImage: previewImageData,
         createdAt: serverTimestamp(), 
         clicks: 0
@@ -231,7 +238,6 @@ export default function Dashboard() {
       const shortLink = `${window.location.origin}/qr/${finalId}`;
       const theme = TREE_THEMES[treeType];
       
-      // GENERATE CUSTOM 2D QR CODE
       const qrDataUrl = await generateCustomQR(shortLink, theme, voxelShape);
 
       setRecentlyCreated({ link: shortLink, img: qrDataUrl, title: linkTitle || 'Untitled Tree' });
@@ -282,7 +288,6 @@ export default function Dashboard() {
     try {
       const shortLink = `${window.location.origin}/qr/${qr.slug || qr.id}`;
       const theme = TREE_THEMES[qr.treeType] || TREE_THEMES.cherryblossom;
-      // UPDATED: Use the custom generator for downloading previous links
       const imgUrl = await generateCustomQR(shortLink, theme, qr.voxelShape || 'cube');
       const link = document.createElement('a');
       link.download = `${qr.title || 'voxly-tree'}-qr.png`;
@@ -311,7 +316,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-emerald-200 flex flex-col relative">
       <style>{scrollbarCSS}</style>
 
-      {/* DELETE MODAL */}
       {linkToDelete && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
@@ -325,7 +329,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* THE RESTORED & FIXED QR MODAL */}
       {selectedQrForModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl ring-1 ring-slate-900/5 text-center animate-[fadeInUp_0.2s_ease-out]">
@@ -449,7 +452,6 @@ export default function Dashboard() {
                 <directionalLight position={[20, 30, 20]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
                 <Environment preset="city" />
                 <group rotation={[0, Date.now() * 0.0005, 0]}>
-                  {/* Passes the active shape state into the live 3D preview */}
                   {previewVoxels.map((v, i) => <AnimatedVoxel key={`preview-${i}`} v={v} shape={voxelShape} />)}
                 </group>
                 <OrbitControls 
@@ -498,7 +500,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* NEW: Shape Selector UI */}
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-3 ml-2">Particle Shape</label>
                 <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-2 custom-slim-scrollbar">
@@ -662,11 +663,9 @@ export default function Dashboard() {
 
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex gap-2">
-                              {/* RESTORED: The QR Modal Button */}
                               <button 
                                 onClick={async () => {
                                   const theme = TREE_THEMES[qr.treeType] || TREE_THEMES.cherryblossom;
-                                  // UPDATED: Uses the custom Shape Generator for the Grid Modal!
                                   const imgUrl = await generateCustomQR(publicUrl, theme, qr.voxelShape || 'cube');
                                   setSelectedQrForModal({ title: qr.title, qrImgUrl: imgUrl, publicUrl });
                                 }} 
