@@ -158,9 +158,9 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
           } 
           else if (theme.shape === 'umbrella') {
-            // Give the Socotra Dragon extra bounding space so the flat wide canopy fits
+            // UPDATED: Give the Socotra Dragon extra height bounds so the new curved dome doesn't get clipped
             if (theme.name === 'socotra dragon') {
-                isValidCanopy = cy_y >= -2 && cy_y <= radius * 1.5 && Math.sqrt(x*x + z*z) <= radius * 2.8;
+                isValidCanopy = cy_y >= -2 && cy_y <= radius * 2.5 && Math.sqrt(x*x + z*z) <= radius * 2.8;
             } else {
                 isValidCanopy = cy_y >= 0 && Math.sqrt((x*x)/3.0 + (cy_y*cy_y)*0.8 + (z*z)/3.0) <= radius * 1.6;
             }
@@ -287,10 +287,14 @@ export function generateTree(treeType, qrData, qrSize) {
              const distFromProfile = Math.abs(distToCenterXZ - branchProfile);
              const isBranch = isBranchMesh && distFromProfile < 1.8 && cy_y >= 0 && cy_y < maxH * 0.95;
 
-             // Canopy forms a dense, flat roof sitting strictly ON TOP of the branches
-             const isTopCanopy = cy_y >= maxH * 0.85 && cy_y <= maxH * 1.1 && distToCenterXZ <= maxRadius;
-             // Add a tiny bit of canopy padding down the outer rim so it isn't a sharp cylinder
-             const isRimCanopy = cy_y >= maxH * 0.7 && cy_y < maxH * 0.85 && distToCenterXZ <= branchProfile + 2.0 && distToCenterXZ >= branchProfile - 1.0;
+             // UPDATED: Canopy forms a semi-ellipsoid curve (dome) sitting on top of the branches
+             const canopyBase = maxH * 0.85;
+             const canopyHeight = maxH * 0.5; 
+             const isTopCanopy = cy_y >= canopyBase && 
+                 (Math.pow(distToCenterXZ / maxRadius, 2) + Math.pow((cy_y - canopyBase) / canopyHeight, 2) <= 1);
+                 
+             // Keep the tiny bit of canopy padding down the outer rim to bridge the gap seamlessly
+             const isRimCanopy = cy_y >= maxH * 0.7 && cy_y < canopyBase && distToCenterXZ <= branchProfile + 2.0 && distToCenterXZ >= branchProfile - 1.0;
              
              const isLeafArea = isTopCanopy || isRimCanopy;
              const isCoreBase = Math.sqrt(x*x + z*z) < 2.5 && cy_y < radius * 0.4;
