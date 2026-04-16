@@ -186,7 +186,6 @@ export function generateTree(treeType, qrData, qrSize) {
           }
           else if (theme.shape === 'magnolia') {
             isValidCanopy = Math.sqrt((x*x)/2.2 + (cy_y*cy_y)/1.2 + (z*z)/2.2) <= radius * 1.3;
-            // Increased threshold slightly so the new detailed clusters have room to breathe
             if (isValidCanopy && hash(x,y,z) > 0.96) isFlower = true;
           }
           else if (theme.shape === 'cactus') {
@@ -243,7 +242,6 @@ export function generateTree(treeType, qrData, qrSize) {
           const isCore = Math.sqrt(x*x + cy_y*cy_y + z*z) < radius * 0.4; 
 
           if (isFlower) {
-            // NEW: Detailed pixel-art flower cluster for Magnolia
             if (theme.shape === 'magnolia') {
                const fScale = 0.35 * vScale;
                const baseColor = getFlowerColor();
@@ -251,18 +249,38 @@ export function generateTree(treeType, qrData, qrSize) {
                // Center Stamen (Yellow)
                voxels.push({ pos: [x, y, z], color: '#facc15', qrColor: theme.qrDark, scale: fScale * 1.1 });
                
-               // Surrounding Petals (cupping upwards like the pixel art reference)
+               // Calculate Outward Rotation Normal to tilt the flower to face outwards
+               const distFromCenter = Math.sqrt(x*x + cy_y*cy_y + z*z) || 1;
+               const nx = x / distFromCenter;
+               const ny = cy_y / distFromCenter;
+               const nz = z / distFromCenter;
+               
+               const phi = Math.acos(ny);
+               const theta = Math.atan2(nx, nz);
+               const cosPhi = Math.cos(phi), sinPhi = Math.sin(phi);
+               const cosTheta = Math.cos(theta), sinTheta = Math.sin(theta);
+
+               // Surrounding Petals (cupping shape base)
                const petals = [
                    [0.35, 0.1, 0], [-0.35, 0.1, 0], [0, 0.1, 0.35], [0, 0.1, -0.35], // Inner cross
                    [0.25, 0.25, 0.25], [-0.25, 0.25, -0.25], [0.25, 0.25, -0.25], [-0.25, 0.25, 0.25] // Raised corners
                ];
                
-               petals.forEach(([dx, dy, dz]) => {
+               petals.forEach(([px, py, pz]) => {
+                   // Pitch (tilt up/down)
+                   const px1 = px;
+                   const py1 = py * cosPhi - pz * sinPhi;
+                   const pz1 = py * sinPhi + pz * cosPhi;
+                   
+                   // Yaw (rotate around tree)
+                   const rx = px1 * cosTheta + pz1 * sinTheta;
+                   const ry = py1;
+                   const rz = -px1 * sinTheta + pz1 * cosTheta;
+
                    const pColor = Math.random() > 0.6 ? getFlowerColor() : baseColor;
-                   voxels.push({ pos: [x + dx, y + dy, z + dz], color: pColor, qrColor: theme.qrDark, scale: fScale });
+                   voxels.push({ pos: [x + rx, y + ry, z + rz], color: pColor, qrColor: theme.qrDark, scale: fScale });
                });
             } else {
-               // Standard single-block flower for other trees (like Cactus)
                voxels.push({ pos: [x, y, z], color: getFlowerColor(), qrColor: theme.qrDark, scale: vScale });
             }
           } else if (theme.shape === 'cactus') {
