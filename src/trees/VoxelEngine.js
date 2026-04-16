@@ -158,9 +158,9 @@ export function generateTree(treeType, qrData, qrSize) {
             isValidCanopy = cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
           } 
           else if (theme.shape === 'umbrella') {
-            // UPDATED: Give the Socotra Dragon extra height bounds so the new curved dome doesn't get clipped
+            // UPDATED: Increased vertical bounds significantly so the thicker, curved dome doesn't get clipped
             if (theme.name === 'socotra dragon') {
-                isValidCanopy = cy_y >= -2 && cy_y <= radius * 2.5 && Math.sqrt(x*x + z*z) <= radius * 2.8;
+                isValidCanopy = cy_y >= -2 && cy_y <= radius * 3.5 && Math.sqrt(x*x + z*z) <= radius * 3.0;
             } else {
                 isValidCanopy = cy_y >= 0 && Math.sqrt((x*x)/3.0 + (cy_y*cy_y)*0.8 + (z*z)/3.0) <= radius * 1.6;
             }
@@ -270,31 +270,26 @@ export function generateTree(treeType, qrData, qrSize) {
              const maxH = radius * 1.2;
              const maxRadius = radius * 2.4;
 
-             // Normalized height (0 to 1) dictates how far the branch flares out
              const nY = Math.max(0, Math.min(1, cy_y / maxH));
-
-             // Create an upward curving bowl/flare shape (x = y^0.7 curve)
              const branchProfile = maxRadius * Math.pow(nY, 0.7);
 
-             // Create an intertangled mesh using intersecting sine waves based on angle and height
              const numBranches = 10 + Math.floor(radius);
              const twist = nY * 3.5;
              const spiral1 = Math.cos(numBranches * angle + twist);
              const spiral2 = Math.cos(numBranches * angle - twist);
              
-             // Branch exists if it falls on the spiral mesh AND is close to the outer profile envelope
              const isBranchMesh = (spiral1 > 0.25 || spiral2 > 0.25);
              const distFromProfile = Math.abs(distToCenterXZ - branchProfile);
              const isBranch = isBranchMesh && distFromProfile < 1.8 && cy_y >= 0 && cy_y < maxH * 0.95;
 
-             // UPDATED: Canopy forms a semi-ellipsoid curve (dome) sitting on top of the branches
-             const canopyBase = maxH * 0.85;
-             const canopyHeight = maxH * 0.5; 
+             // UPDATED: Thicker canopy (2-3 more layers) with a gentle curve
+             const canopyBase = maxH * 0.75; // Lowered slightly to add thickness at the base
+             const canopyHeight = maxH * 0.9; // Increased height to add 2-3 more layers of gentle curve
+             
              const isTopCanopy = cy_y >= canopyBase && 
                  (Math.pow(distToCenterXZ / maxRadius, 2) + Math.pow((cy_y - canopyBase) / canopyHeight, 2) <= 1);
                  
-             // Keep the tiny bit of canopy padding down the outer rim to bridge the gap seamlessly
-             const isRimCanopy = cy_y >= maxH * 0.7 && cy_y < canopyBase && distToCenterXZ <= branchProfile + 2.0 && distToCenterXZ >= branchProfile - 1.0;
+             const isRimCanopy = cy_y >= maxH * 0.65 && cy_y < canopyBase && distToCenterXZ <= branchProfile + 2.5 && distToCenterXZ >= branchProfile - 1.5;
              
              const isLeafArea = isTopCanopy || isRimCanopy;
              const isCoreBase = Math.sqrt(x*x + z*z) < 2.5 && cy_y < radius * 0.4;
