@@ -10,7 +10,9 @@ export const pine = {
     processVoxel: ({ x, y, z, cy_y, trunkHeight, bounds, clusterNoise, isCore, voxels, theme }) => {
       const isTrunk = y <= trunkHeight && Math.sqrt(x*x + z*z) <= 1.5;
       const h = bounds * 2.2;
-      const isValidCanopy = cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
+      
+      // FIXED: Added `cy_y >= -1` so the wide base of the cone canopy stops exactly at the top of the trunk
+      const isValidCanopy = cy_y >= -1 && cy_y < h && Math.sqrt(x*x + z*z) <= (h - cy_y) * 0.45;
 
       if (isTrunk) {
         voxels.push({ pos: [x, y, z], color: theme.trunk, qrColor: theme.qrDark, scale: 1 });
