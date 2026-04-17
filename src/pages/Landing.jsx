@@ -31,12 +31,16 @@ const stagger = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1 } }
 };
+// Dedicated stagger for cards — tighter gap looks better in a dense grid
+const cardStagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } }
+};
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
 const TREES = [
   {
     id: 'cherryblossom', label: 'Cherry Blossom',
-    // Using local path from public folder
     imagePlaceholder: '/images/cherryblossom.jpg',
     leaves: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096'],
     trunk: '#3A2318', qr: '#be185d',
@@ -87,7 +91,6 @@ const TREES = [
   {
     id: 'cactus', label: 'Prickly Pear Cactus',
     imagePlaceholder: '/images/cactus.jpg',
-    // Expanded Palette for Cactus to include flower colors
     leaves: ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#f43f5e', '#fb7185', '#e11d48'],
     trunk: '#14532d', qr: '#14532d',
     desc: 'Vivid desert geometry — bright green paddles and pink blooming flowers.'
@@ -95,7 +98,6 @@ const TREES = [
   {
     id: 'southern magnolia', label: 'Southern Magnolia',
     imagePlaceholder: '/images/southernmagnolia.jpg',
-    // Expanded Palette for Magnolia to include greens and floral shades
     leaves: ['#1e3a1e', '#2d4c2d', '#3e5e3e', '#ffffff', '#fdf2f8', '#fae8ff', '#f0abfc'],
     trunk: '#4b3f35', qr: '#4c1d95',
     desc: 'Deep glossy green canopy with vibrant purplish-white flowers — gothic and grand.'
@@ -110,9 +112,9 @@ const QR_SHAPES = [
 ];
 
 const STEPS = [
-  { icon: Link2,  title: 'Paste Your URL',        desc: 'Drop any link — a portfolio, a product page, a bio — into the engine.' },
-  { icon: Trees,  title: 'Choose Your Tree',       desc: 'Pick from 9 procedurally-generated species, each with a distinct shape and colour.' },
-  { icon: Share2, title: 'Share the Experience',   desc: 'Your audience scans the living QR. Every scan is tracked in your dashboard.' },
+  { icon: Link2,  title: 'Paste Your URL',       desc: 'Drop any link — a portfolio, a product page, a bio — into the engine.' },
+  { icon: Trees,  title: 'Choose Your Tree',      desc: 'Pick from 9 procedurally-generated species, each with a distinct shape and colour.' },
+  { icon: Share2, title: 'Share the Experience',  desc: 'Your audience scans the living QR. Every scan is tracked in your dashboard.' },
 ];
 
 const FEATURES = [
@@ -143,13 +145,15 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: '9',    label: 'Tree Species'    },
-  { value: '4',    label: 'QR Tile Shapes'  },
-  { value: '14K+', label: 'Links Grown'     },
-  { value: '100%', label: 'Browser Native'  },
+  { value: '9',    label: 'Tree Species'   },
+  { value: '4',    label: 'QR Tile Shapes' },
+  { value: '14K+', label: 'Links Grown'    },
+  { value: '100%', label: 'Browser Native' },
 ];
 
-// ─── Reusable scroll-reveal wrapper ──────────────────────────────────────────
+// ─── Reusable scroll-reveal wrappers ─────────────────────────────────────────
+
+// Single element — same as before
 function RevealSection({ children, className = '', delay = 0 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
@@ -167,23 +171,38 @@ function RevealSection({ children, className = '', delay = 0 }) {
   );
 }
 
+// FIX: Grid stagger container — ONE InView ref on the parent; children use
+// motion.div with variants={fadeUp} + custom={i * delay} directly.
+// This avoids N independent IntersectionObservers fighting each other and
+// ensures all visible cards in the grid animate as a single cohesive wave.
+function RevealGrid({ children, className = '' }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-60px' });
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? 'visible' : 'hidden'}
+      variants={cardStagger}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Landing() {
   const { currentUser } = useAuth();
   const windowWidth = useWindowWidth();
-  const isDesktop = windowWidth > 1024;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-x-hidden selection:bg-emerald-200">
 
       {/* ── SOFT BLENDING GRADIENT BACKGROUND ──────────── */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Top Right Aura */}
         <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-200/50 via-teal-100/30 to-transparent rounded-full blur-[100px] lg:blur-[140px] opacity-80 animate-pulse" style={{ animationDuration: '8s' }} />
-        {/* Bottom Left Aura */}
         <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-200/40 via-emerald-100/20 to-transparent rounded-full blur-[100px] lg:blur-[120px] opacity-60" />
-        
-        {/* RESTORED: Soft glowing gradient directly behind the hero text section */}
         <div className="absolute top-[15%] left-[5%] lg:left-[10%] w-[30rem] lg:w-[45rem] h-[30rem] lg:h-[45rem] bg-teal-300/20 rounded-full blur-[100px] lg:blur-[140px] opacity-60" />
       </div>
 
@@ -308,9 +327,7 @@ export default function Landing() {
           </RevealSection>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 relative">
-            {/* Connector line */}
             <div className="hidden md:block absolute top-[3.5rem] left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-emerald-200 to-transparent" />
-
             {STEPS.map((step, i) => {
               const Icon = step.icon;
               return (
@@ -341,11 +358,11 @@ export default function Landing() {
             <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">A powerful fusion of data encoding, procedural generation, and WebGL graphics.</p>
           </RevealSection>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <RevealGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
               return (
-                <RevealSection key={f.title} delay={i * 0.07}>
+                <motion.div key={f.title} variants={fadeUp} custom={i * 0.07}>
                   <div className="p-8 rounded-[2rem] bg-white ring-1 ring-slate-900/5 h-full transition-all hover:shadow-2xl hover:shadow-slate-200/60 hover:-translate-y-1">
                     <div className="w-14 h-14 bg-slate-50 text-emerald-600 flex items-center justify-center rounded-2xl mb-6 shadow-sm ring-1 ring-slate-900/5">
                       <Icon size={28} />
@@ -353,10 +370,10 @@ export default function Landing() {
                     <h3 className="text-xl font-serif font-bold text-slate-900 mb-3">{f.title}</h3>
                     <p className="text-slate-600 leading-relaxed text-sm">{f.desc}</p>
                   </div>
-                </RevealSection>
+                </motion.div>
               );
             })}
-          </div>
+          </RevealGrid>
         </div>
       </section>
 
@@ -371,22 +388,23 @@ export default function Landing() {
             </p>
           </RevealSection>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* FIX: Single RevealGrid wraps all cards — one InView triggers a unified
+              stagger wave across all 9 cards simultaneously, instead of 9 independent
+              observers that can fire at slightly wrong times and cause jank. */}
+          <RevealGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {TREES.map((tree, i) => (
-              <RevealSection key={tree.id} delay={i * 0.05}>
+              <motion.div key={tree.id} variants={fadeUp} custom={i * 0.05}>
                 <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
-                  
-                  {/* Blended Background Image - Reduced blending for local image clarity */}
-                  <div 
+
+                  {/* Blended Background Image */}
+                  <div
                     className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
                     style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
                   />
 
                   <div className="relative z-10">
                     <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
-                      </div>
+                      <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
                       <div
                         className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
                         style={{ background: tree.qr }}
@@ -404,16 +422,15 @@ export default function Landing() {
                     <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
                   </div>
                 </div>
-              </RevealSection>
+              </motion.div>
             ))}
-          </div>
+          </RevealGrid>
 
           <RevealSection className="flex justify-center mt-14">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-slate-50 px-4 py-2 rounded-full ring-1 ring-slate-900/5">
               More presets will be launched in the future <Sparkles size={16} className="text-emerald-500" />
             </p>
           </RevealSection>
-
         </div>
       </section>
 
@@ -428,29 +445,28 @@ export default function Landing() {
             </p>
           </RevealSection>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <RevealGrid className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {QR_SHAPES.map((shape, i) => {
               const Icon = shape.icon;
               return (
-                <RevealSection key={shape.id} delay={i * 0.08}>
+                <motion.div key={shape.id} variants={fadeUp} custom={i * 0.08}>
                   <div className="p-8 rounded-[1.5rem] bg-white ring-1 ring-slate-900/5 text-center hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all h-full">
                     <div className="flex justify-center mb-5 text-emerald-600">
-                       <Icon size={44} strokeWidth={1.5} />
+                      <Icon size={44} strokeWidth={1.5} />
                     </div>
                     <h3 className="text-xl font-serif font-bold text-slate-900 mb-2">{shape.label}</h3>
                     <p className="text-slate-500 text-sm leading-relaxed font-medium">{shape.desc}</p>
                   </div>
-                </RevealSection>
+                </motion.div>
               );
             })}
-          </div>
+          </RevealGrid>
 
           <RevealSection className="flex justify-center mt-14">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-white px-4 py-2 rounded-full ring-1 ring-slate-900/5 shadow-sm">
               More shapes will be launched in the future <Shapes size={16} className="text-emerald-500" />
             </p>
           </RevealSection>
-
         </div>
       </section>
 
@@ -489,7 +505,6 @@ export default function Landing() {
                 </>
               )}
             </div>
-            {/* Trust micro-copy */}
             <div className="flex flex-wrap justify-center items-center gap-6 mt-10">
               {['Free to start', 'No credit card', 'Browser native', '9 tree species'].map((t) => (
                 <div key={t} className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
@@ -504,24 +519,53 @@ export default function Landing() {
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <footer className="w-full py-12 relative z-20 bg-slate-900 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <Trees size={20} className="text-emerald-500" />
-            <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
+        <div className="max-w-7xl mx-auto px-6 flex flex-col gap-8">
+
+          {/* Top row */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            {/* Brand */}
+            <div className="flex items-center gap-2">
+              <Trees size={20} className="text-emerald-500" />
+              <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
+            </div>
+
+            {/* Nav links */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+              <a href="#how-it-works" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">How It Works</a>
+              <a href="#species" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Species</a>
+              <Link to="/login" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Login</Link>
+              <Link to="/signup" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Sign Up</Link>
+            </div>
+
+            {/* Credit */}
+            <p className="text-sm text-slate-500 font-medium">
+              Architected by{' '}
+              <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer"
+                className="text-emerald-500 hover:text-emerald-400 hover:underline font-bold transition-colors">
+                Shovith
+              </a>
+            </p>
           </div>
-          <div className="flex items-center gap-6 text-sm">
-            <a href="#how-it-works" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">How It Works</a>
-            <a href="#species" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Species</a>
-            <Link to="/login" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Login</Link>
-            <Link to="/signup" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Sign Up</Link>
+
+          {/* Divider */}
+          <div className="border-t border-slate-800" />
+
+          {/* Bottom row — legal links */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-slate-600">
+              © {new Date().getFullYear()} Grow-Voxly. All rights reserved.
+            </p>
+            <div className="flex items-center gap-5 text-xs">
+              <Link to="/privacy" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
+                Privacy Policy
+              </Link>
+              <span className="text-slate-700">·</span>
+              <Link to="/terms" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
+                Terms of Service
+              </Link>
+            </div>
           </div>
-          <p className="text-sm text-slate-500 font-medium">
-            Architected by{' '}
-            <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer"
-              className="text-emerald-500 hover:text-emerald-400 hover:underline font-bold transition-colors">
-              Shovith
-            </a>
-          </p>
+
         </div>
       </footer>
 
