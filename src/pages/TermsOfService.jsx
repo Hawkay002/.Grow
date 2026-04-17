@@ -192,8 +192,9 @@ export default function TermsOfService() {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
-    const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
-    const chatId = "YOUR_TELEGRAM_CHAT_ID";
+    // Replace the hardcoded strings with your environment variables
+    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
     const finalReason = formData.reason === 'Other' ? formData.customReason : formData.reason;
     const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`;
