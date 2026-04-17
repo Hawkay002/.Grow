@@ -233,7 +233,7 @@ ${formData.message}
       <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-slate-100/60 to-transparent pointer-events-none" />
 
       {/* ── NAV ─────────────────────────────────────────────────────────── */}
-      <nav className="relative z-200 w-full px-6 py-6 lg:px-12 flex justify-between items-center border-b border-slate-100 bg-white/70 backdrop-blur-md sticky top-0">
+      <nav className="relative z-1000 w-full px-6 py-6 lg:px-12 flex justify-between items-center border-b border-slate-100 bg-white/70 backdrop-blur-md sticky top-0">
         <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide">
           <Trees size={26} className="text-emerald-600" />
           Grow-Voxly
