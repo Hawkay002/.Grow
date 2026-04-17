@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trees, ArrowLeft, Shield, Eye, Database, Cookie, UserCheck, Mail, Globe, Lock } from 'lucide-react';
+import { Trees, ArrowLeft, Shield, Eye, Database, Cookie, UserCheck, Mail, Globe, Lock, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
+import { sortedCountryCodes } from '../utils/countryCodes';
 
 const LAST_UPDATED = 'April 17, 2025';
 
@@ -125,23 +126,70 @@ const SECTIONS = [
       },
     ]
   },
-  {
-    icon: Mail,
-    title: 'Contact Us',
-    content: [
-      {
-        subtitle: 'Questions or Requests',
-        text: 'If you have any questions about this Privacy Policy, or wish to exercise your data rights, please reach out via WhatsApp or email. We will respond within 7 business days.'
-      },
-    ]
-  },
+];
+
+const REASONS = [
+  "Data Deletion Request",
+  "Data Export Request",
+  "Privacy Concern",
+  "Cookie Policy Query",
+  "Other"
 ];
 
 export default function PrivacyPolicy() {
+  const [formData, setFormData] = useState({
+    firstName: '', middleName: '', lastName: '',
+    email: '', countryCode: '+91', phone: '',
+    reason: REASONS[0], customReason: '', message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
+    const chatId = "YOUR_TELEGRAM_CHAT_ID";
+
+    const finalReason = formData.reason === 'Other' ? formData.customReason : formData.reason;
+    const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`;
+
+    const textMsg = `
+🛡️ *New Privacy Policy Contact*
+*Name:* ${fullName}
+*Email:* ${formData.email}
+*Phone:* ${formData.countryCode} ${formData.phone}
+*Reason:* ${finalReason}
+
+*Message:*
+${formData.message}
+    `;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: textMsg, parse_mode: 'Markdown' })
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        setFormData({ firstName: '', middleName: '', lastName: '', email: '', countryCode: '+91', phone: '', reason: REASONS[0], customReason: '', message: '' });
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (err) {
+      setSubmitStatus('error');
+    }
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-
-      {/* Subtle top gradient */}
       <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-emerald-50/60 to-transparent pointer-events-none" />
 
       {/* ── NAV ─────────────────────────────────────────────────────────── */}
@@ -150,10 +198,7 @@ export default function PrivacyPolicy() {
           <Trees size={26} className="text-emerald-600" />
           Grow-Voxly
         </div>
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-4 py-2 rounded-full hover:bg-emerald-50"
-        >
+        <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-4 py-2 rounded-full hover:bg-emerald-50">
           <ArrowLeft size={16} /> Back to Home
         </Link>
       </nav>
@@ -179,15 +224,12 @@ export default function PrivacyPolicy() {
           return (
             <RevealSection key={section.title} delay={si * 0.04}>
               <div className="bg-white rounded-[2rem] ring-1 ring-slate-900/5 overflow-hidden">
-                {/* Section header */}
                 <div className="flex items-center gap-4 px-8 py-6 border-b border-slate-100 bg-slate-50/50">
                   <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
                     <Icon size={20} />
                   </div>
                   <h2 className="text-xl font-serif font-bold text-slate-900">{section.title}</h2>
                 </div>
-
-                {/* Subsections */}
                 <div className="divide-y divide-slate-100">
                   {section.content.map((item) => (
                     <div key={item.subtitle} className="px-8 py-6">
@@ -201,24 +243,93 @@ export default function PrivacyPolicy() {
           );
         })}
 
-        {/* Contact card */}
+        {/* ── CONTACT FORM ────────────────────────────────────────────────── */}
         <RevealSection>
-          <div className="bg-slate-900 rounded-[2rem] p-8 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-400 mb-4">
-              <Mail size={22} />
+          <div className="bg-slate-900 rounded-[2rem] p-8 sm:p-10 shadow-2xl shadow-emerald-900/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+            <div className="text-center mb-10 relative z-10">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-400 mb-4">
+                <Mail size={22} />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-white mb-2">Privacy & Data Requests</h3>
+              <p className="text-slate-400 text-sm max-w-md mx-auto">
+                Need to delete your data or have a privacy concern? Send us a secure message and we will respond within 7 business days.
+              </p>
             </div>
-            <h3 className="text-xl font-serif font-bold text-white mb-2">Get in Touch</h3>
-            <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
-              Privacy questions, deletion requests, or anything else — we respond within 7 business days.
-            </p>
-            <a
-              href="https://wa.me/918777845713"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-emerald-500 text-white font-bold px-7 py-3 rounded-xl hover:bg-emerald-400 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/30"
-            >
-              Contact Shovith
-            </a>
+
+            {submitStatus === 'success' ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-8 text-center relative z-10">
+                <CheckCircle2 size={48} className="text-emerald-400 mx-auto mb-4" />
+                <h4 className="text-xl font-bold text-white mb-2">Message Sent</h4>
+                <p className="text-emerald-200/80 text-sm">We've received your request securely and will get back to you shortly.</p>
+                <button onClick={() => setSubmitStatus(null)} className="mt-6 text-emerald-400 text-sm font-semibold hover:text-emerald-300">Send another message</button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">First Name *</label>
+                    <input required type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="John" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Middle Name</label>
+                    <input type="text" name="middleName" value={formData.middleName} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Last Name *</label>
+                    <input required type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="Doe" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Email Address *</label>
+                    <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="john@example.com" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Phone Number *</label>
+                    <div className="flex">
+                      <select name="countryCode" value={formData.countryCode} onChange={handleChange} className="bg-slate-800 border border-slate-700 rounded-l-xl px-2 py-3 text-white focus:outline-none focus:border-emerald-500 transition-all border-r-0 cursor-pointer max-w-[120px]">
+                        {sortedCountryCodes.map((c, i) => (
+                          <option key={`cc-${i}`} value={c.code}>{c.code} ({c.iso.toUpperCase()})</option>
+                        ))}
+                      </select>
+                      <input required type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-r-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="1234567890" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Reason for Contact *</label>
+                  <select name="reason" value={formData.reason} onChange={handleChange} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer">
+                    {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+
+                {formData.reason === 'Other' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1 mt-2">Specify Reason *</label>
+                    <input required type="text" name="customReason" value={formData.customReason} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-all" placeholder="Please specify your reason..." />
+                  </motion.div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Message *</label>
+                  <textarea required name="message" value={formData.message} onChange={handleChange} rows="4" className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all resize-none" placeholder="Provide details about your request..."></textarea>
+                </div>
+
+                {submitStatus === 'error' && (
+                  <div className="flex items-center gap-2 text-red-400 bg-red-400/10 p-3 rounded-xl text-sm font-medium">
+                    <AlertCircle size={16} /> Something went wrong. Please try again.
+                  </div>
+                )}
+
+                <button disabled={isSubmitting} type="submit" className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white font-bold px-7 py-4 rounded-xl hover:bg-emerald-400 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/30 disabled:opacity-70 disabled:hover:translate-y-0">
+                  {isSubmitting ? 'Sending Request...' : <><Send size={18} /> Submit Request</>}
+                </button>
+              </form>
+            )}
           </div>
         </RevealSection>
       </div>
@@ -235,7 +346,7 @@ export default function PrivacyPolicy() {
             <span className="text-slate-700">·</span>
             <Link to="/terms" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">Terms of Service</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/privacy" className="text-emerald-500 font-bold">Privacy Policy</Link>
+            <span className="text-emerald-500 font-bold">Privacy Policy</span>
           </div>
           <p className="text-xs text-slate-600">© {new Date().getFullYear()} Grow-Voxly</p>
         </div>
