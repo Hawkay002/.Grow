@@ -1,15 +1,11 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Trees, Sparkles, ArrowRight, QrCode, Zap, Layers, Activity,
-  Globe, Palette, ChevronDown, Share2, Link2
+  Globe, Palette, ChevronDown, Share2, Link2,
+  Square, Circle, Hexagon, Diamond
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, OrbitControls, Float, ContactShadows } from '@react-three/drei';
-import * as THREE from 'three';
-import QRCode from 'qrcode';
-import { generateTree } from '../trees/VoxelEngine';
 import { motion, useInView } from 'framer-motion';
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -36,138 +32,79 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.1 } }
 };
 
-// ─── 3D Scene Components ──────────────────────────────────────────────────────
-function HeroVoxel({ v }) {
-  const targetColor = useMemo(() => new THREE.Color(v.color), [v.color]);
-  return (
-    <mesh position={v.pos} scale={v.scale || 1} castShadow receiveShadow>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial
-        color={targetColor}
-        emissive={v.isBase ? targetColor : new THREE.Color('#000000')}
-        emissiveIntensity={0.2}
-        roughness={0.8}
-      />
-    </mesh>
-  );
-}
-
-function DataStream() {
-  const particlesRef = useRef();
-  const particles = useMemo(() => Array.from({ length: 40 }).map(() => ({
-    x: (Math.random() - 0.5) * 30,
-    y: (Math.random() - 0.5) * 40 - 20,
-    z: (Math.random() - 0.5) * 30,
-    scale: Math.random() * 0.6 + 0.2,
-    speed: Math.random() * 0.02 + 0.01,
-    color: Math.random() > 0.5 ? '#10b981' : '#34d399'
-  })), []);
-
-  useFrame(() => {
-    if (!particlesRef.current) return;
-    particlesRef.current.children.forEach((mesh, i) => {
-      mesh.position.y += particles[i].speed;
-      mesh.rotation.x += particles[i].speed;
-      mesh.rotation.y += particles[i].speed;
-      if (mesh.position.y > 10) mesh.position.y = -30;
-    });
-  });
-
-  return (
-    <group ref={particlesRef}>
-      {particles.map((p, i) => (
-        <mesh key={i} position={[p.x, p.y, p.z]} scale={p.scale}>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={p.color} emissive={p.color} emissiveIntensity={0.8} transparent opacity={0.6} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function HeroTree() {
-  // BUG FIX: use correct key 'socotra dragon' matching VoxelEngine PRESETS object
-  const voxels = useMemo(() => {
-    const matrix = QRCode.create('https://grow-voxly.vercel.app/innovation', { errorCorrectionLevel: 'H' });
-    return generateTree('socotra dragon', matrix.modules.data, matrix.modules.size);
-  }, []);
-
-  return (
-    <group position={[0, -5, 0]}>
-      <DataStream />
-      <Float speed={2} rotationIntensity={0.3} floatIntensity={0.5}>
-        <group>
-          {voxels.map((v, i) => <HeroVoxel key={`hero-${i}`} v={v} />)}
-        </group>
-      </Float>
-      <ContactShadows position={[0, -12, 0]} opacity={0.25} scale={80} blur={3.5} far={25} color="#064e3b" />
-    </group>
-  );
-}
-
 // ─── Static Data ──────────────────────────────────────────────────────────────
 const TREES = [
   {
-    id: 'cherryblossom', label: 'Cherry Blossom', emoji: '🌸',
+    id: 'cherryblossom', label: 'Cherry Blossom',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1522226115097-9430c69d8eb8?auto=format&fit=crop&w=600&q=80',
     leaves: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096'],
     trunk: '#3A2318', qr: '#be185d',
     desc: 'Soft pink canopy with a romantic, spring-bloom silhouette.'
   },
   {
-    id: 'pine', label: 'Pine', emoji: '🌲',
+    id: 'pine', label: 'Pine',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80',
     leaves: ['#1B4332', '#2D6A4F', '#40916C', '#52B788'],
     trunk: '#2D241E', qr: '#064e3b',
     desc: 'Dense evergreen layers — sharp, cool, and commanding.'
   },
   {
-    id: 'socotra dragon', label: 'Socotra Dragon', emoji: '🐉',
+    id: 'socotra dragon', label: 'Socotra Dragon',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1558470598-a5ffa964e4ea?auto=format&fit=crop&w=600&q=80',
     leaves: ['#274C2B', '#386641', '#4C956C', '#2D6A4F'],
     trunk: '#5C1A06', qr: '#451a03',
     desc: 'Alien umbrella crown from the island of Socotra, Yemen.'
   },
   {
-    id: 'maple', label: 'Maple', emoji: '🍁',
+    id: 'maple', label: 'Maple',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=600&q=80',
     leaves: ['#9D0208', '#D00000', '#DC2F02', '#F48C06'],
     trunk: '#3A2618', qr: '#9a3412',
     desc: 'Fiery autumn palette — reds and oranges at full blaze.'
   },
   {
-    id: 'juniper', label: 'Juniper', emoji: '🌿',
+    id: 'juniper', label: 'Juniper',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=600&q=80',
     leaves: ['#2D4A22', '#3A5A40', '#588157', '#A3B18A'],
     trunk: '#1A1A1A', qr: '#0f766e',
     desc: 'Sculptural silvery-green needles with a windswept form.'
   },
   {
-    id: 'baobab', label: 'Baobab', emoji: '🌳',
+    id: 'baobab', label: 'Baobab',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80',
     leaves: ['#56692e', '#6a8239', '#445423', '#839e4a'],
     trunk: '#75695c', qr: '#4a3f35',
     desc: 'Massive African giant — swollen trunk, sparse proud crown.'
   },
   {
-    id: 'weeping willow', label: 'Weeping Willow', emoji: '🌾',
+    id: 'weeping willow', label: 'Weeping Willow',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1600171350036-7c1ea5174092?auto=format&fit=crop&w=600&q=80',
     leaves: ['#8f9e59', '#a2b366', '#768545', '#b7c975'],
     trunk: '#3d3224', qr: '#2d4a22',
     desc: 'Long cascading curtains of yellow-green foliage draping down.'
   },
   {
-    id: 'cactus', label: 'Prickly Pear Cactus', emoji: '🌵',
+    id: 'cactus', label: 'Prickly Pear Cactus',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1437964706703-40b90bdf563b?auto=format&fit=crop&w=600&q=80',
     leaves: ['#4ade80', '#22c55e', '#16a34a', '#15803d'],
     trunk: '#14532d', qr: '#14532d',
     desc: 'Vivid desert geometry — bright green paddles, no leaves needed.'
   },
   {
-    id: 'southern magnolia', label: 'Southern Magnolia', emoji: '🌺',
-    leaves: ['#1e3a1e', '#2d4c2d', '#3e5e3e'],
+    id: 'southern magnolia', label: 'Southern Magnolia',
+    imagePlaceholder: 'https://images.unsplash.com/photo-1589139850125-c631e892c90c?auto=format&fit=crop&w=600&q=80',
+    // UPDATED: Pink, purplish, and white shades for the Magnolia
+    leaves: ['#ffffff', '#fdf2f8', '#fae8ff', '#f0abfc'],
     trunk: '#4b3f35', qr: '#4c1d95',
     desc: 'Deep glossy canopy with a violet QR base — gothic and grand.'
   },
 ];
 
 const QR_SHAPES = [
-  { id: 'cube',    label: 'Cube',    icon: '⬛', desc: 'Classic block tiles — maximum scannability and bold graphic presence.' },
-  { id: 'sphere',  label: 'Sphere',  icon: '⚫', desc: 'Smooth circular dots for an organic, modern aesthetic.' },
-  { id: 'hexagon', label: 'Hexagon', icon: '⬡',  desc: 'Honeycomb six-sided tiles — geometry that mirrors nature.' },
-  { id: 'diamond', label: 'Diamond', icon: '♦',  desc: 'Rotated squares creating a dense crystal lattice effect.' },
+  { id: 'cube',    label: 'Cube',    icon: Square,  desc: 'Classic block tiles — maximum scannability and bold graphic presence.' },
+  { id: 'sphere',  label: 'Sphere',  icon: Circle,  desc: 'Smooth circular dots for an organic, modern aesthetic.' },
+  { id: 'hexagon', label: 'Hexagon', icon: Hexagon, desc: 'Honeycomb six-sided tiles — geometry that mirrors nature.' },
+  { id: 'diamond', label: 'Diamond', icon: Diamond, desc: 'Rotated squares creating a dense crystal lattice effect.' },
 ];
 
 const STEPS = [
@@ -231,37 +168,28 @@ function RevealSection({ children, className = '', delay = 0 }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Landing() {
   const { currentUser } = useAuth();
-  // BUG FIX: use reactive state instead of raw window.innerWidth in JSX
   const windowWidth = useWindowWidth();
   const isDesktop = windowWidth > 1024;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-x-hidden selection:bg-emerald-200">
 
-      {/* ── FULL-SCREEN 3D CANVAS ─────────────────────────────────────────── */}
-      <div className="absolute inset-0 z-0 pointer-events-auto cursor-grab active:cursor-grabbing">
-        <div className="absolute top-1/2 right-[10%] lg:right-[20%] -translate-y-1/2 w-[30rem] h-[30rem] bg-emerald-400/10 rounded-full blur-[100px] pointer-events-none" />
-        <Canvas shadows dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [70, 80, 70], zoom: 4.0 }}>
-          <ambientLight intensity={0.7} />
-          <directionalLight position={[30, 50, 20]} intensity={1.3} castShadow shadow-mapSize={[2048, 2048]} />
-          <Environment preset="city" />
-          {/* BUG FIX: isDesktop from state, not raw window.innerWidth */}
-          <group position={[isDesktop ? 25 : 0, -5, 0]}>
-            <HeroTree />
-          </group>
-          <OrbitControls
-            enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={1.2}
-            maxPolarAngle={Math.PI / 2 + 0.15} minPolarAngle={Math.PI / 4}
-          />
-        </Canvas>
+      {/* ── SOFT BLENDING GRADIENT BACKGROUND (Replaces 3D Canvas) ──────────── */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Top Right Aura */}
+        <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-200/50 via-teal-100/30 to-transparent rounded-full blur-[100px] lg:blur-[140px] mix-blend-multiply opacity-80 animate-pulse" style={{ animationDuration: '8s' }} />
+        {/* Bottom Left Aura */}
+        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-200/40 via-emerald-100/20 to-transparent rounded-full blur-[100px] lg:blur-[120px] mix-blend-multiply opacity-60" />
+        {/* Center Accent Aura */}
+        <div className="absolute top-[20%] left-[20%] w-[20rem] lg:w-[40rem] h-[20rem] lg:h-[40rem] bg-teal-100/30 rounded-full blur-[80px] lg:blur-[100px] mix-blend-multiply opacity-50" />
       </div>
 
       {/* ── FLOATING HUD OVERLAYS ─────────────────────────────────────────── */}
       <div className="hidden lg:flex absolute top-[25%] right-[8%] z-10 bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl px-4 py-3 rounded-2xl items-center gap-3 shadow-emerald-900/5">
         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs font-extrabold text-emerald-900 tracking-wider">LIVE RENDER ENGINE</span>
+        <span className="text-xs font-extrabold text-emerald-900 tracking-wider">LIVE DATA ENGINE</span>
       </div>
-      <div className="hidden lg:flex absolute bottom-[25%] right-[35%] z-10 bg-slate-900/80 backdrop-blur-xl border border-slate-700 shadow-2xl px-5 py-3 rounded-2xl items-center gap-3">
+      <div className="hidden lg:flex absolute bottom-[25%] right-[20%] z-10 bg-slate-900/80 backdrop-blur-xl border border-slate-700 shadow-2xl px-5 py-3 rounded-2xl items-center gap-3">
         <Activity size={18} className="text-emerald-400" />
         <span className="text-xs font-bold text-white tracking-widest">
           SCANS: <span className="text-emerald-400 font-mono text-sm ml-1">14,092</span>
@@ -269,7 +197,7 @@ export default function Landing() {
       </div>
 
       {/* ── FOREGROUND CONTENT ────────────────────────────────────────────── */}
-      <div className="relative z-10 w-full min-h-screen flex flex-col pointer-events-none">
+      <div className="relative z-10 w-full min-h-screen flex flex-col">
 
         {/* NAVBAR */}
         <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center pointer-events-auto">
@@ -300,7 +228,7 @@ export default function Landing() {
         <main className="flex-grow max-w-7xl mx-auto w-full px-6 flex items-center pt-10 pb-32 lg:py-0">
           <motion.div
             initial="hidden" animate="visible" variants={stagger}
-            className="w-full lg:w-5/12 flex flex-col items-center lg:items-start text-center lg:text-left pointer-events-auto"
+            className="w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left pointer-events-auto"
           >
             <motion.div variants={fadeUp} custom={0}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 text-emerald-900 text-xs font-black uppercase tracking-widest mb-8 ring-1 ring-slate-900/5 backdrop-blur-md shadow-sm"
@@ -309,7 +237,7 @@ export default function Landing() {
             </motion.div>
 
             <motion.h1 variants={fadeUp} custom={0.05}
-              className="text-6xl lg:text-[4.5rem] font-serif text-slate-900 mb-6 leading-[1.05] tracking-tight"
+              className="text-6xl lg:text-[5rem] font-serif text-slate-900 mb-6 leading-[1.05] tracking-tight"
             >
               Plant a Link. <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-br from-emerald-600 to-teal-400">
@@ -440,35 +368,48 @@ export default function Landing() {
             </p>
           </RevealSection>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {TREES.map((tree, i) => (
               <RevealSection key={tree.id} delay={i * 0.05}>
-                <div className="group p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:bg-white hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <span className="text-3xl leading-none block mb-2">{tree.emoji}</span>
-                      <h3 className="text-base font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
+                <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
+                  
+                  {/* Blended Background Image Placeholder */}
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-10 group-hover:opacity-20 transition-opacity z-0 pointer-events-none"
+                    style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
+                  />
+
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
+                      </div>
+                      {/* QR accent chip */}
+                      <div
+                        className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
+                        style={{ background: tree.qr }}
+                        title="QR dark colour"
+                      />
                     </div>
-                    {/* QR accent chip shows the QR dark colour */}
-                    <div
-                      className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
-                      style={{ background: tree.qr }}
-                      title="QR dark colour"
-                    />
+                    <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
                   </div>
-                  <p className="text-slate-500 text-xs leading-relaxed mb-4 font-medium">{tree.desc}</p>
-                  {/* Leaf colour palette dots */}
-                  <div className="flex items-center gap-1.5">
+
+                  <div className="relative z-10 flex items-center gap-1.5 mt-auto">
                     {tree.leaves.map((c) => (
-                      <div key={c} className="w-5 h-5 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
+                      <div key={c} className="w-6 h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
                     ))}
-                    <div className="w-5 h-5 rounded-full ring-1 ring-black/10 shadow-sm ml-0.5 opacity-70" style={{ background: tree.trunk }} title="Trunk" />
-                    <span className="text-[10px] text-slate-400 font-semibold ml-1 tracking-wide uppercase">Palette</span>
+                    <div className="w-6 h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
+                    <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
                   </div>
                 </div>
               </RevealSection>
             ))}
           </div>
+
+          <RevealSection className="text-center mt-12">
+            <p className="text-sm font-semibold text-slate-400 tracking-wide">More presets will be launched in the future ✨</p>
+          </RevealSection>
+
         </div>
       </section>
 
@@ -484,16 +425,26 @@ export default function Landing() {
           </RevealSection>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            {QR_SHAPES.map((shape, i) => (
-              <RevealSection key={shape.id} delay={i * 0.08}>
-                <div className="p-6 rounded-[1.5rem] bg-white ring-1 ring-slate-900/5 text-center hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all">
-                  <div className="text-4xl mb-4 leading-none">{shape.icon}</div>
-                  <h3 className="text-base font-serif font-bold text-slate-900 mb-2">{shape.label}</h3>
-                  <p className="text-slate-500 text-xs leading-relaxed font-medium">{shape.desc}</p>
-                </div>
-              </RevealSection>
-            ))}
+            {QR_SHAPES.map((shape, i) => {
+              const Icon = shape.icon;
+              return (
+                <RevealSection key={shape.id} delay={i * 0.08}>
+                  <div className="p-8 rounded-[1.5rem] bg-white ring-1 ring-slate-900/5 text-center hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all h-full">
+                    <div className="flex justify-center mb-5 text-emerald-600">
+                       <Icon size={44} strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-xl font-serif font-bold text-slate-900 mb-2">{shape.label}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed font-medium">{shape.desc}</p>
+                  </div>
+                </RevealSection>
+              );
+            })}
           </div>
+
+          <RevealSection className="text-center mt-12">
+            <p className="text-sm font-semibold text-slate-400 tracking-wide">More shapes will be launched in the future 🚀</p>
+          </RevealSection>
+
         </div>
       </section>
 
