@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Trees, Sparkles, ArrowRight, QrCode, Zap, Layers, Activity,
   Globe, Palette, ChevronDown, Share2, Link2,
-  Square, Circle, Hexagon, Diamond
+  Square, Circle, Hexagon, Diamond, Shapes
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, useInView } from 'framer-motion';
@@ -36,67 +36,69 @@ const stagger = {
 const TREES = [
   {
     id: 'cherryblossom', label: 'Cherry Blossom',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1522226115097-9430c69d8eb8?auto=format&fit=crop&w=600&q=80',
+    // Using local path from public folder
+    imagePlaceholder: '/images/cherryblossom.jpg',
     leaves: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096'],
     trunk: '#3A2318', qr: '#be185d',
     desc: 'Soft pink canopy with a romantic, spring-bloom silhouette.'
   },
   {
     id: 'pine', label: 'Pine',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80',
+    imagePlaceholder: '/images/pine.jpg',
     leaves: ['#1B4332', '#2D6A4F', '#40916C', '#52B788'],
     trunk: '#2D241E', qr: '#064e3b',
     desc: 'Dense evergreen layers — sharp, cool, and commanding.'
   },
   {
     id: 'socotra dragon', label: 'Socotra Dragon',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1558470598-a5ffa964e4ea?auto=format&fit=crop&w=600&q=80',
+    imagePlaceholder: '/images/socotradragon.jpg',
     leaves: ['#274C2B', '#386641', '#4C956C', '#2D6A4F'],
     trunk: '#5C1A06', qr: '#451a03',
     desc: 'Alien umbrella crown from the island of Socotra, Yemen.'
   },
   {
     id: 'maple', label: 'Maple',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=600&q=80',
+    imagePlaceholder: '/images/maple.jpg',
     leaves: ['#9D0208', '#D00000', '#DC2F02', '#F48C06'],
     trunk: '#3A2618', qr: '#9a3412',
     desc: 'Fiery autumn palette — reds and oranges at full blaze.'
   },
   {
     id: 'juniper', label: 'Juniper',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=600&q=80',
+    imagePlaceholder: '/images/juniper.jpg',
     leaves: ['#2D4A22', '#3A5A40', '#588157', '#A3B18A'],
     trunk: '#1A1A1A', qr: '#0f766e',
     desc: 'Sculptural silvery-green needles with a windswept form.'
   },
   {
     id: 'baobab', label: 'Baobab',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80',
+    imagePlaceholder: '/images/baobab.jpg',
     leaves: ['#56692e', '#6a8239', '#445423', '#839e4a'],
     trunk: '#75695c', qr: '#4a3f35',
     desc: 'Massive African giant — swollen trunk, sparse proud crown.'
   },
   {
     id: 'weeping willow', label: 'Weeping Willow',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1600171350036-7c1ea5174092?auto=format&fit=crop&w=600&q=80',
+    imagePlaceholder: '/images/weepingwillow.jpg',
     leaves: ['#8f9e59', '#a2b366', '#768545', '#b7c975'],
     trunk: '#3d3224', qr: '#2d4a22',
     desc: 'Long cascading curtains of yellow-green foliage draping down.'
   },
   {
     id: 'cactus', label: 'Prickly Pear Cactus',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1437964706703-40b90bdf563b?auto=format&fit=crop&w=600&q=80',
-    leaves: ['#4ade80', '#22c55e', '#16a34a', '#15803d'],
+    imagePlaceholder: '/images/cactus.jpg',
+    // Expanded Palette for Cactus to include flower colors
+    leaves: ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#f43f5e', '#fb7185', '#e11d48'],
     trunk: '#14532d', qr: '#14532d',
-    desc: 'Vivid desert geometry — bright green paddles, no leaves needed.'
+    desc: 'Vivid desert geometry — bright green paddles and pink blooming flowers.'
   },
   {
     id: 'southern magnolia', label: 'Southern Magnolia',
-    imagePlaceholder: 'https://images.unsplash.com/photo-1589139850125-c631e892c90c?auto=format&fit=crop&w=600&q=80',
-    // UPDATED: Pink, purplish, and white shades for the Magnolia
-    leaves: ['#ffffff', '#fdf2f8', '#fae8ff', '#f0abfc'],
+    imagePlaceholder: '/images/southernmagnolia.jpg',
+    // Expanded Palette for Magnolia to include greens and floral shades
+    leaves: ['#1e3a1e', '#2d4c2d', '#3e5e3e', '#ffffff', '#fdf2f8', '#fae8ff', '#f0abfc'],
     trunk: '#4b3f35', qr: '#4c1d95',
-    desc: 'Deep glossy canopy with a violet QR base — gothic and grand.'
+    desc: 'Deep glossy green canopy with vibrant purplish-white flowers — gothic and grand.'
   },
 ];
 
@@ -174,14 +176,15 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-x-hidden selection:bg-emerald-200">
 
-      {/* ── SOFT BLENDING GRADIENT BACKGROUND (Replaces 3D Canvas) ──────────── */}
+      {/* ── SOFT BLENDING GRADIENT BACKGROUND ──────────── */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         {/* Top Right Aura */}
-        <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-200/50 via-teal-100/30 to-transparent rounded-full blur-[100px] lg:blur-[140px] mix-blend-multiply opacity-80 animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-200/50 via-teal-100/30 to-transparent rounded-full blur-[100px] lg:blur-[140px] opacity-80 animate-pulse" style={{ animationDuration: '8s' }} />
         {/* Bottom Left Aura */}
-        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-200/40 via-emerald-100/20 to-transparent rounded-full blur-[100px] lg:blur-[120px] mix-blend-multiply opacity-60" />
-        {/* Center Accent Aura */}
-        <div className="absolute top-[20%] left-[20%] w-[20rem] lg:w-[40rem] h-[20rem] lg:h-[40rem] bg-teal-100/30 rounded-full blur-[80px] lg:blur-[100px] mix-blend-multiply opacity-50" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-200/40 via-emerald-100/20 to-transparent rounded-full blur-[100px] lg:blur-[120px] opacity-60" />
+        
+        {/* RESTORED: Soft glowing gradient directly behind the hero text section */}
+        <div className="absolute top-[15%] left-[5%] lg:left-[10%] w-[30rem] lg:w-[45rem] h-[30rem] lg:h-[45rem] bg-teal-300/20 rounded-full blur-[100px] lg:blur-[140px] opacity-60" />
       </div>
 
       {/* ── FLOATING HUD OVERLAYS ─────────────────────────────────────────── */}
@@ -373,9 +376,9 @@ export default function Landing() {
               <RevealSection key={tree.id} delay={i * 0.05}>
                 <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
                   
-                  {/* Blended Background Image Placeholder */}
+                  {/* Blended Background Image - Reduced blending for local image clarity */}
                   <div 
-                    className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-10 group-hover:opacity-20 transition-opacity z-0 pointer-events-none"
+                    className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
                     style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
                   />
 
@@ -384,7 +387,6 @@ export default function Landing() {
                       <div>
                         <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
                       </div>
-                      {/* QR accent chip */}
                       <div
                         className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
                         style={{ background: tree.qr }}
@@ -394,11 +396,11 @@ export default function Landing() {
                     <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
                   </div>
 
-                  <div className="relative z-10 flex items-center gap-1.5 mt-auto">
+                  <div className="relative z-10 flex flex-wrap items-center gap-1.5 mt-auto pt-4">
                     {tree.leaves.map((c) => (
-                      <div key={c} className="w-6 h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
+                      <div key={c} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
                     ))}
-                    <div className="w-6 h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
                     <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
                   </div>
                 </div>
@@ -406,8 +408,10 @@ export default function Landing() {
             ))}
           </div>
 
-          <RevealSection className="text-center mt-12">
-            <p className="text-sm font-semibold text-slate-400 tracking-wide">More presets will be launched in the future ✨</p>
+          <RevealSection className="flex justify-center mt-14">
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-slate-50 px-4 py-2 rounded-full ring-1 ring-slate-900/5">
+              More presets will be launched in the future <Sparkles size={16} className="text-emerald-500" />
+            </p>
           </RevealSection>
 
         </div>
@@ -441,8 +445,10 @@ export default function Landing() {
             })}
           </div>
 
-          <RevealSection className="text-center mt-12">
-            <p className="text-sm font-semibold text-slate-400 tracking-wide">More shapes will be launched in the future 🚀</p>
+          <RevealSection className="flex justify-center mt-14">
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-white px-4 py-2 rounded-full ring-1 ring-slate-900/5 shadow-sm">
+              More shapes will be launched in the future <Shapes size={16} className="text-emerald-500" />
+            </p>
           </RevealSection>
 
         </div>
