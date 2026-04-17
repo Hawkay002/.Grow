@@ -7,6 +7,8 @@ import QrScanner from './pages/QrScanner';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 // A simple wrapper to protect the root route
 function PrivateRoute({ children }) {
@@ -25,6 +27,8 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/qr/:id" element={<QrScanner />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
 
           {/* Protected Routes */}
           <Route 
