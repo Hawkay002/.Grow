@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trees, ArrowLeft, FileText, AlertTriangle, Ban, Scale, RefreshCw, Users, Globe, Wrench } from 'lucide-react';
+import { Trees, ArrowLeft, FileText, AlertTriangle, Ban, Scale, RefreshCw, Users, Globe, Wrench, Mail, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
+import { sortedCountryCodes } from '../utils/countryCodes';
 
 const LAST_UPDATED = 'April 17, 2025';
 
@@ -167,10 +168,68 @@ const SECTIONS = [
   },
 ];
 
+const REASONS = [
+  "Account Suspension Query",
+  "Acceptable Use Verification",
+  "Copyright/IP Issue",
+  "General Terms Inquiry",
+  "Other"
+];
+
 export default function TermsOfService() {
+  const [formData, setFormData] = useState({
+    firstName: '', middleName: '', lastName: '',
+    email: '', countryCode: '+91', phone: '',
+    reason: REASONS[0], customReason: '', message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
+    const chatId = "YOUR_TELEGRAM_CHAT_ID";
+
+    const finalReason = formData.reason === 'Other' ? formData.customReason : formData.reason;
+    const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`;
+
+    const textMsg = `
+⚖️ *New Terms of Service Contact*
+*Name:* ${fullName}
+*Email:* ${formData.email}
+*Phone:* ${formData.countryCode} ${formData.phone}
+*Reason:* ${finalReason}
+
+*Message:*
+${formData.message}
+    `;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: textMsg, parse_mode: 'Markdown' })
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        setFormData({ firstName: '', middleName: '', lastName: '', email: '', countryCode: '+91', phone: '', reason: REASONS[0], customReason: '', message: '' });
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (err) {
+      setSubmitStatus('error');
+    }
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-
       <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-slate-100/60 to-transparent pointer-events-none" />
 
       {/* ── NAV ─────────────────────────────────────────────────────────── */}
@@ -179,10 +238,7 @@ export default function TermsOfService() {
           <Trees size={26} className="text-emerald-600" />
           Grow-Voxly
         </div>
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-4 py-2 rounded-full hover:bg-emerald-50"
-        >
+        <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-4 py-2 rounded-full hover:bg-emerald-50">
           <ArrowLeft size={16} /> Back to Home
         </Link>
       </nav>
@@ -249,21 +305,93 @@ export default function TermsOfService() {
           );
         })}
 
-        {/* Contact card */}
+        {/* ── CONTACT FORM ────────────────────────────────────────────────── */}
         <RevealSection>
-          <div className="bg-slate-900 rounded-[2rem] p-8 text-center">
-            <h3 className="text-xl font-serif font-bold text-white mb-2">Questions About These Terms?</h3>
-            <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
-              Reach out and we'll do our best to clarify anything that's unclear.
-            </p>
-            <a
-              href="https://wa.me/918777845713"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-white text-slate-900 font-bold px-7 py-3 rounded-xl hover:bg-slate-100 transition-all hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              Contact Shovith
-            </a>
+          <div className="bg-slate-900 rounded-[2rem] p-8 sm:p-10 shadow-2xl shadow-slate-900/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-slate-700/30 rounded-full blur-[80px] pointer-events-none"></div>
+
+            <div className="text-center mb-10 relative z-10">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-800 text-slate-300 mb-4 border border-slate-700">
+                <Mail size={22} />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-white mb-2">Terms & Policy Inquiries</h3>
+              <p className="text-slate-400 text-sm max-w-md mx-auto">
+                Have questions about our acceptable use or copyright policy? Send us a message below.
+              </p>
+            </div>
+
+            {submitStatus === 'success' ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-8 text-center relative z-10">
+                <CheckCircle2 size={48} className="text-emerald-400 mx-auto mb-4" />
+                <h4 className="text-xl font-bold text-white mb-2">Message Sent</h4>
+                <p className="text-emerald-200/80 text-sm">We've received your request securely and will get back to you shortly.</p>
+                <button onClick={() => setSubmitStatus(null)} className="mt-6 text-emerald-400 text-sm font-semibold hover:text-emerald-300">Send another message</button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">First Name *</label>
+                    <input required type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="John" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Middle Name</label>
+                    <input type="text" name="middleName" value={formData.middleName} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="(Optional)" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Last Name *</label>
+                    <input required type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="Doe" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Email Address *</label>
+                    <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="john@example.com" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Phone Number *</label>
+                    <div className="flex">
+                      <select name="countryCode" value={formData.countryCode} onChange={handleChange} className="bg-slate-800 border border-slate-700 rounded-l-xl px-2 py-3 text-white focus:outline-none focus:border-emerald-500 transition-all border-r-0 cursor-pointer max-w-[120px]">
+                        {sortedCountryCodes.map((c, i) => (
+                          <option key={`cc-${i}`} value={c.code}>{c.code} ({c.iso.toUpperCase()})</option>
+                        ))}
+                      </select>
+                      <input required type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-r-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="1234567890" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Reason for Contact *</label>
+                  <select name="reason" value={formData.reason} onChange={handleChange} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer">
+                    {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+
+                {formData.reason === 'Other' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1 mt-2">Specify Reason *</label>
+                    <input required type="text" name="customReason" value={formData.customReason} onChange={handleChange} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-all" placeholder="Please specify your reason..." />
+                  </motion.div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Message *</label>
+                  <textarea required name="message" value={formData.message} onChange={handleChange} rows="4" className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all resize-none" placeholder="Provide details about your inquiry..."></textarea>
+                </div>
+
+                {submitStatus === 'error' && (
+                  <div className="flex items-center gap-2 text-red-400 bg-red-400/10 p-3 rounded-xl text-sm font-medium">
+                    <AlertCircle size={16} /> Something went wrong. Please try again.
+                  </div>
+                )}
+
+                <button disabled={isSubmitting} type="submit" className="w-full flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-7 py-4 rounded-xl hover:bg-slate-100 transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-70 disabled:hover:translate-y-0">
+                  {isSubmitting ? 'Sending Request...' : <><Send size={18} /> Submit Request</>}
+                </button>
+              </form>
+            )}
           </div>
         </RevealSection>
       </div>
@@ -278,7 +406,7 @@ export default function TermsOfService() {
           <div className="flex items-center gap-5 text-xs">
             <Link to="/" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">Home</Link>
             <span className="text-slate-700">·</span>
-            <Link to="/terms" className="text-emerald-500 font-bold">Terms of Service</Link>
+            <span className="text-emerald-500 font-bold">Terms of Service</span>
             <span className="text-slate-700">·</span>
             <Link to="/privacy" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">Privacy Policy</Link>
           </div>
