@@ -166,7 +166,7 @@ function RevealSection({ children, className = '', delay = 0 }) {
 
 function RevealCard({ children, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.70 });
+  const isInView = useInView(ref, { once: true, amount: 0.50 });
   return (
     <motion.div
       ref={ref}
@@ -184,13 +184,13 @@ function RevealCard({ children, className = '' }) {
 function SpeciesMarquee() {
   const items = [...TREES, ...TREES];
   return (
-    <div className="relative overflow-hidden bg-emerald-950 py-4 border-y border-emerald-900/60">
+    <div className="relative overflow-hidden bg-emerald-950 py-4 border-y border-emerald-900/60 flex">
       <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-emerald-950 to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-emerald-950 to-transparent z-10 pointer-events-none" />
       <motion.div
-        className="flex items-center whitespace-nowrap"
+        className="flex w-max items-center whitespace-nowrap"
         animate={{ x: ['0%', '-50%'] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
       >
         {items.map((tree, i) => (
           <span key={`${tree.id}-${i}`} className="inline-flex items-center gap-3 flex-shrink-0 px-8">
@@ -205,15 +205,15 @@ function SpeciesMarquee() {
 
 // ─── Auto-Rotating Image Carousel ────────────────────────────────────────────
 const CAROUSEL_IMAGES = [
-  '/images/carousel1.png',
-  '/images/carousel2.png',
-  '/images/carousel3.png',
-  '/images/carousel4.png',
-  '/images/carousel5.png',
-  '/images/carousel6.png',
-  '/images/carousel7.png',
-  '/images/carousel8.png',
-  '/images/carousel9.png',
+  '/carousel1.png',
+  '/carousel2.png',
+  '/carousel3.png',
+  '/carousel4.png',
+  '/carousel5.png',
+  '/carousel6.png',
+  '/carousel7.png',
+  '/carousel8.png',
+  '/carousel9.png',
 ];
 
 function TreeCarousel() {
