@@ -180,6 +180,42 @@ function RevealCard({ children, className = '' }) {
   );
 }
 
+// ─── Number Counting Component ────────────────────────────────────────────────
+function AnimatedCounter({ value }) {
+  // Extract just the number and just the text/symbols
+  const numMatch = value.match(/\d+/);
+  const num = numMatch ? parseInt(numMatch[0], 10) : 0;
+  const suffix = value.replace(/\d+/g, '');
+
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  useEffect(() => {
+    if (isInView) {
+      let startTimestamp = null;
+      const duration = 2000; // 2 seconds
+
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        
+        // easeOutExpo for a fast start and slow finish
+        const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+        
+        setCount(Math.floor(easeProgress * num));
+        
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+  }, [isInView, num]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
 // ─── Species Marquee ──────────────────────────────────────────────────────────
 function SpeciesMarquee() {
   const items = [...TREES, ...TREES];
@@ -438,7 +474,9 @@ export default function Landing() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((s, i) => (
               <RevealSection key={s.label} delay={i * 0.08} className="text-center">
-                <div className="text-3xl lg:text-4xl font-serif font-bold text-emerald-400 mb-1">{s.value}</div>
+                <div className="text-3xl lg:text-4xl font-serif font-bold text-emerald-400 mb-1">
+                  <AnimatedCounter value={s.value} />
+                </div>
                 <div className="text-xs font-semibold text-slate-400 tracking-widest uppercase">{s.label}</div>
               </RevealSection>
             ))}
