@@ -44,15 +44,15 @@ const staggerContainerVariant = {
 
 // Custom Carousel Images
 const CAROUSEL_IMAGES = [
-  '/images/carousel1.png',
-  '/images/carousel2.png',
-  '/images/carousel3.png',
-  '/images/carousel4.png',
-  '/images/carousel5.png',
-  '/images/carousel6.png',
-  '/images/carousel7.png',
-  '/images/carousel8.png',
-  '/images/carousel9.png',
+  '/images/carousel1.jpg',
+  '/images/carousel2.jpg',
+  '/images/carousel3.jpg',
+  '/images/carousel4.jpg',
+  '/images/carousel5.jpg',
+  '/images/carousel6.jpg',
+  '/images/carousel7.jpg',
+  '/images/carousel8.jpg',
+  '/images/carousel9.jpg',
 ];
 
 const TREES = [
@@ -199,7 +199,7 @@ const FAQS = [
 
 function RevealSection({ children, className = '', delay = 0 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.70 });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
   return (
     <motion.div
       ref={ref}
@@ -218,7 +218,7 @@ function RevealSection({ children, className = '', delay = 0 }) {
 
 function RevealGrid({ children, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.70 });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
   return (
     <motion.div
       ref={ref}
