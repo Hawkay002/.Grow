@@ -31,10 +31,10 @@ const stagger = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1 } }
 };
-// Dedicated stagger for cards — tighter gap looks better in a dense grid
+// Card stagger — used by features + QR shape grids
 const cardStagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } }
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } }
 };
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
@@ -191,6 +191,60 @@ function RevealGrid({ children, className = '' }) {
   );
 }
 
+// SpeciesGrid — single useInView trigger, direct inline transition per card.
+// Bypasses variant orchestration entirely so timing is always predictable.
+function SpeciesGrid({ trees }) {
+  const ref = useRef(null);
+  // amount:0 means trigger as soon as ANY pixel of the grid enters the viewport
+  const isInView = useInView(ref, { once: true, amount: 0 });
+
+  return (
+    <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {trees.map((tree, i) => (
+        <motion.div
+          key={tree.id}
+          initial={{ opacity: 0, y: 36 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
+          transition={{
+            duration: 0.52,
+            ease: [0.22, 1, 0.36, 1],
+            delay: i * 0.09,  // 90ms between each card — clearly visible cascade
+          }}
+        >
+          <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
+
+            {/* Blended Background Image */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
+              style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
+            />
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
+                <div
+                  className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
+                  style={{ background: tree.qr }}
+                  title="QR dark colour"
+                />
+              </div>
+              <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
+            </div>
+
+            <div className="relative z-10 flex flex-wrap items-center gap-1.5 mt-auto pt-4">
+              {tree.leaves.map((c) => (
+                <div key={c} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
+              ))}
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
+              <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Landing() {
   const { currentUser } = useAuth();
@@ -224,7 +278,7 @@ export default function Landing() {
         {/* NAVBAR */}
         <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center pointer-events-auto">
           <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide">
-            <Trees size={28} className="text-emerald-600" />
+            <Trees size={36} className="text-emerald-600" />
             Grow-Voxly
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
@@ -388,43 +442,7 @@ export default function Landing() {
             </p>
           </RevealSection>
 
-          {/* FIX: Single RevealGrid wraps all cards — one InView triggers a unified
-              stagger wave across all 9 cards simultaneously, instead of 9 independent
-              observers that can fire at slightly wrong times and cause jank. */}
-          <RevealGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {TREES.map((tree, i) => (
-              <motion.div key={tree.id} variants={fadeUp} custom={i * 0.05}>
-                <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
-
-                  {/* Blended Background Image */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
-                    style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
-                  />
-
-                  <div className="relative z-10">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
-                      <div
-                        className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
-                        style={{ background: tree.qr }}
-                        title="QR dark colour"
-                      />
-                    </div>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
-                  </div>
-
-                  <div className="relative z-10 flex flex-wrap items-center gap-1.5 mt-auto pt-4">
-                    {tree.leaves.map((c) => (
-                      <div key={c} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
-                    ))}
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
-                    <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </RevealGrid>
+          <SpeciesGrid trees={TREES} />
 
           <RevealSection className="flex justify-center mt-14">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-slate-50 px-4 py-2 rounded-full ring-1 ring-slate-900/5">
@@ -525,7 +543,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             {/* Brand */}
             <div className="flex items-center gap-2">
-              <Trees size={20} className="text-emerald-500" />
+              <Trees size={28} className="text-emerald-500" />
               <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
             </div>
 
