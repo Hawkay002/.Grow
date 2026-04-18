@@ -144,7 +144,7 @@ export default function PrinterModal({ onClose }) {
     // Generate the QR code for the website
     QRCode.toDataURL('https://grow-voxly.vercel.app', { 
       margin: 1, 
-      width: 180, 
+      width: 140, 
       color: { dark: '#0f172a', light: '#fcfcfc' } 
     }).then(setQrDataUrl).catch(console.error);
 
@@ -164,18 +164,17 @@ export default function PrinterModal({ onClose }) {
   };
 
   const startPrinting = () => {
-    // Generate sensible payload exactly at the moment the button is pressed
+    // Generate exactly at the moment the button is pressed with relevant platform data
     setTicketData({
-      id: Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
+      id: Math.random().toString(36).substring(2, 8).toUpperCase(),
       date: new Date().toLocaleDateString(),
       time: new Date().toLocaleTimeString(),
       items: [
-        { name: 'Voxel Ecosystem', price: 'INFINITE' },
-        { name: 'Procedural Seed', price: 'ACTIVE' },
-        { name: 'Custom QR Matrix', price: 'SECURE' },
-        { name: 'Live Analytics', price: 'ONLINE' }
-      ],
-      total: 'PRICELESS'
+        { name: 'Procedural Generation', price: 'ACTIVE' },
+        { name: 'Interactive 3D Engine', price: 'ACTIVE' },
+        { name: 'Custom QR Encoding', price: 'ACTIVE' },
+        { name: 'Platform Access', price: 'FREE TIER' }
+      ]
     });
 
     setPrintStatus('printing');
@@ -251,13 +250,12 @@ export default function PrinterModal({ onClose }) {
   const printerPartAnimation = `transition-transform duration-1000 ease-in-out ${viewMode === 'ticket' ? 'translate-y-[100vh]' : 'translate-y-0'}`;
 
   return (
-    // BRAND GREEN BACKGROUND: Applied signature emerald-to-slate gradient
-    <div className="fixed inset-0 z-[200] bg-gradient-to-br from-emerald-950/95 via-emerald-900/95 to-slate-950/95 backdrop-blur-md flex flex-col items-center justify-between font-sans overflow-hidden px-4 text-slate-200 pt-10 pb-16 sm:pb-24">
+    <div className="fixed inset-0 z-[200] bg-emerald-950/95 backdrop-blur-md flex flex-col items-center justify-between font-sans overflow-hidden px-4 pt-10 pb-16 sm:pb-24">
       
-      {/* ALWAYS VISIBLE CLOSE BUTTON */}
+      {/* ALWAYS VISIBLE Close Modal Button */}
       <button 
         onClick={onClose} 
-        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-emerald-500/40 rounded-full text-white transition-colors z-[250] shadow-lg border border-white/10"
+        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-[250]"
       >
         <X size={24} />
       </button>
@@ -276,7 +274,7 @@ export default function PrinterModal({ onClose }) {
           </div>
 
           {/* 2. PAPER EXTRUSION ZONE */}
-          <div className={`absolute bottom-[135px] w-[340px] h-[800px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
+          <div className={`absolute bottom-[135px] w-[340px] h-[700px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
             
             {/* THE ANIMATION WRAPPER */}
             <div 
@@ -287,7 +285,7 @@ export default function PrinterModal({ onClose }) {
                   printStatus === 'printing' ? 'translateY(0%)' :
                   printStatus === 'printed' ? 'translateY(0%)' :
                   printStatus === 'tearing' ? 'translateY(-15px) rotate(-3deg) scale(1.02)' :
-                  'translateY(calc(-50dvh + 50% + 230px)) rotate(0deg) scale(1.1)', 
+                  'translateY(calc(-50dvh + 50% + 180px)) rotate(0deg) scale(1.1)', 
                 transition: 
                   printStatus === 'printing' ? `transform ${printDuration}ms linear` :
                   printStatus === 'tearing' ? 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' :
@@ -297,106 +295,84 @@ export default function PrinterModal({ onClose }) {
             >
               <div data-html2canvas-ignore="true" className={`absolute inset-0 bg-black/5 shadow-2xl transition-opacity duration-500 z-0 ${viewMode === 'ticket' ? 'opacity-100' : 'opacity-0'}`} />
 
-              {/* THE CAPTURE TARGET */}
-              <div ref={ticketRef} className="w-full h-auto bg-transparent text-black flex flex-col relative z-10 shrink-0">
+              {/* THE CAPTURE TARGET (RECEIPT) */}
+              <div ref={ticketRef} className="w-full h-auto bg-transparent text-slate-800 flex flex-col relative z-10 shrink-0">
                 <JaggedEdgeCode top={true} />
 
-                <div className="w-full bg-[#fcfcfc] px-6 pt-5 pb-7 flex flex-col font-sans text-sm relative overflow-hidden">
+                <div className="w-full bg-[#fcfcfc] px-5 pt-4 pb-5 flex flex-col relative overflow-hidden">
                   
-                  {/* ARTISTIC WATERMARK: Low opacity trees icon in the background using a hex color safely supported by html2canvas */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                     <Trees size={220} strokeWidth={0.5} color="#d1fae5" />
+                  {/* Artistic Trees Watermark */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
+                     <Trees size={220} strokeWidth={3} className="text-emerald-900" />
                   </div>
 
-                  {/* HEADER WITH FONT PAIRING */}
-                  <div className="text-center font-serif font-black text-3xl mb-1 tracking-tight text-emerald-950 relative z-10">
-                    Grow-Voxly
-                  </div>
-                  <div className="text-center text-xs text-slate-500 font-medium mb-4 pb-4 border-b-2 border-dashed border-slate-300 relative z-10">
-                    The 3D Voxel URL Engine<br/>
-                    Procedural Botanical Data
-                  </div>
-                  
-                  {/* RECEIPT DATA */}
-                  {ticketData && (
-                    <div className="flex flex-col gap-1 text-slate-800 relative z-10">
-                      <div className="flex justify-between text-xs mb-2 font-medium text-slate-500">
-                        <span>{ticketData.date}</span>
-                        <span>{ticketData.time}</span>
-                      </div>
-                      <div className="flex justify-between text-xs mb-3 font-bold border-b border-slate-100 pb-2">
-                        <span>Session ID:</span>
-                        <span className="font-mono">#{ticketData.id}</span>
-                      </div>
-
-                      <div className="border-b border-dashed border-slate-300 pb-3 mb-2 space-y-2">
-                        {ticketData.items.map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-xs font-medium">
-                            <span>{item.name}</span>
-                            <span className="font-bold text-emerald-700">{item.price}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex justify-between mt-2 text-lg font-black text-emerald-950">
-                        <span>TOTAL:</span>
-                        <span>{ticketData.total}</span>
-                      </div>
+                  <div className="relative z-10 flex flex-col font-sans">
+                    <div className="text-center font-serif font-black text-2xl mb-0.5 tracking-tight text-emerald-950">
+                      GROW-VOXLY
                     </div>
-                  )}
-                  
-                  {/* WEBSITE QR CODE & INSTRUCTIONS */}
-                  {qrDataUrl && (
-                    <div className="flex flex-col items-center mt-6 mb-2 relative z-10">
-                       <div className="text-[9px] font-bold text-slate-400 mb-2 tracking-[0.15em] uppercase text-center">
-                         Scan the QR code to visit<br/>the website
-                       </div>
-                       <img src={qrDataUrl} alt="Grow-Voxly QR" className="w-32 h-32 mix-blend-multiply my-1" />
-                       <div className="text-[12px] font-bold text-slate-800 tracking-wide mt-2">
-                         grow-voxly.vercel.app
-                       </div>
+                    <div className="text-center text-[10px] text-slate-500 mb-3 pb-2 border-b border-dashed border-slate-300 font-medium tracking-wide">
+                      The 3D Voxel URL Engine
                     </div>
-                  )}
+                    
+                    {ticketData && (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-between text-[10px] font-bold mb-1">
+                          <span>{ticketData.date}</span>
+                          <span>{ticketData.time}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] font-bold mb-2">
+                          <span>SESSION ID:</span>
+                          <span>#{ticketData.id}</span>
+                        </div>
 
-                  <div className="text-center text-[9px] text-slate-400 mt-5 font-sans tracking-widest uppercase font-bold relative z-10">
-                    Thank You For Cultivating
+                        <div className="border-t border-b border-dashed border-slate-300 py-2 my-1 space-y-1">
+                          {ticketData.items.map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-[10px] font-bold">
+                              <span className="text-slate-600">{item.name}</span>
+                              <span className="text-slate-900">{item.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {qrDataUrl && (
+                      <div className="flex flex-col items-center mt-3 mb-1">
+                         <img src={qrDataUrl} alt="Grow-Voxly QR" className="w-24 h-24 mix-blend-multiply" />
+                         <span className="text-[8px] font-bold uppercase tracking-wider mt-1.5 text-slate-500">Scan to visit website</span>
+                         <span className="text-[10px] font-bold text-slate-800">grow-voxly.vercel.app</span>
+                      </div>
+                    )}
+
+                    <div className="text-center text-[8px] text-slate-400 mt-3 font-bold tracking-widest uppercase">
+                      Thank you for cultivating
+                    </div>
                   </div>
                 </div>
 
                 <JaggedEdgeCode top={false} />
               </div>
 
-              {/* TICKET VIEW CONTROLS (Flipped positions & renaming) */}
+              {/* TICKET VIEW CONTROLS */}
               <div 
                 data-html2canvas-ignore="true" 
-                className={`absolute top-full mt-6 flex flex-row justify-between gap-2 w-[260px] transition-opacity duration-700 delay-300 ${viewMode === 'ticket' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`absolute top-full mt-6 flex flex-row justify-between gap-3 w-[260px] transition-opacity duration-700 delay-300 ${viewMode === 'ticket' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
               >
-                {/* REPRINT (Left) */}
                 <button
                   onClick={handleReset}
-                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-[10px] bg-slate-700 hover:bg-slate-600 shadow-md text-white transition-all active:scale-95"
+                  className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-slate-700 hover:bg-slate-600 shadow-md text-white transition-all active:scale-95"
                 >
-                  <RefreshCw size={14} />
+                  <RefreshCw size={16} />
                   REPRINT
                 </button>
 
-                {/* SHARE WEB (Center) */}
                 <button
                   onClick={handleShare}
                   disabled={isSharing}
-                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-[10px] bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
+                  className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
-                  {isSharing ? <span className="animate-spin text-sm">⚙</span> : <Share2 size={14} />}
+                  {isSharing ? <span className="animate-spin text-sm">⚙</span> : <Share2 size={16} />}
                   SHARE WEB
-                </button>
-                
-                {/* DEDICATED CLOSE BUTTON ON TICKET (Right) */}
-                <button
-                  onClick={onClose}
-                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-[10px] bg-red-500/20 text-red-300 hover:bg-red-500/30 hover:text-red-200 border border-red-500/20 shadow-md transition-all active:scale-95"
-                >
-                  <X size={14} />
-                  CLOSE
                 </button>
               </div>
 
@@ -453,28 +429,26 @@ export default function PrinterModal({ onClose }) {
           </div>
         </div>
 
-        {/* --- MAIN PRINTER CONTROLS (Flipped positions & naming) --- */}
+        {/* --- MAIN PRINTER CONTROLS --- */}
         <div className={`mt-6 flex flex-row gap-4 relative z-50 transition-all duration-700 ${viewMode === 'ticket' ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100 translate-y-0'}`}>
           
-          {/* TEAR (Left) */}
           <button
             onClick={handleTear}
             disabled={printStatus !== 'printed'}
             className={`flex flex-1 items-center justify-center gap-2 w-36 py-2.5 rounded-lg font-bold text-xs transition-all ${
               printStatus === 'printed' ? 'bg-slate-700 hover:bg-slate-600 shadow-md text-white active:scale-95'
-              : 'bg-slate-800 text-slate-600 cursor-not-allowed opacity-50'
+              : 'bg-slate-800/80 text-slate-600 cursor-not-allowed opacity-50'
             }`}
           >
             <Scissors size={16} className={printStatus === 'printed' ? 'animate-bounce' : ''} />
             TEAR
           </button>
 
-          {/* GENERATE (Right) */}
           <button
             onClick={handlePrint}
             disabled={printStatus === 'tearing'}
             className={`flex flex-1 items-center justify-center gap-2 w-36 py-2.5 rounded-lg font-bold text-xs transition-all ${
-              printStatus === 'tearing' ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-inner' 
+              printStatus === 'tearing' ? 'bg-slate-800/80 text-slate-500 cursor-not-allowed shadow-inner' 
               : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white active:scale-95'
             }`}
           >
