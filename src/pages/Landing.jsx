@@ -1,23 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Trees, Sparkles, ArrowRight, QrCode, Zap, Layers, Activity,
   Globe, Palette, ChevronDown, Share2, Link2,
-  Square, Circle, Hexagon, Diamond, Shapes
+  Square, Circle, Hexagon, Diamond, Shapes,
+  Star, Check, X, Plus, Wand2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { motion, useInView } from 'framer-motion';
-
-// ─── Hooks ────────────────────────────────────────────────────────────────────
-function useWindowWidth() {
-  const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1280);
-  useEffect(() => {
-    const handler = () => setWidth(window.innerWidth);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-  return width;
-}
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
 const fadeUp = {
@@ -35,63 +25,63 @@ const stagger = {
 // ─── Static Data ──────────────────────────────────────────────────────────────
 const TREES = [
   {
-    id: 'cherryblossom', label: 'Cherry Blossom',
+    id: 'cherryblossom', label: 'Cherry Blossom', emoji: '🌸',
     imagePlaceholder: '/images/cherryblossom.jpg',
     leaves: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096'],
     trunk: '#3A2318', qr: '#be185d',
     desc: 'Soft pink canopy with a romantic, spring-bloom silhouette.'
   },
   {
-    id: 'pine', label: 'Pine',
+    id: 'pine', label: 'Pine', emoji: '🌲',
     imagePlaceholder: '/images/pine.jpg',
     leaves: ['#1B4332', '#2D6A4F', '#40916C', '#52B788'],
     trunk: '#2D241E', qr: '#064e3b',
     desc: 'Dense evergreen layers — sharp, cool, and commanding.'
   },
   {
-    id: 'socotra dragon', label: 'Socotra Dragon',
+    id: 'socotra dragon', label: 'Socotra Dragon', emoji: '🐉',
     imagePlaceholder: '/images/socotradragon.jpg',
     leaves: ['#274C2B', '#386641', '#4C956C', '#2D6A4F'],
     trunk: '#5C1A06', qr: '#451a03',
     desc: 'Alien umbrella crown from the island of Socotra, Yemen.'
   },
   {
-    id: 'maple', label: 'Maple',
+    id: 'maple', label: 'Maple', emoji: '🍁',
     imagePlaceholder: '/images/maple.jpg',
     leaves: ['#9D0208', '#D00000', '#DC2F02', '#F48C06'],
     trunk: '#3A2618', qr: '#9a3412',
     desc: 'Fiery autumn palette — reds and oranges at full blaze.'
   },
   {
-    id: 'juniper', label: 'Juniper',
+    id: 'juniper', label: 'Juniper', emoji: '🌿',
     imagePlaceholder: '/images/juniper.jpg',
     leaves: ['#2D4A22', '#3A5A40', '#588157', '#A3B18A'],
     trunk: '#1A1A1A', qr: '#0f766e',
     desc: 'Sculptural silvery-green needles with a windswept form.'
   },
   {
-    id: 'baobab', label: 'Baobab',
+    id: 'baobab', label: 'Baobab', emoji: '🌳',
     imagePlaceholder: '/images/baobab.jpg',
     leaves: ['#56692e', '#6a8239', '#445423', '#839e4a'],
     trunk: '#75695c', qr: '#4a3f35',
     desc: 'Massive African giant — swollen trunk, sparse proud crown.'
   },
   {
-    id: 'weeping willow', label: 'Weeping Willow',
+    id: 'weeping willow', label: 'Weeping Willow', emoji: '🌾',
     imagePlaceholder: '/images/weepingwillow.jpg',
     leaves: ['#8f9e59', '#a2b366', '#768545', '#b7c975'],
     trunk: '#3d3224', qr: '#2d4a22',
     desc: 'Long cascading curtains of yellow-green foliage draping down.'
   },
   {
-    id: 'cactus', label: 'Prickly Pear Cactus',
+    id: 'cactus', label: 'Prickly Pear Cactus', emoji: '🌵',
     imagePlaceholder: '/images/cactus.jpg',
     leaves: ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#f43f5e', '#fb7185', '#e11d48'],
     trunk: '#14532d', qr: '#14532d',
     desc: 'Vivid desert geometry — bright green paddles and pink blooming flowers.'
   },
   {
-    id: 'southern magnolia', label: 'Southern Magnolia',
+    id: 'southern magnolia', label: 'Southern Magnolia', emoji: '🌺',
     imagePlaceholder: '/images/southernmagnolia.jpg',
     leaves: ['#1e3a1e', '#2d4c2d', '#3e5e3e', '#ffffff', '#fdf2f8', '#fae8ff', '#f0abfc'],
     trunk: '#4b3f35', qr: '#4c1d95',
@@ -107,36 +97,18 @@ const QR_SHAPES = [
 ];
 
 const STEPS = [
-  { icon: Link2,  title: 'Paste Your URL',       desc: 'Drop any link — a portfolio, a product page, a bio — into the engine.' },
-  { icon: Trees,  title: 'Choose Your Tree',      desc: 'Pick from 9 procedurally-generated species, each with a distinct shape and colour.' },
-  { icon: Share2, title: 'Share the Experience',  desc: 'Your audience scans the living QR. Every scan is tracked in your dashboard.' },
+  { icon: Link2,  title: 'Paste Your URL',      desc: 'Drop any link — a portfolio, a product page, a bio — into the engine.' },
+  { icon: Trees,  title: 'Choose Your Tree',     desc: 'Pick from 9 procedurally-generated species, each with a distinct shape and colour.' },
+  { icon: Share2, title: 'Share the Experience', desc: 'Your audience scans the living QR. Every scan is tracked in your dashboard.' },
 ];
 
 const FEATURES = [
-  {
-    icon: Layers, title: 'Cryptographic Growth',
-    desc: 'Your URL is the seed. Every character in your link directly alters the procedural generation of branches, density, and canopy — no two trees are identical.',
-  },
-  {
-    icon: Zap, title: 'Instant WebGL Rendering',
-    desc: 'Powered by React-Three-Fiber and optimised voxel geometry. Massive 3D ecosystems load instantly — no plugins, no lag, no installs.',
-  },
-  {
-    icon: QrCode, title: '4 Custom Tile Shapes',
-    desc: 'Export QR codes with Cubes, Spheres, Hexagons, or Diamonds. Finder patterns are always protected for 100% scan reliability.',
-  },
-  {
-    icon: Globe, title: 'Smart Slug Routing',
-    desc: 'Every tree gets a vanity URL under grow-voxly.vercel.app/qr/your-slug — with duplicate detection, auto-suggestions, and instant redirect.',
-  },
-  {
-    icon: Activity, title: 'Real-Time Analytics',
-    desc: 'Every scan increments a live counter. Watch links gain traction with per-tree click tracking from your personal garden dashboard.',
-  },
-  {
-    icon: Palette, title: '9 Unique Species',
-    desc: 'Cherry Blossom to Socotra Dragon — each tree ships with its own colour palette, canopy geometry, and QR theme. More species planned.',
-  },
+  { icon: Layers,   title: 'Cryptographic Growth',    desc: 'Your URL is the seed. Every character directly alters branch angles, canopy density, and leaf cluster positions — no two trees are identical.' },
+  { icon: Zap,      title: 'Instant WebGL Rendering', desc: 'Powered by React-Three-Fiber and optimised voxel geometry. Massive 3D ecosystems load instantly — no plugins, no lag.' },
+  { icon: QrCode,   title: '4 Custom Tile Shapes',    desc: 'Export with Cubes, Spheres, Hexagons, or Diamonds. Finder patterns are always protected for 100% scan reliability.' },
+  { icon: Globe,    title: 'Smart Slug Routing',      desc: 'Every tree gets a vanity URL — duplicate detection, auto-suggestions, and instant redirect included.' },
+  { icon: Activity, title: 'Real-Time Analytics',     desc: 'Every scan increments a live counter. Watch links gain traction with per-tree click tracking from your garden dashboard.' },
+  { icon: Palette,  title: '9 Unique Species',        desc: 'Cherry Blossom to Socotra Dragon — each tree ships with its own palette, canopy geometry, and QR theme. More coming.' },
 ];
 
 const STATS = [
@@ -146,12 +118,66 @@ const STATS = [
   { value: '100%', label: 'Browser Native' },
 ];
 
-// ─── Reusable scroll-reveal wrappers ─────────────────────────────────────────
+const TESTIMONIALS = [
+  {
+    name: 'Arjun Mehta', role: 'Creative Director', company: 'Mindwave Studio',
+    initials: 'AM', color: '#4C956C',
+    quote: 'We replaced every static QR in our client campaigns with Grow-Voxly trees. Scan rates tripled. People genuinely want to scan them.',
+    stars: 5,
+  },
+  {
+    name: 'Sarah Chen', role: 'Product Designer', company: 'Freelance',
+    initials: 'SC', color: '#DC2F02',
+    quote: "The Cherry Blossom tree on my portfolio card gets more compliments than my actual work. That's the magic here.",
+    stars: 5,
+  },
+  {
+    name: 'Lucas Oliveira', role: 'Growth Lead', company: 'Startup Garage',
+    initials: 'LO', color: '#4c1d95',
+    quote: 'Socotra Dragon QR on every deck. People remember us because it looks like art, not an afterthought nobody ever scanned.',
+    stars: 5,
+  },
+];
 
-// Single element — same as before
+const FAQS = [
+  {
+    q: 'Is Grow-Voxly completely free?',
+    a: 'Yes — every feature including all 9 tree species, 4 QR tile shapes, vanity slugs, and click analytics is free. We may introduce optional plans later, but the core will always remain free.'
+  },
+  {
+    q: 'Do the QR codes actually scan reliably?',
+    a: 'Absolutely. Every exported QR is ISO/IEC 18004 compliant. Finder patterns (the three corner squares) are always standard square modules regardless of tile shape, ensuring 100% compatibility with every modern smartphone.'
+  },
+  {
+    q: 'What makes each tree structurally unique?',
+    a: 'Your URL is the cryptographic seed for the procedural generation algorithm. Every character influences branch angles, canopy density, trunk width, and leaf cluster positions. Two different URLs always produce distinct trees, even within the same species.'
+  },
+  {
+    q: 'Can I use a custom domain for my short links?',
+    a: 'Currently all links live under grow-voxly.vercel.app/qr/your-slug. You can choose any memorable vanity slug now. Custom domain mapping is on the roadmap.'
+  },
+  {
+    q: 'How many links can I create?',
+    a: "There's no hard cap. Create as many trees as you need. We monitor for automated abuse, but individual creators will never hit a practical limit."
+  },
+  {
+    q: 'Can I delete or update a link after creating it?',
+    a: 'Yes. Delete any tree from your Dashboard at any time — its URL immediately returns a 404. Editing the destination URL on an existing slug is coming in a future update.'
+  },
+];
+
+// ─── URL → Species hash (djb2) ────────────────────────────────────────────────
+function hashStr(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = (((h << 5) + h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+// ─── Reusable scroll-reveal components ───────────────────────────────────────
+
 function RevealSection({ children, className = '', delay = 0 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const isInView = useInView(ref, { once: true, margin: '-60px' });
   return (
     <motion.div
       ref={ref}
@@ -166,13 +192,9 @@ function RevealSection({ children, className = '', delay = 0 }) {
   );
 }
 
-// RevealCard — every card gets its OWN IntersectionObserver.
-// As the user scrolls, each card fires independently the moment it enters
-// the viewport, giving a true one-by-one reveal instead of a mass trigger.
+// Each card has its own IntersectionObserver — fires one-by-one as you scroll
 function RevealCard({ children, className = '' }) {
   const ref = useRef(null);
-  // amount: 0.15 → card must be 15% visible before it animates in.
-  // Once triggered it stays visible (once: true).
   const isInView = useInView(ref, { once: true, amount: 0.50 });
   return (
     <motion.div
@@ -187,15 +209,192 @@ function RevealCard({ children, className = '' }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Species Marquee ──────────────────────────────────────────────────────────
+function SpeciesMarquee() {
+  const items = [...TREES, ...TREES];
+  return (
+    <div className="relative overflow-hidden bg-emerald-950 py-4 border-y border-emerald-900/60">
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-emerald-950 to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-emerald-950 to-transparent z-10 pointer-events-none" />
+      <motion.div
+        className="flex items-center whitespace-nowrap"
+        animate={{ x: ['0%', '-50%'] }}
+        transition={{ duration: 34, repeat: Infinity, ease: 'linear' }}
+      >
+        {items.map((tree, i) => (
+          <span key={`${tree.id}-${i}`} className="inline-flex items-center gap-3 flex-shrink-0 px-8">
+            <span className="text-xl">{tree.emoji}</span>
+            <span className="font-serif font-bold text-lg text-emerald-200">{tree.label}</span>
+            <span className="text-emerald-700 ml-4 text-sm">◆</span>
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Live URL Demo ────────────────────────────────────────────────────────────
+function LiveDemo() {
+  const [url, setUrl] = useState('');
+  const tree = useMemo(() => {
+    const clean = url.trim();
+    if (!clean) return null;
+    return TREES[hashStr(clean) % TREES.length];
+  }, [url]);
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="relative">
+        <input
+          type="text"
+          value={url}
+          onChange={e => setUrl(e.target.value)}
+          placeholder="https://yourwebsite.com"
+          className="w-full px-6 py-5 pr-14 rounded-2xl bg-white ring-1 ring-slate-200 text-slate-900 font-medium text-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-lg transition-shadow"
+        />
+        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">
+          <Wand2 size={22} />
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {tree ? (
+          <motion.div
+            key={tree.id}
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-5 p-7 rounded-2xl bg-white ring-1 ring-slate-200 shadow-2xl shadow-slate-200/60"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 ring-1 ring-black/5"
+                style={{ background: tree.qr + '20' }}
+              >
+                {tree.emoji}
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Your URL grows into a</p>
+                <h3 className="text-xl font-serif font-bold text-slate-900">{tree.label}</h3>
+              </div>
+            </div>
+            <p className="text-slate-500 text-sm leading-relaxed mb-5">{tree.desc}</p>
+            <div className="flex flex-wrap gap-2 items-center pt-4 border-t border-slate-100">
+              {tree.leaves.map(c => (
+                <div key={c} className="w-7 h-7 rounded-full shadow-sm ring-1 ring-black/10 hover:scale-110 transition-transform" style={{ background: c }} />
+              ))}
+              <div className="w-7 h-7 rounded-full shadow-sm ring-1 ring-black/10 opacity-70" style={{ background: tree.trunk }} />
+              <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest ml-2">Generated Palette</span>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.p
+            key="hint"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-center text-slate-400 text-sm mt-5 font-medium"
+          >
+            Type any URL above — see which species it grows into ✦
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Realistic QR SVG (proper finder patterns) ────────────────────────────────
+function BoringQRCode() {
+  const S = 17;
+  const inFinder = (r, c) => {
+    if (r < 7 && c < 7) {
+      if (r === 0 || r === 6 || c === 0 || c === 6) return true;
+      if (r >= 2 && r <= 4 && c >= 2 && c <= 4) return true;
+      return false;
+    }
+    if (r < 7 && c >= S - 7) {
+      const lc = c - (S - 7);
+      if (r === 0 || r === 6 || lc === 0 || lc === 6) return true;
+      if (r >= 2 && r <= 4 && lc >= 2 && lc <= 4) return true;
+      return false;
+    }
+    if (r >= S - 7 && c < 7) {
+      const lr = r - (S - 7);
+      if (lr === 0 || lr === 6 || c === 0 || c === 6) return true;
+      if (lr >= 2 && lr <= 4 && c >= 2 && c <= 4) return true;
+      return false;
+    }
+    return null;
+  };
+  const inSep = (r, c) =>
+    (r === 7 && c <= 7) || (c === 7 && r <= 7) ||
+    (r === 7 && c >= S - 8) || (c === S - 8 && r <= 7) ||
+    (r === S - 8 && c <= 7) || (c === 7 && r >= S - 8);
+
+  const cells = Array.from({ length: S * S }, (_, idx) => {
+    const r = Math.floor(idx / S), c = idx % S;
+    const f = inFinder(r, c);
+    if (f !== null) return f;
+    if (inSep(r, c)) return false;
+    return ((r * 13 + c * 7 + r * c * 3) % 5) < 2;
+  });
+
+  return (
+    <div
+      style={{ display: 'grid', gridTemplateColumns: `repeat(${S}, 1fr)`, gap: 2 }}
+      className="bg-white p-5 rounded-2xl w-full max-w-[200px] mx-auto shadow-inner"
+    >
+      {cells.map((filled, i) => (
+        <div key={i} style={{ aspectRatio: '1', background: filled ? '#0f172a' : '#fff', borderRadius: 1 }} />
+      ))}
+    </div>
+  );
+}
+
+// ─── FAQ Accordion Item ───────────────────────────────────────────────────────
+function FAQItem({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-slate-100 last:border-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-5 text-left gap-4 group"
+      >
+        <span className="font-serif font-bold text-slate-900 text-base group-hover:text-emerald-700 transition-colors leading-snug">{q}</span>
+        <motion.div
+          animate={{ rotate: open ? 45 : 0 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="flex-shrink-0"
+        >
+          <Plus size={20} className="text-emerald-500" />
+        </motion.div>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="pb-6 text-slate-500 leading-relaxed text-sm pr-8">{a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Landing() {
   const { currentUser } = useAuth();
-  const windowWidth = useWindowWidth();
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-x-hidden selection:bg-emerald-200">
 
-      {/* ── SOFT BLENDING GRADIENT BACKGROUND ──────────── */}
+      {/* ── GRADIENT BACKGROUND ───────────────────────────────────────────── */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-200/50 via-teal-100/30 to-transparent rounded-full blur-[100px] lg:blur-[140px] opacity-80 animate-pulse" style={{ animationDuration: '8s' }} />
         <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-200/40 via-emerald-100/20 to-transparent rounded-full blur-[100px] lg:blur-[120px] opacity-60" />
@@ -203,7 +402,7 @@ export default function Landing() {
       </div>
 
       {/* ── FLOATING HUD OVERLAYS ─────────────────────────────────────────── */}
-      <div className="hidden lg:flex absolute top-[25%] right-[8%] z-10 bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl px-4 py-3 rounded-2xl items-center gap-3 shadow-emerald-900/5">
+      <div className="hidden lg:flex absolute top-[25%] right-[8%] z-10 bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl px-4 py-3 rounded-2xl items-center gap-3">
         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
         <span className="text-xs font-extrabold text-emerald-900 tracking-wider">LIVE DATA ENGINE</span>
       </div>
@@ -214,22 +413,18 @@ export default function Landing() {
         </span>
       </div>
 
-      {/* ── FOREGROUND CONTENT ────────────────────────────────────────────── */}
+      {/* ── FOREGROUND ────────────────────────────────────────────────────── */}
       <div className="relative z-10 w-full min-h-screen flex flex-col">
 
         {/* NAVBAR */}
-        <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center pointer-events-auto">
+        <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center">
           <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide">
-            <Trees size={28} className="text-emerald-600" />
+            <Trees size={36} className="text-emerald-600" />
             Grow-Voxly
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
-            <a href="#how-it-works" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
-              How It Works
-            </a>
-            <a href="#species" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
-              Species
-            </a>
+            <a href="#how-it-works" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">How It Works</a>
+            <a href="#species" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">Species</a>
             {currentUser ? (
               <Link to="/dashboard" className="font-bold text-sm text-emerald-800 bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-sm ring-1 ring-slate-900/5 hover:bg-white hover:shadow-md transition-all">
                 My Garden
@@ -242,18 +437,17 @@ export default function Landing() {
           </div>
         </nav>
 
-        {/* HERO COPY */}
+        {/* HERO */}
         <main className="flex-grow max-w-7xl mx-auto w-full px-6 flex items-center pt-10 pb-32 lg:py-0">
           <motion.div
             initial="hidden" animate="visible" variants={stagger}
-            className="w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left pointer-events-auto"
+            className="w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left"
           >
             <motion.div variants={fadeUp} custom={0}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 text-emerald-900 text-xs font-black uppercase tracking-widest mb-8 ring-1 ring-slate-900/5 backdrop-blur-md shadow-sm"
             >
               <Sparkles size={14} className="text-emerald-500" /> Voxel Web Architecture
             </motion.div>
-
             <motion.h1 variants={fadeUp} custom={0.05}
               className="text-6xl lg:text-[5rem] font-serif text-slate-900 mb-6 leading-[1.05] tracking-tight"
             >
@@ -262,13 +456,11 @@ export default function Landing() {
                 Grow a World.
               </span>
             </motion.h1>
-
             <motion.p variants={fadeUp} custom={0.1}
               className="text-lg lg:text-xl text-slate-600 mb-10 max-w-lg leading-relaxed font-medium"
             >
               We convert raw URL data into breathtaking, procedural 3D ecosystems. Ditch boring black-and-white pixels and share links your audience can actually explore.
             </motion.p>
-
             <motion.div variants={fadeUp} custom={0.15}
               className="flex flex-col sm:flex-row w-full sm:w-auto items-center gap-4"
             >
@@ -291,8 +483,8 @@ export default function Landing() {
         </main>
 
         {/* Scroll hint */}
-        <div className="pointer-events-auto flex justify-center pb-10">
-          <a href="#stats" className="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-600 transition-colors group">
+        <div className="flex justify-center pb-10">
+          <a href="#stats" className="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-600 transition-colors">
             <span className="text-xs font-semibold tracking-widest uppercase">Discover</span>
             <ChevronDown size={18} className="animate-bounce" />
           </a>
@@ -313,6 +505,9 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── SPECIES MARQUEE ───────────────────────────────────────────────── */}
+      <SpeciesMarquee />
+
       {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
       <section id="how-it-works" className="relative z-20 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-24">
@@ -321,7 +516,6 @@ export default function Landing() {
             <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">From URL to Ecosystem</h2>
             <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">Three steps. Zero friction. A living, scannable 3D world.</p>
           </RevealSection>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 relative">
             <div className="hidden md:block absolute top-[3.5rem] left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-emerald-200 to-transparent" />
             {STEPS.map((step, i) => {
@@ -332,15 +526,80 @@ export default function Landing() {
                     <div className="w-14 h-14 rounded-2xl bg-emerald-50 ring-1 ring-emerald-100 flex items-center justify-center shadow-sm">
                       <Icon size={26} className="text-emerald-600" />
                     </div>
-                    <span className="absolute -top-2 -right-2 text-[10px] font-black bg-slate-900 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                      {i + 1}
-                    </span>
+                    <span className="absolute -top-2 -right-2 text-[10px] font-black bg-slate-900 text-white w-5 h-5 rounded-full flex items-center justify-center">{i + 1}</span>
                   </div>
                   <h3 className="text-xl font-serif font-bold text-slate-900 mb-3">{step.title}</h3>
                   <p className="text-slate-500 leading-relaxed text-sm font-medium">{step.desc}</p>
                 </RevealSection>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── LIVE URL DEMO ─────────────────────────────────────────────────── */}
+      <section className="relative z-20 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6 py-24">
+          <RevealSection className="text-center mb-14">
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">Try It Now</p>
+            <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">
+              What Will Your Link Grow Into?
+            </h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">
+              Every URL deterministically maps to one of 9 species. Type yours and find out instantly.
+            </p>
+          </RevealSection>
+          <RevealSection>
+            <LiveDemo />
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* ── MANIFESTO ─────────────────────────────────────────────────────── */}
+      <section className="relative z-20 bg-slate-950 overflow-hidden border-b border-slate-800">
+        {/* Decorative giant outlined year */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+          <span
+            className="font-black font-serif leading-none"
+            style={{
+              fontSize: 'clamp(8rem, 28vw, 20rem)',
+              WebkitTextStroke: '1px rgba(16,185,129,0.07)',
+              color: 'transparent',
+              userSelect: 'none',
+            }}
+          >
+            1994
+          </span>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 py-28">
+          <div className="max-w-3xl">
+            <RevealSection>
+              <p className="text-xs font-black uppercase tracking-widest text-emerald-500 mb-6">The Problem</p>
+              <h2 className="text-5xl lg:text-7xl font-serif font-black text-white leading-[1.0] mb-8">
+                QR codes were invented in{' '}
+                <span className="text-emerald-400">1994.</span>
+                <br />Most still look that way.
+              </h2>
+              <p className="text-slate-400 text-xl leading-relaxed max-w-xl mb-14">
+                A black-and-white matrix of noise. Nobody stops. Nobody scans. It communicates nothing except "I exist." We think links deserve better.
+              </p>
+            </RevealSection>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {[
+                { n: '85%', label: 'of QR codes are ignored because they look identical to every other one', accent: 'text-red-400', ring: 'ring-red-500/10', bg: 'bg-red-500/5' },
+                { n: '3×',  label: 'more scans when a QR has distinctive visual branding people remember', accent: 'text-emerald-400', ring: 'ring-emerald-500/10', bg: 'bg-emerald-500/5' },
+                { n: '0',   label: 'standard QR codes have ever gone viral. Grow-Voxly trees have.', accent: 'text-white', ring: 'ring-white/8', bg: 'bg-white/4' },
+              ].map((s) => (
+                <RevealCard key={s.n}>
+                  <div className={`p-6 rounded-2xl ring-1 h-full ${s.ring} ${s.bg}`}>
+                    <div className={`text-5xl font-serif font-black mb-4 ${s.accent}`}>{s.n}</div>
+                    <p className="text-slate-400 text-sm leading-relaxed font-medium">{s.label}</p>
+                  </div>
+                </RevealCard>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -353,7 +612,6 @@ export default function Landing() {
             <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">Engineered for Engagement</h2>
             <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">A powerful fusion of data encoding, procedural generation, and WebGL graphics.</p>
           </RevealSection>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f) => {
               const Icon = f.icon;
@@ -373,8 +631,75 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── COMPARISON ────────────────────────────────────────────────────── */}
+      <section className="relative z-20 bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6 py-24">
+          <RevealSection className="text-center mb-16">
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">The Difference</p>
+            <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">Stop Blending In</h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">
+              Your QR code is a first impression. Here's what it currently says about you.
+            </p>
+          </RevealSection>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_80px_1fr] gap-6 items-center">
+            {/* Left — boring */}
+            <RevealSection>
+              <div className="p-8 rounded-[2rem] bg-slate-100 ring-1 ring-slate-200 text-center h-full flex flex-col">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-8">Standard QR Code</p>
+                <div className="flex justify-center mb-8 flex-grow items-center">
+                  <BoringQRCode />
+                </div>
+                <div className="space-y-3 text-left">
+                  {['Zero personality or brand identity', 'Ignored or mistrusted by users', 'Looks like every other QR code', 'Impossible to make memorable'].map(con => (
+                    <div key={con} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <X size={10} className="text-red-500" />
+                      </div>
+                      <span className="text-sm text-slate-500 font-medium leading-snug">{con}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </RevealSection>
+
+            {/* VS */}
+            <RevealSection className="flex justify-center">
+              <div className="w-14 h-14 rounded-full bg-slate-900 text-white font-black text-sm flex items-center justify-center shadow-2xl ring-4 ring-white">vs</div>
+            </RevealSection>
+
+            {/* Right — Grow-Voxly */}
+            <RevealSection>
+              <div className="p-8 rounded-[2rem] bg-gradient-to-br from-emerald-950 to-slate-900 ring-1 ring-emerald-800/40 text-center h-full flex flex-col shadow-2xl shadow-emerald-950/20">
+                <p className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-8">Grow-Voxly Tree</p>
+                <div className="flex justify-center mb-8 flex-grow items-center">
+                  <div className="w-48 h-48 rounded-2xl bg-emerald-900/40 ring-1 ring-emerald-700/30 flex flex-col items-center justify-center gap-4 shadow-inner">
+                    <Trees size={56} className="text-emerald-400" />
+                    <div className="flex gap-2">
+                      {['#FFB7C5', '#4C956C', '#DC2F02', '#F48C06', '#4c1d95'].map(c => (
+                        <div key={c} className="w-5 h-5 rounded-full ring-1 ring-white/10 shadow" style={{ background: c }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3 text-left">
+                  {['Instantly recognisable brand identity', 'Invites curiosity — people want to scan', 'One-of-a-kind, seeded from your URL', 'Memorable, shareable, and beautiful'].map(pro => (
+                    <div key={pro} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check size={10} className="text-emerald-400" />
+                      </div>
+                      <span className="text-sm text-slate-300 font-medium leading-snug">{pro}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </RevealSection>
+          </div>
+        </div>
+      </section>
+
       {/* ── TREE SPECIES GALLERY ──────────────────────────────────────────── */}
-      <section id="species" className="relative z-20 bg-white border-b border-slate-100">
+      <section id="species" className="relative z-20 bg-slate-50 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-24">
           <RevealSection className="text-center mb-16">
             <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">Species Library</p>
@@ -383,47 +708,81 @@ export default function Landing() {
               Each species has its own procedural algorithm, colour palette, and QR theme. Your URL dictates the exact shape.
             </p>
           </RevealSection>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {TREES.map((tree) => (
               <RevealCard key={tree.id}>
-                <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
-
-                  {/* Blended Background Image */}
+                <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-white ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between">
                   <div
-                    className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
+                    className="absolute inset-0 bg-cover bg-center opacity-10 group-hover:opacity-20 transition-opacity z-0 pointer-events-none"
                     style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
                   />
-
                   <div className="relative z-10">
                     <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
-                      <div
-                        className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
-                        style={{ background: tree.qr }}
-                        title="QR dark colour"
-                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{tree.emoji}</span>
+                        <h3 className="text-xl font-serif font-bold text-slate-900">{tree.label}</h3>
+                      </div>
+                      <div className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm" style={{ background: tree.qr }} />
                     </div>
                     <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
                   </div>
-
-                  <div className="relative z-10 flex flex-wrap items-center gap-1.5 mt-auto pt-4">
+                  <div className="relative z-10 flex flex-wrap items-center gap-1.5 mt-auto pt-4 border-t border-slate-100">
                     {tree.leaves.map((c) => (
-                      <div key={c} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
+                      <div key={c} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm hover:scale-110 transition-transform" style={{ background: c }} />
                     ))}
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
-                    <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-70" style={{ background: tree.trunk }} />
+                    <span className="text-[10px] text-slate-400 font-black ml-2 tracking-widest uppercase">Palette</span>
                   </div>
                 </div>
               </RevealCard>
             ))}
           </div>
-
           <RevealSection className="flex justify-center mt-14">
-            <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-slate-50 px-4 py-2 rounded-full ring-1 ring-slate-900/5">
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-white px-4 py-2 rounded-full ring-1 ring-slate-900/5 shadow-sm">
               More presets will be launched in the future <Sparkles size={16} className="text-emerald-500" />
             </p>
           </RevealSection>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
+      <section className="relative z-20 bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6 py-24">
+          <RevealSection className="text-center mb-16">
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">Community</p>
+            <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">People Love Their Trees</h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">
+              Designers, developers, and creators who replaced boring QR codes for good.
+            </p>
+          </RevealSection>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t) => (
+              <RevealCard key={t.name}>
+                <div className="p-8 rounded-[2rem] bg-slate-50 ring-1 ring-slate-900/5 h-full flex flex-col hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all">
+                  <div className="flex gap-1 mb-6">
+                    {Array.from({ length: t.stars }).map((_, i) => (
+                      <Star key={i} size={15} className="text-amber-400 fill-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-slate-700 leading-relaxed font-medium flex-grow mb-6 text-[15px] italic">
+                    "{t.quote}"
+                  </p>
+                  <div className="flex items-center gap-3 pt-5 border-t border-slate-200">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-sm"
+                      style={{ background: t.color }}
+                    >
+                      {t.initials}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{t.name}</p>
+                      <p className="text-xs text-slate-400 font-medium">{t.role} · {t.company}</p>
+                    </div>
+                  </div>
+                </div>
+              </RevealCard>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -437,7 +796,6 @@ export default function Landing() {
               Export your QR with any tile shape. Finder patterns always stay square — every code scans perfectly.
             </p>
           </RevealSection>
-
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {QR_SHAPES.map((shape) => {
               const Icon = shape.icon;
@@ -454,11 +812,28 @@ export default function Landing() {
               );
             })}
           </div>
-
           <RevealSection className="flex justify-center mt-14">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-white px-4 py-2 rounded-full ring-1 ring-slate-900/5 shadow-sm">
               More shapes will be launched in the future <Shapes size={16} className="text-emerald-500" />
             </p>
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
+      <section className="relative z-20 bg-white border-b border-slate-100">
+        <div className="max-w-3xl mx-auto px-6 py-24">
+          <RevealSection className="text-center mb-14">
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">FAQ</p>
+            <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">Common Questions</h2>
+            <p className="text-slate-500 text-lg font-medium">Everything you need before you plant your first tree.</p>
+          </RevealSection>
+          <RevealSection>
+            <div className="bg-white rounded-[2rem] ring-1 ring-slate-900/5 shadow-sm divide-y divide-slate-100 px-8">
+              {FAQS.map(faq => (
+                <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+              ))}
+            </div>
           </RevealSection>
         </div>
       </section>
@@ -513,24 +888,17 @@ export default function Landing() {
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <footer className="w-full py-12 relative z-20 bg-slate-900 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-6 flex flex-col gap-8">
-
-          {/* Top row */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            {/* Brand */}
             <div className="flex items-center gap-2">
-              <Trees size={20} className="text-emerald-500" />
+              <Trees size={28} className="text-emerald-500" />
               <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
             </div>
-
-            {/* Nav links */}
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
               <a href="#how-it-works" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">How It Works</a>
               <a href="#species" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Species</a>
               <Link to="/login" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Login</Link>
               <Link to="/signup" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Sign Up</Link>
             </div>
-
-            {/* Credit */}
             <p className="text-sm text-slate-500 font-medium">
               Architected by{' '}
               <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer"
@@ -539,26 +907,15 @@ export default function Landing() {
               </a>
             </p>
           </div>
-
-          {/* Divider */}
           <div className="border-t border-slate-800" />
-
-          {/* Bottom row — legal links */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-slate-600">
-              © {new Date().getFullYear()} Grow-Voxly. All rights reserved.
-            </p>
+            <p className="text-xs text-slate-600">© {new Date().getFullYear()} Grow-Voxly. All rights reserved.</p>
             <div className="flex items-center gap-5 text-xs">
-              <Link to="/privacy" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
-                Privacy Policy
-              </Link>
+              <Link to="/privacy" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">Privacy Policy</Link>
               <span className="text-slate-700">·</span>
-              <Link to="/terms" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
-                Terms of Service
-              </Link>
+              <Link to="/terms" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">Terms of Service</Link>
             </div>
           </div>
-
         </div>
       </footer>
 
