@@ -1,10 +1,10 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Trees, Sparkles, ArrowRight, QrCode, Zap, Layers, Activity,
   Globe, Palette, ChevronDown, Share2, Link2,
   Square, Circle, Hexagon, Diamond, Shapes,
-  Star, Check, X, Plus, Wand2
+  Check, X, Plus
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
@@ -25,63 +25,63 @@ const stagger = {
 // ─── Static Data ──────────────────────────────────────────────────────────────
 const TREES = [
   {
-    id: 'cherryblossom', label: 'Cherry Blossom', emoji: '🌸',
+    id: 'cherryblossom', label: 'Cherry Blossom',
     imagePlaceholder: '/images/cherryblossom.jpg',
     leaves: ['#FFB7C5', '#FF9EB5', '#FF85A1', '#FF7096'],
     trunk: '#3A2318', qr: '#be185d',
     desc: 'Soft pink canopy with a romantic, spring-bloom silhouette.'
   },
   {
-    id: 'pine', label: 'Pine', emoji: '🌲',
+    id: 'pine', label: 'Pine',
     imagePlaceholder: '/images/pine.jpg',
     leaves: ['#1B4332', '#2D6A4F', '#40916C', '#52B788'],
     trunk: '#2D241E', qr: '#064e3b',
     desc: 'Dense evergreen layers — sharp, cool, and commanding.'
   },
   {
-    id: 'socotra dragon', label: 'Socotra Dragon', emoji: '🐉',
+    id: 'socotra dragon', label: 'Socotra Dragon',
     imagePlaceholder: '/images/socotradragon.jpg',
     leaves: ['#274C2B', '#386641', '#4C956C', '#2D6A4F'],
     trunk: '#5C1A06', qr: '#451a03',
     desc: 'Alien umbrella crown from the island of Socotra, Yemen.'
   },
   {
-    id: 'maple', label: 'Maple', emoji: '🍁',
+    id: 'maple', label: 'Maple',
     imagePlaceholder: '/images/maple.jpg',
     leaves: ['#9D0208', '#D00000', '#DC2F02', '#F48C06'],
     trunk: '#3A2618', qr: '#9a3412',
     desc: 'Fiery autumn palette — reds and oranges at full blaze.'
   },
   {
-    id: 'juniper', label: 'Juniper', emoji: '🌿',
+    id: 'juniper', label: 'Juniper',
     imagePlaceholder: '/images/juniper.jpg',
     leaves: ['#2D4A22', '#3A5A40', '#588157', '#A3B18A'],
     trunk: '#1A1A1A', qr: '#0f766e',
     desc: 'Sculptural silvery-green needles with a windswept form.'
   },
   {
-    id: 'baobab', label: 'Baobab', emoji: '🌳',
+    id: 'baobab', label: 'Baobab',
     imagePlaceholder: '/images/baobab.jpg',
     leaves: ['#56692e', '#6a8239', '#445423', '#839e4a'],
     trunk: '#75695c', qr: '#4a3f35',
     desc: 'Massive African giant — swollen trunk, sparse proud crown.'
   },
   {
-    id: 'weeping willow', label: 'Weeping Willow', emoji: '🌾',
+    id: 'weeping willow', label: 'Weeping Willow',
     imagePlaceholder: '/images/weepingwillow.jpg',
     leaves: ['#8f9e59', '#a2b366', '#768545', '#b7c975'],
     trunk: '#3d3224', qr: '#2d4a22',
     desc: 'Long cascading curtains of yellow-green foliage draping down.'
   },
   {
-    id: 'cactus', label: 'Prickly Pear Cactus', emoji: '🌵',
+    id: 'cactus', label: 'Prickly Pear Cactus',
     imagePlaceholder: '/images/cactus.jpg',
     leaves: ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#f43f5e', '#fb7185', '#e11d48'],
     trunk: '#14532d', qr: '#14532d',
     desc: 'Vivid desert geometry — bright green paddles and pink blooming flowers.'
   },
   {
-    id: 'southern magnolia', label: 'Southern Magnolia', emoji: '🌺',
+    id: 'southern magnolia', label: 'Southern Magnolia',
     imagePlaceholder: '/images/southernmagnolia.jpg',
     leaves: ['#1e3a1e', '#2d4c2d', '#3e5e3e', '#ffffff', '#fdf2f8', '#fae8ff', '#f0abfc'],
     trunk: '#4b3f35', qr: '#4c1d95',
@@ -118,27 +118,6 @@ const STATS = [
   { value: '100%', label: 'Browser Native' },
 ];
 
-const TESTIMONIALS = [
-  {
-    name: 'Arjun Mehta', role: 'Creative Director', company: 'Mindwave Studio',
-    initials: 'AM', color: '#4C956C',
-    quote: 'We replaced every static QR in our client campaigns with Grow-Voxly trees. Scan rates tripled. People genuinely want to scan them.',
-    stars: 5,
-  },
-  {
-    name: 'Sarah Chen', role: 'Product Designer', company: 'Freelance',
-    initials: 'SC', color: '#DC2F02',
-    quote: "The Cherry Blossom tree on my portfolio card gets more compliments than my actual work. That's the magic here.",
-    stars: 5,
-  },
-  {
-    name: 'Lucas Oliveira', role: 'Growth Lead', company: 'Startup Garage',
-    initials: 'LO', color: '#4c1d95',
-    quote: 'Socotra Dragon QR on every deck. People remember us because it looks like art, not an afterthought nobody ever scanned.',
-    stars: 5,
-  },
-];
-
 const FAQS = [
   {
     q: 'Is Grow-Voxly completely free?',
@@ -166,13 +145,6 @@ const FAQS = [
   },
 ];
 
-// ─── URL → Species hash (djb2) ────────────────────────────────────────────────
-function hashStr(s) {
-  let h = 5381;
-  for (let i = 0; i < s.length; i++) h = (((h << 5) + h) + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
 // ─── Reusable scroll-reveal components ───────────────────────────────────────
 
 function RevealSection({ children, className = '', delay = 0 }) {
@@ -192,7 +164,6 @@ function RevealSection({ children, className = '', delay = 0 }) {
   );
 }
 
-// Each card has its own IntersectionObserver — fires one-by-one as you scroll
 function RevealCard({ children, className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.50 });
@@ -219,11 +190,10 @@ function SpeciesMarquee() {
       <motion.div
         className="flex items-center whitespace-nowrap"
         animate={{ x: ['0%', '-50%'] }}
-        transition={{ duration: 34, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
       >
         {items.map((tree, i) => (
           <span key={`${tree.id}-${i}`} className="inline-flex items-center gap-3 flex-shrink-0 px-8">
-            <span className="text-xl">{tree.emoji}</span>
             <span className="font-serif font-bold text-lg text-emerald-200">{tree.label}</span>
             <span className="text-emerald-700 ml-4 text-sm">◆</span>
           </span>
@@ -233,73 +203,32 @@ function SpeciesMarquee() {
   );
 }
 
-// ─── Live URL Demo ────────────────────────────────────────────────────────────
-function LiveDemo() {
-  const [url, setUrl] = useState('');
-  const tree = useMemo(() => {
-    const clean = url.trim();
-    if (!clean) return null;
-    return TREES[hashStr(clean) % TREES.length];
-  }, [url]);
+// ─── Auto-Rotating Image Carousel ────────────────────────────────────────────
+function TreeCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % TREES.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="relative">
-        <input
-          type="text"
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          placeholder="https://yourwebsite.com"
-          className="w-full px-6 py-5 pr-14 rounded-2xl bg-white ring-1 ring-slate-200 text-slate-900 font-medium text-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-lg transition-shadow"
+    <div className="w-48 h-48 rounded-2xl ring-1 ring-emerald-700/30 overflow-hidden shadow-inner relative bg-emerald-900/40">
+      <AnimatePresence>
+        <motion.img
+          key={currentIndex}
+          src={TREES[currentIndex].imagePlaceholder}
+          alt={TREES[currentIndex].label}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">
-          <Wand2 size={22} />
-        </div>
-      </div>
-
-      <AnimatePresence mode="wait">
-        {tree ? (
-          <motion.div
-            key={tree.id}
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-5 p-7 rounded-2xl bg-white ring-1 ring-slate-200 shadow-2xl shadow-slate-200/60"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 ring-1 ring-black/5"
-                style={{ background: tree.qr + '20' }}
-              >
-                {tree.emoji}
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Your URL grows into a</p>
-                <h3 className="text-xl font-serif font-bold text-slate-900">{tree.label}</h3>
-              </div>
-            </div>
-            <p className="text-slate-500 text-sm leading-relaxed mb-5">{tree.desc}</p>
-            <div className="flex flex-wrap gap-2 items-center pt-4 border-t border-slate-100">
-              {tree.leaves.map(c => (
-                <div key={c} className="w-7 h-7 rounded-full shadow-sm ring-1 ring-black/10 hover:scale-110 transition-transform" style={{ background: c }} />
-              ))}
-              <div className="w-7 h-7 rounded-full shadow-sm ring-1 ring-black/10 opacity-70" style={{ background: tree.trunk }} />
-              <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest ml-2">Generated Palette</span>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.p
-            key="hint"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center text-slate-400 text-sm mt-5 font-medium"
-          >
-            Type any URL above — see which species it grows into ✦
-          </motion.p>
-        )}
       </AnimatePresence>
+      <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/60 to-transparent pointer-events-none" />
     </div>
   );
 }
@@ -419,7 +348,7 @@ export default function Landing() {
         {/* NAVBAR */}
         <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center">
           <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide">
-            <Trees size={36} className="text-emerald-600" />
+            <Trees size={36} className="text-emerald-600 relative bottom-[2px]" />
             Grow-Voxly
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
@@ -505,9 +434,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── SPECIES MARQUEE ───────────────────────────────────────────────── */}
-      <SpeciesMarquee />
-
       {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
       <section id="how-it-works" className="relative z-20 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-24">
@@ -534,24 +460,6 @@ export default function Landing() {
               );
             })}
           </div>
-        </div>
-      </section>
-
-      {/* ── LIVE URL DEMO ─────────────────────────────────────────────────── */}
-      <section className="relative z-20 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-24">
-          <RevealSection className="text-center mb-14">
-            <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">Try It Now</p>
-            <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">
-              What Will Your Link Grow Into?
-            </h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">
-              Every URL deterministically maps to one of 9 species. Type yours and find out instantly.
-            </p>
-          </RevealSection>
-          <RevealSection>
-            <LiveDemo />
-          </RevealSection>
         </div>
       </section>
 
@@ -673,14 +581,7 @@ export default function Landing() {
               <div className="p-8 rounded-[2rem] bg-gradient-to-br from-emerald-950 to-slate-900 ring-1 ring-emerald-800/40 text-center h-full flex flex-col shadow-2xl shadow-emerald-950/20">
                 <p className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-8">Grow-Voxly Tree</p>
                 <div className="flex justify-center mb-8 flex-grow items-center">
-                  <div className="w-48 h-48 rounded-2xl bg-emerald-900/40 ring-1 ring-emerald-700/30 flex flex-col items-center justify-center gap-4 shadow-inner">
-                    <Trees size={56} className="text-emerald-400" />
-                    <div className="flex gap-2">
-                      {['#FFB7C5', '#4C956C', '#DC2F02', '#F48C06', '#4c1d95'].map(c => (
-                        <div key={c} className="w-5 h-5 rounded-full ring-1 ring-white/10 shadow" style={{ background: c }} />
-                      ))}
-                    </div>
-                  </div>
+                  <TreeCarousel />
                 </div>
                 <div className="space-y-3 text-left">
                   {['Instantly recognisable brand identity', 'Invites curiosity — people want to scan', 'One-of-a-kind, seeded from your URL', 'Memorable, shareable, and beautiful'].map(pro => (
@@ -697,6 +598,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ── SPECIES MARQUEE ───────────────────────────────────────────────── */}
+      <SpeciesMarquee />
 
       {/* ── TREE SPECIES GALLERY ──────────────────────────────────────────── */}
       <section id="species" className="relative z-20 bg-slate-50 border-b border-slate-100">
@@ -718,10 +622,7 @@ export default function Landing() {
                   />
                   <div className="relative z-10">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{tree.emoji}</span>
-                        <h3 className="text-xl font-serif font-bold text-slate-900">{tree.label}</h3>
-                      </div>
+                      <h3 className="text-xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
                       <div className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm" style={{ background: tree.qr }} />
                     </div>
                     <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
@@ -742,47 +643,6 @@ export default function Landing() {
               More presets will be launched in the future <Sparkles size={16} className="text-emerald-500" />
             </p>
           </RevealSection>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ──────────────────────────────────────────────────── */}
-      <section className="relative z-20 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-24">
-          <RevealSection className="text-center mb-16">
-            <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">Community</p>
-            <h2 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 mb-4">People Love Their Trees</h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">
-              Designers, developers, and creators who replaced boring QR codes for good.
-            </p>
-          </RevealSection>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <RevealCard key={t.name}>
-                <div className="p-8 rounded-[2rem] bg-slate-50 ring-1 ring-slate-900/5 h-full flex flex-col hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all">
-                  <div className="flex gap-1 mb-6">
-                    {Array.from({ length: t.stars }).map((_, i) => (
-                      <Star key={i} size={15} className="text-amber-400 fill-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-slate-700 leading-relaxed font-medium flex-grow mb-6 text-[15px] italic">
-                    "{t.quote}"
-                  </p>
-                  <div className="flex items-center gap-3 pt-5 border-t border-slate-200">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-sm"
-                      style={{ background: t.color }}
-                    >
-                      {t.initials}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">{t.name}</p>
-                      <p className="text-xs text-slate-400 font-medium">{t.role} · {t.company}</p>
-                    </div>
-                  </div>
-                </div>
-              </RevealCard>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -889,8 +749,8 @@ export default function Landing() {
       <footer className="w-full py-12 relative z-20 bg-slate-900 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-6 flex flex-col gap-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <Trees size={28} className="text-emerald-500" />
+            <div className="flex items-center gap-2 leading-none">
+              <Trees size={20} className="text-emerald-500 relative bottom-[1px]" />
               <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
             </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
