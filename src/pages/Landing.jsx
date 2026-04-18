@@ -348,7 +348,7 @@ export default function Landing() {
                 </motion.div>
               );
             })}
-          RevealGrid>
+          </RevealGrid>
         </div>
       </section>
 
