@@ -20,23 +20,23 @@ function useWindowWidth() {
 }
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
-// UPDATED: Much deeper drop (y: 60) and slower duration (1.2s) for a dramatic, cinematic breathe
-const fadeUp = {
-  hidden: { opacity: 0, y: 60 },
-  visible: (delay = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1], delay }
-  })
+const fadeUpVariant = {
+  hidden: { opacity: 0, y: 50 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
+  }
 };
 
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.25 } }
-};
-
-const cardStagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.2, delayChildren: 0.15 } }
+const staggerContainerVariant = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15
+    }
+  }
 };
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
@@ -155,19 +155,18 @@ const STATS = [
 
 // ─── Reusable scroll-reveal wrappers ─────────────────────────────────────────
 
-// UPDATED: Strict 40% margin threshold. Element must be 40% up the screen before revealing.
-function RevealSection({ children, className = '', delay = 0, customMargin = '-40%' }) {
+function RevealSection({ children, className = '', delay = 0 }) {
   const ref = useRef(null);
-  // Using custom margin to strictly control the trigger point. 
-  // Margin string format: "Top Right Bottom Left" -> "0px 0px -40% 0px" triggers when element crosses 40% from bottom
-  const isInView = useInView(ref, { once: true, margin: `0px 0px ${customMargin} 0px` });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
   return (
     <motion.div
       ref={ref}
       initial="hidden"
       animate={isInView ? 'visible' : 'hidden'}
-      variants={fadeUp}
-      custom={delay}
+      variants={{
+        hidden: { opacity: 0, y: 50 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay } }
+      }}
       className={className}
     >
       {children}
@@ -177,13 +176,13 @@ function RevealSection({ children, className = '', delay = 0, customMargin = '-4
 
 function RevealGrid({ children, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '0px 0px -40% 0px' });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
   return (
     <motion.div
       ref={ref}
       initial="hidden"
       animate={isInView ? 'visible' : 'hidden'}
-      variants={cardStagger}
+      variants={staggerContainerVariant}
       className={className}
     >
       {children}
@@ -199,23 +198,33 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-x-hidden selection:bg-emerald-200">
 
-      {/* ── SOFT BLENDING GRADIENT BACKGROUND (UPDATED) ──────────── */}
-      {/* FIXED: Highly saturated, centered, undeniable gradient so it punches through the white background on mobile */}
+      {/* ── SOFT BLENDING GRADIENT BACKGROUND ──────────── */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Main Central Glow directly behind the text */}
-        <div className="absolute top-[5%] lg:top-[15%] left-1/2 -translate-x-1/2 w-[80vw] lg:w-[45rem] max-w-[600px] h-[400px] lg:h-[45rem] bg-emerald-400/50 lg:bg-teal-300/30 rounded-full blur-[60px] lg:blur-[100px] opacity-100 mix-blend-normal pointer-events-none" />
+        {/* Main Central Glow directly behind the text - Boosted opacity and color for high visibility */}
+        <div className="absolute top-[8%] lg:top-[15%] left-1/2 -translate-x-1/2 w-[85vw] lg:w-[50rem] h-[400px] lg:h-[45rem] bg-teal-400/40 rounded-full blur-[80px] lg:blur-[100px] pointer-events-none transform-gpu will-change-transform" />
         
         {/* Accent Glows */}
-        <div className="absolute top-[-5%] right-[-5%] w-[300px] lg:w-[60rem] h-[300px] lg:h-[60rem] bg-gradient-to-bl from-emerald-500/30 via-teal-300/30 to-transparent rounded-full blur-[60px] lg:blur-[140px] opacity-100 animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute top-[30%] left-[-10%] w-[300px] lg:w-[50rem] h-[300px] lg:h-[50rem] bg-gradient-to-tr from-emerald-400/30 via-emerald-200/20 to-transparent rounded-full blur-[60px] lg:blur-[120px] opacity-100" />
+        <div className="absolute top-[-5%] right-[-5%] w-[300px] lg:w-[60rem] h-[300px] lg:h-[60rem] bg-gradient-to-bl from-emerald-500/30 via-teal-400/20 to-transparent rounded-full blur-[80px] lg:blur-[120px] animate-pulse transform-gpu will-change-transform" style={{ animationDuration: '8s' }} />
+        <div className="absolute top-[30%] left-[-10%] w-[300px] lg:w-[50rem] h-[300px] lg:h-[50rem] bg-gradient-to-tr from-emerald-400/30 via-emerald-200/20 to-transparent rounded-full blur-[80px] lg:blur-[120px] transform-gpu will-change-transform" />
+      </div>
+
+      {/* ── FLOATING HUD OVERLAYS ─────────────────────────────────────────── */}
+      <div className="hidden lg:flex absolute top-[25%] right-[8%] z-10 bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl px-4 py-3 rounded-2xl items-center gap-3 shadow-emerald-900/5">
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs font-extrabold text-emerald-900 tracking-wider">LIVE DATA ENGINE</span>
+      </div>
+      <div className="hidden lg:flex absolute bottom-[25%] right-[20%] z-10 bg-slate-900/80 backdrop-blur-xl border border-slate-700 shadow-2xl px-5 py-3 rounded-2xl items-center gap-3">
+        <Activity size={18} className="text-emerald-400" />
+        <span className="text-xs font-bold text-white tracking-widest">
+          SCANS: <span className="text-emerald-400 font-mono text-sm ml-1">14,092</span>
+        </span>
       </div>
 
       {/* ── FOREGROUND CONTENT ────────────────────────────────────────────── */}
       <div className="relative z-10 w-full min-h-screen flex flex-col">
 
         {/* NAVBAR */}
-        {/* Wrapped in RevealSection so it drops down beautifully on load */}
-        <RevealSection customMargin="0px">
+        <RevealSection>
           <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center pointer-events-auto">
             <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide leading-none">
               <Trees size={28} className="text-emerald-600 shrink-0 relative bottom-[2px]" />
@@ -243,17 +252,16 @@ export default function Landing() {
         </RevealSection>
 
         {/* HERO COPY */}
-        {/* The Hero is already at the top, so a 0% margin works perfectly to trigger the delayed fade-ins immediately on load */}
         <main className="flex-grow max-w-7xl mx-auto w-full px-6 flex items-center justify-center pt-10 pb-32 lg:py-0">
-          <RevealSection customMargin="0px" className="w-full lg:w-8/12 flex flex-col items-center text-center pointer-events-auto">
+          <RevealSection className="w-full lg:w-8/12 flex flex-col items-center text-center pointer-events-auto">
             
-            <motion.div variants={fadeUp} custom={0.2}
+            <motion.div variants={fadeUpVariant} custom={0.1}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 text-emerald-900 text-xs font-black uppercase tracking-widest mb-8 ring-1 ring-slate-900/5 backdrop-blur-md shadow-sm"
             >
               <Sparkles size={14} className="text-emerald-500" /> Voxel Web Architecture
             </motion.div>
 
-            <motion.h1 variants={fadeUp} custom={0.4}
+            <motion.h1 variants={fadeUpVariant} custom={0.2}
               className="text-6xl lg:text-[6rem] font-serif text-slate-900 mb-6 leading-[1.05] tracking-tight"
             >
               Plant a Link. <br />
@@ -262,13 +270,13 @@ export default function Landing() {
               </span>
             </motion.h1>
 
-            <motion.p variants={fadeUp} custom={0.6}
+            <motion.p variants={fadeUpVariant} custom={0.3}
               className="text-lg lg:text-xl text-slate-600 mb-10 max-w-xl leading-relaxed font-medium"
             >
               We convert raw URL data into breathtaking, procedural 3D ecosystems. Ditch boring black-and-white pixels and share links your audience can actually explore.
             </motion.p>
 
-            <motion.div variants={fadeUp} custom={0.8}
+            <motion.div variants={fadeUpVariant} custom={0.4}
               className="flex flex-col sm:flex-row w-full sm:w-auto items-center justify-center gap-4"
             >
               {currentUser ? (
@@ -290,7 +298,7 @@ export default function Landing() {
         </main>
 
         {/* Scroll hint */}
-        <RevealSection customMargin="0px" delay={1.2} className="pointer-events-auto flex justify-center pb-10">
+        <RevealSection delay={0.6} className="pointer-events-auto flex justify-center pb-10">
           <a href="#stats" className="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-600 transition-colors group">
             <span className="text-xs font-semibold tracking-widest uppercase">Discover</span>
             <ChevronDown size={18} className="animate-bounce" />
@@ -301,14 +309,14 @@ export default function Landing() {
       {/* ── STATS BAR ─────────────────────────────────────────────────────── */}
       <section id="stats" className="relative z-20 bg-slate-900 border-y border-slate-800">
         <div className="max-w-7xl mx-auto px-6 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <RevealGrid className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((s, i) => (
-              <RevealSection key={s.label} delay={i * 0.15} className="text-center">
+              <motion.div key={s.label} variants={fadeUpVariant} className="text-center">
                 <div className="text-3xl lg:text-4xl font-serif font-bold text-emerald-400 mb-1">{s.value}</div>
                 <div className="text-xs font-semibold text-slate-400 tracking-widest uppercase">{s.label}</div>
-              </RevealSection>
+              </motion.div>
             ))}
-          </div>
+          </RevealGrid>
         </div>
       </section>
 
@@ -321,12 +329,12 @@ export default function Landing() {
             <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">Three steps. Zero friction. A living, scannable 3D world.</p>
           </RevealSection>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 relative">
+          <RevealGrid className="grid grid-cols-1 md:grid-cols-3 gap-0 relative">
             <div className="hidden md:block absolute top-[3.5rem] left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-emerald-200 to-transparent" />
             {STEPS.map((step, i) => {
               const Icon = step.icon;
               return (
-                <RevealSection key={step.title} delay={i * 0.2} className="flex flex-col items-center text-center px-8 py-6">
+                <motion.div key={step.title} variants={fadeUpVariant} className="flex flex-col items-center text-center px-8 py-6">
                   <div className="relative mb-6">
                     <div className="w-14 h-14 rounded-2xl bg-emerald-50 ring-1 ring-emerald-100 flex items-center justify-center shadow-sm">
                       <Icon size={26} className="text-emerald-600" />
@@ -337,10 +345,10 @@ export default function Landing() {
                   </div>
                   <h3 className="text-xl font-serif font-bold text-slate-900 mb-3">{step.title}</h3>
                   <p className="text-slate-500 leading-relaxed text-sm font-medium">{step.desc}</p>
-                </RevealSection>
+                </motion.div>
               );
             })}
-          </div>
+          RevealGrid>
         </div>
       </section>
 
@@ -357,7 +365,7 @@ export default function Landing() {
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
               return (
-                <motion.div key={f.title} variants={fadeUp} custom={i * 0.15}>
+                <motion.div key={f.title} variants={fadeUpVariant} className="h-full">
                   <div className="p-8 rounded-[2rem] bg-white ring-1 ring-slate-900/5 h-full transition-all hover:shadow-2xl hover:shadow-slate-200/60 hover:-translate-y-1">
                     <div className="w-14 h-14 bg-slate-50 text-emerald-600 flex items-center justify-center rounded-2xl mb-6 shadow-sm ring-1 ring-slate-900/5">
                       <Icon size={28} />
@@ -385,12 +393,11 @@ export default function Landing() {
 
           <RevealGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {TREES.map((tree, i) => (
-              <motion.div key={tree.id} variants={fadeUp} custom={i * 0.15}>
+              <motion.div key={tree.id} variants={fadeUpVariant} className="h-full">
                 <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
 
-                  {/* Blended Background Image - Reduced blending for local image clarity */}
                   <div
-                    className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
+                    className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30 transition-opacity z-0 pointer-events-none"
                     style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
                   />
 
@@ -441,7 +448,7 @@ export default function Landing() {
             {QR_SHAPES.map((shape, i) => {
               const Icon = shape.icon;
               return (
-                <motion.div key={shape.id} variants={fadeUp} custom={i * 0.15}>
+                <motion.div key={shape.id} variants={fadeUpVariant} className="h-full">
                   <div className="p-8 rounded-[1.5rem] bg-white ring-1 ring-slate-900/5 text-center hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all h-full">
                     <div className="flex justify-center mb-5 text-emerald-600">
                       <Icon size={44} strokeWidth={1.5} />
@@ -465,7 +472,7 @@ export default function Landing() {
       {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
       <section className="relative z-20 bg-slate-900 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[20rem] bg-emerald-500/10 rounded-full blur-[80px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[20rem] bg-emerald-500/10 rounded-full blur-[80px] transform-gpu will-change-transform" />
         </div>
         <div className="relative max-w-4xl mx-auto px-6 py-28 text-center">
           <RevealSection>
@@ -514,8 +521,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col gap-8">
 
           {/* Top row */}
-          {/* Note: Decreased threshold to 15% here so the footer doesn't get permanently stuck off-screen on short monitors! */}
-          <RevealSection customMargin="-15%">
+          <RevealSection>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex items-center gap-2 leading-none">
                 <Trees size={20} className="text-emerald-500 relative bottom-[1px]" />
@@ -542,7 +548,7 @@ export default function Landing() {
           <div className="border-t border-slate-800" />
 
           {/* Bottom row — legal links */}
-          <RevealSection customMargin="-15%">
+          <RevealSection>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               <p className="text-xs text-slate-600">
                 © {new Date().getFullYear()} Grow-Voxly. All rights reserved.
