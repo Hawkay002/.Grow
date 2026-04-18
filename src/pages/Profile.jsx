@@ -4,9 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { deleteUser, updateProfile } from 'firebase/auth'; 
-import { ArrowLeft, LogOut, Trash2, AlertTriangle, Edit2 } from 'lucide-react';
-// IMPORT the new Avatar Picker and the avatars array
+import { ArrowLeft, LogOut, Trash2, AlertTriangle, Edit2, Share2 } from 'lucide-react';
 import { AvatarPicker, avatars } from '../components/avatar-picker';
+import PrinterModal from './Printer'; // Adjust path if your Printer.jsx is in a different folder
 
 export default function Profile() {
   const { currentUser, logout } = useAuth();
@@ -14,6 +14,8 @@ export default function Profile() {
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showPrinterModal, setShowPrinterModal] = useState(false); // Controls the new Share Modal
+  
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +25,6 @@ export default function Profile() {
     return null;
   }
 
-  // Look up the user's saved avatar ID (defaults to 1: Emerald Oak if they haven't picked one)
   const currentAvatarId = currentUser.photoURL ? parseInt(currentUser.photoURL) : 1;
   const currentAvatar = avatars.find(a => a.id === currentAvatarId) || avatars[0];
 
@@ -36,7 +37,6 @@ export default function Profile() {
     }
   }
 
-  // Saves the selected Avatar ID directly to the user's Firebase Auth profile
   async function handleSaveAvatar(newId) {
     setIsSavingAvatar(true);
     setError('');
@@ -56,7 +56,6 @@ export default function Profile() {
     setError('');
     
     try {
-      // 1. Wipe out all user data (trees) from Firestore
       const q = query(collection(db, 'qrs'), where("userId", "==", currentUser.uid));
       const querySnapshot = await getDocs(q);
       const batch = writeBatch(db);
@@ -66,7 +65,6 @@ export default function Profile() {
       });
       await batch.commit();
 
-      // 2. Delete the user's Authentication record
       await deleteUser(currentUser);
       
       navigate('/signup');
@@ -85,6 +83,11 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col relative">
       
+      {/* PRINTER/SHARE MODAL OVERLAY */}
+      {showPrinterModal && (
+        <PrinterModal onClose={() => setShowPrinterModal(false)} />
+      )}
+
       {/* AVATAR PICKER OVERLAY */}
       {showAvatarPicker && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -157,7 +160,6 @@ export default function Profile() {
             
             {/* DYNAMIC AVATAR DISPLAY */}
             <div className="relative mb-4 group">
-              {/* Note: Changed rounded-[2rem] to rounded-full to match circular avatars */}
               <div className="w-28 h-28 bg-slate-100 rounded-full flex items-center justify-center ring-4 ring-white shadow-lg overflow-hidden transition-transform duration-300 group-hover:scale-105">
                  <img 
                     src={currentAvatar.src} 
@@ -177,6 +179,20 @@ export default function Profile() {
             <h2 className="text-xl font-bold text-slate-800 mt-2">{currentUser.email}</h2>
             <p className="text-sm text-slate-400 mt-1 uppercase tracking-widest font-semibold">{currentAvatar.alt} Cultivator</p>
           </div>
+        </div>
+
+        {/* SHARE GROW-VOXLY */}
+        <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-emerald-100 border border-emerald-50 mb-8">
+          <h3 className="text-lg font-bold text-emerald-900 mb-2">Share Grow-Voxly</h3>
+          <p className="text-sm text-slate-500 mb-6">
+            Love the platform? Print a digital receipt and share the ecosystem with your friends and network.
+          </p>
+          <button 
+            onClick={() => setShowPrinterModal(true)} 
+            className="w-full flex items-center justify-center gap-2 py-4 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors ring-1 ring-emerald-200"
+          >
+            <Share2 size={18} /> Print & Share
+          </button>
         </div>
 
         {/* DANGER ZONE */}
