@@ -173,7 +173,7 @@ function RevealCard({ children, className = '' }) {
   const ref = useRef(null);
   // amount: 0.15 → card must be 15% visible before it animates in.
   // Once triggered it stays visible (once: true).
-  const isInView = useInView(ref, { once: true, amount: 0.20 });
+  const isInView = useInView(ref, { once: true, amount: 0.30 });
   return (
     <motion.div
       ref={ref}
