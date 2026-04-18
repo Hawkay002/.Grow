@@ -205,15 +205,15 @@ function SpeciesMarquee() {
 
 // ─── Auto-Rotating Image Carousel ────────────────────────────────────────────
 const CAROUSEL_IMAGES = [
-  '/carousel1.png',
-  '/carousel2.png',
-  '/carousel3.png',
-  '/carousel4.png',
-  '/carousel5.png',
-  '/carousel6.png',
-  '/carousel7.png',
-  '/carousel8.png',
-  '/carousel9.png',
+  '/images/carousel1.png',
+  '/images/carousel2.png',
+  '/images/carousel3.png',
+  '/images/carousel4.png',
+  '/images/carousel5.png',
+  '/images/carousel6.png',
+  '/images/carousel7.png',
+  '/images/carousel8.png',
+  '/images/carousel9.png',
 ];
 
 function TreeCarousel() {
