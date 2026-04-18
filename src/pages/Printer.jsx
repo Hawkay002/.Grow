@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Printer as PrinterIcon, Scissors, Power, Share2, RefreshCw, X } from 'lucide-react';
+import { Printer as PrinterIcon, Scissors, Power, Share2, RefreshCw, X, Trees } from 'lucide-react';
 import QRCode from 'qrcode';
 
 // --- Web Audio API Synth for Thermal Printer Sound ---
@@ -144,7 +144,7 @@ export default function PrinterModal({ onClose }) {
     // Generate the QR code for the website
     QRCode.toDataURL('https://grow-voxly.vercel.app', { 
       margin: 1, 
-      width: 160, 
+      width: 180, 
       color: { dark: '#0f172a', light: '#fcfcfc' } 
     }).then(setQrDataUrl).catch(console.error);
 
@@ -164,15 +164,16 @@ export default function PrinterModal({ onClose }) {
   };
 
   const startPrinting = () => {
-    // Generate exactly at the moment the button is pressed
+    // Generate sensible payload exactly at the moment the button is pressed
     setTicketData({
       id: Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
       date: new Date().toLocaleDateString(),
       time: new Date().toLocaleTimeString(),
       items: [
-        { name: '1x 3D Voxel Tree', price: 'FREE' },
-        { name: '1x Custom QR Tile', price: 'FREE' },
-        { name: '1x Vanity URL', price: 'FREE' }
+        { name: 'Voxel Ecosystem', price: 'INFINITE' },
+        { name: 'Procedural Seed', price: 'ACTIVE' },
+        { name: 'Custom QR Matrix', price: 'SECURE' },
+        { name: 'Live Analytics', price: 'ONLINE' }
       ],
       total: 'PRICELESS'
     });
@@ -250,12 +251,13 @@ export default function PrinterModal({ onClose }) {
   const printerPartAnimation = `transition-transform duration-1000 ease-in-out ${viewMode === 'ticket' ? 'translate-y-[100vh]' : 'translate-y-0'}`;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-between font-sans overflow-hidden px-4 text-slate-200 pt-10 pb-16 sm:pb-24">
+    // BRAND GREEN BACKGROUND: Applied signature emerald-to-slate gradient
+    <div className="fixed inset-0 z-[200] bg-gradient-to-br from-emerald-950/95 via-emerald-900/95 to-slate-950/95 backdrop-blur-md flex flex-col items-center justify-between font-sans overflow-hidden px-4 text-slate-200 pt-10 pb-16 sm:pb-24">
       
-      {/* Close Modal Button */}
+      {/* ALWAYS VISIBLE CLOSE BUTTON */}
       <button 
         onClick={onClose} 
-        className={`absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-[250] ${viewMode === 'ticket' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-emerald-500/40 rounded-full text-white transition-colors z-[250] shadow-lg border border-white/10"
       >
         <X size={24} />
       </button>
@@ -299,51 +301,65 @@ export default function PrinterModal({ onClose }) {
               <div ref={ticketRef} className="w-full h-auto bg-transparent text-black flex flex-col relative z-10 shrink-0">
                 <JaggedEdgeCode top={true} />
 
-                <div className="w-full bg-[#fcfcfc] px-6 pt-5 pb-7 flex flex-col font-mono text-sm">
-                  <div className="text-center font-black text-2xl mb-1 tracking-tighter">
-                    GROW-VOXLY
+                <div className="w-full bg-[#fcfcfc] px-6 pt-5 pb-7 flex flex-col font-sans text-sm relative overflow-hidden">
+                  
+                  {/* ARTISTIC WATERMARK: Low opacity trees icon in the background using a hex color safely supported by html2canvas */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                     <Trees size={220} strokeWidth={0.5} color="#d1fae5" />
                   </div>
-                  <div className="text-center text-xs text-slate-500 mb-4 pb-4 border-b-2 border-dashed border-slate-300">
+
+                  {/* HEADER WITH FONT PAIRING */}
+                  <div className="text-center font-serif font-black text-3xl mb-1 tracking-tight text-emerald-950 relative z-10">
+                    Grow-Voxly
+                  </div>
+                  <div className="text-center text-xs text-slate-500 font-medium mb-4 pb-4 border-b-2 border-dashed border-slate-300 relative z-10">
                     The 3D Voxel URL Engine<br/>
-                    grow-voxly.vercel.app
+                    Procedural Botanical Data
                   </div>
                   
+                  {/* RECEIPT DATA */}
                   {ticketData && (
-                    <div className="flex flex-col gap-1 text-slate-800">
-                      <div className="flex justify-between text-xs mb-2">
+                    <div className="flex flex-col gap-1 text-slate-800 relative z-10">
+                      <div className="flex justify-between text-xs mb-2 font-medium text-slate-500">
                         <span>{ticketData.date}</span>
                         <span>{ticketData.time}</span>
                       </div>
-                      <div className="flex justify-between text-xs mb-3 font-bold">
-                        <span>Operation:</span>
-                        <span>#{ticketData.id}</span>
+                      <div className="flex justify-between text-xs mb-3 font-bold border-b border-slate-100 pb-2">
+                        <span>Session ID:</span>
+                        <span className="font-mono">#{ticketData.id}</span>
                       </div>
 
-                      <div className="border-t border-b border-dashed border-slate-300 py-3 my-2 space-y-2">
+                      <div className="border-b border-dashed border-slate-300 pb-3 mb-2 space-y-2">
                         {ticketData.items.map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-xs">
+                          <div key={idx} className="flex justify-between text-xs font-medium">
                             <span>{item.name}</span>
-                            <span>{item.price}</span>
+                            <span className="font-bold text-emerald-700">{item.price}</span>
                           </div>
                         ))}
                       </div>
 
-                      <div className="flex justify-between mt-2 text-lg font-bold">
+                      <div className="flex justify-between mt-2 text-lg font-black text-emerald-950">
                         <span>TOTAL:</span>
                         <span>{ticketData.total}</span>
                       </div>
                     </div>
                   )}
                   
-                  {/* Website QR Code replaces the Barcode */}
+                  {/* WEBSITE QR CODE & INSTRUCTIONS */}
                   {qrDataUrl && (
-                    <div className="flex justify-center mt-5 mb-2">
-                       <img src={qrDataUrl} alt="Grow-Voxly QR" className="w-32 h-32 mix-blend-multiply" />
+                    <div className="flex flex-col items-center mt-6 mb-2 relative z-10">
+                       <div className="text-[9px] font-bold text-slate-400 mb-2 tracking-[0.15em] uppercase text-center">
+                         Scan the QR code to visit<br/>the website
+                       </div>
+                       <img src={qrDataUrl} alt="Grow-Voxly QR" className="w-32 h-32 mix-blend-multiply my-1" />
+                       <div className="text-[12px] font-bold text-slate-800 tracking-wide mt-2">
+                         grow-voxly.vercel.app
+                       </div>
                     </div>
                   )}
 
-                  <div className="text-center text-[9px] text-slate-400 mt-2 font-sans tracking-wide uppercase">
-                    THANK YOU FOR CULTIVATING
+                  <div className="text-center text-[9px] text-slate-400 mt-5 font-sans tracking-widest uppercase font-bold relative z-10">
+                    Thank You For Cultivating
                   </div>
                 </div>
 
@@ -353,25 +369,34 @@ export default function PrinterModal({ onClose }) {
               {/* TICKET VIEW CONTROLS (Flipped positions & renaming) */}
               <div 
                 data-html2canvas-ignore="true" 
-                className={`absolute top-full mt-6 flex flex-row justify-between gap-3 w-[260px] transition-opacity duration-700 delay-300 ${viewMode === 'ticket' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`absolute top-full mt-6 flex flex-row justify-between gap-2 w-[260px] transition-opacity duration-700 delay-300 ${viewMode === 'ticket' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
               >
                 {/* REPRINT (Left) */}
                 <button
                   onClick={handleReset}
-                  className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-slate-700 hover:bg-slate-600 shadow-md text-white transition-all active:scale-95"
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-[10px] bg-slate-700 hover:bg-slate-600 shadow-md text-white transition-all active:scale-95"
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw size={14} />
                   REPRINT
                 </button>
 
-                {/* SHARE WEB (Right) */}
+                {/* SHARE WEB (Center) */}
                 <button
                   onClick={handleShare}
                   disabled={isSharing}
-                  className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-[10px] bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
-                  {isSharing ? <span className="animate-spin text-sm">⚙</span> : <Share2 size={16} />}
+                  {isSharing ? <span className="animate-spin text-sm">⚙</span> : <Share2 size={14} />}
                   SHARE WEB
+                </button>
+                
+                {/* DEDICATED CLOSE BUTTON ON TICKET (Right) */}
+                <button
+                  onClick={onClose}
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-[10px] bg-red-500/20 text-red-300 hover:bg-red-500/30 hover:text-red-200 border border-red-500/20 shadow-md transition-all active:scale-95"
+                >
+                  <X size={14} />
+                  CLOSE
                 </button>
               </div>
 
