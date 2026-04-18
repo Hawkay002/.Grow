@@ -20,25 +20,23 @@ function useWindowWidth() {
 }
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
-// UPDATED: Slowed down the duration from 0.55 to 0.9 and added a larger y-offset for a smoother, deeper breathe
+// UPDATED: Much deeper drop (y: 60) and slower duration (1.2s) for a dramatic, cinematic breathe
 const fadeUp = {
-  hidden: { opacity: 0, y: 35 },
+  hidden: { opacity: 0, y: 60 },
   visible: (delay = 0) => ({
     opacity: 1, y: 0,
-    transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1], delay }
+    transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1], delay }
   })
 };
 
-// UPDATED: Increased stagger timing to let each element reveal sequentially
 const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.2 } }
+  visible: { transition: { staggerChildren: 0.25 } }
 };
 
-// UPDATED: Slower stagger for the grid cards
 const cardStagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.15, delayChildren: 0.1 } }
+  visible: { transition: { staggerChildren: 0.2, delayChildren: 0.15 } }
 };
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
@@ -157,9 +155,12 @@ const STATS = [
 
 // ─── Reusable scroll-reveal wrappers ─────────────────────────────────────────
 
-function RevealSection({ children, className = '', delay = 0 }) {
+// UPDATED: Strict 40% margin threshold. Element must be 40% up the screen before revealing.
+function RevealSection({ children, className = '', delay = 0, customMargin = '-40%' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  // Using custom margin to strictly control the trigger point. 
+  // Margin string format: "Top Right Bottom Left" -> "0px 0px -40% 0px" triggers when element crosses 40% from bottom
+  const isInView = useInView(ref, { once: true, margin: `0px 0px ${customMargin} 0px` });
   return (
     <motion.div
       ref={ref}
@@ -176,7 +177,7 @@ function RevealSection({ children, className = '', delay = 0 }) {
 
 function RevealGrid({ children, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-60px' });
+  const isInView = useInView(ref, { once: true, margin: '0px 0px -40% 0px' });
   return (
     <motion.div
       ref={ref}
@@ -194,78 +195,66 @@ function RevealGrid({ children, className = '' }) {
 export default function Landing() {
   const { currentUser } = useAuth();
   const windowWidth = useWindowWidth();
-  const isDesktop = windowWidth > 1024;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-x-hidden selection:bg-emerald-200">
 
       {/* ── SOFT BLENDING GRADIENT BACKGROUND (UPDATED) ──────────── */}
-      {/* Significantly increased opacity and strengthened colors so the gradient visibly pops */}
+      {/* FIXED: Highly saturated, centered, undeniable gradient so it punches through the white background on mobile */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Top Right Aura */}
-        <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-400/50 via-teal-300/40 to-transparent rounded-full blur-[80px] lg:blur-[100px] opacity-100 animate-pulse" style={{ animationDuration: '8s' }} />
-        {/* Bottom Left Aura */}
-        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-400/40 via-emerald-300/30 to-transparent rounded-full blur-[80px] lg:blur-[100px] opacity-100" />
-        {/* Deep Center Aura */}
-        <div className="absolute top-[15%] left-[5%] lg:left-[10%] w-[30rem] lg:w-[45rem] h-[30rem] lg:h-[45rem] bg-teal-400/30 rounded-full blur-[80px] lg:blur-[100px] opacity-100" />
-      </div>
-
-      {/* ── FLOATING HUD OVERLAYS ─────────────────────────────────────────── */}
-      <div className="hidden lg:flex absolute top-[25%] right-[8%] z-10 bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl px-4 py-3 rounded-2xl items-center gap-3 shadow-emerald-900/5">
-        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs font-extrabold text-emerald-900 tracking-wider">LIVE DATA ENGINE</span>
-      </div>
-      <div className="hidden lg:flex absolute bottom-[25%] right-[20%] z-10 bg-slate-900/80 backdrop-blur-xl border border-slate-700 shadow-2xl px-5 py-3 rounded-2xl items-center gap-3">
-        <Activity size={18} className="text-emerald-400" />
-        <span className="text-xs font-bold text-white tracking-widest">
-          SCANS: <span className="text-emerald-400 font-mono text-sm ml-1">14,092</span>
-        </span>
+        {/* Main Central Glow directly behind the text */}
+        <div className="absolute top-[5%] lg:top-[15%] left-1/2 -translate-x-1/2 w-[80vw] lg:w-[45rem] max-w-[600px] h-[400px] lg:h-[45rem] bg-emerald-400/50 lg:bg-teal-300/30 rounded-full blur-[60px] lg:blur-[100px] opacity-100 mix-blend-normal pointer-events-none" />
+        
+        {/* Accent Glows */}
+        <div className="absolute top-[-5%] right-[-5%] w-[300px] lg:w-[60rem] h-[300px] lg:h-[60rem] bg-gradient-to-bl from-emerald-500/30 via-teal-300/30 to-transparent rounded-full blur-[60px] lg:blur-[140px] opacity-100 animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute top-[30%] left-[-10%] w-[300px] lg:w-[50rem] h-[300px] lg:h-[50rem] bg-gradient-to-tr from-emerald-400/30 via-emerald-200/20 to-transparent rounded-full blur-[60px] lg:blur-[120px] opacity-100" />
       </div>
 
       {/* ── FOREGROUND CONTENT ────────────────────────────────────────────── */}
       <div className="relative z-10 w-full min-h-screen flex flex-col">
 
         {/* NAVBAR */}
-        <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center pointer-events-auto">
-          {/* FIXED: Added leading-none and relative bottom nudges to perfectly align the font-serif with the icon */}
-          <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide leading-none">
-            <Trees size={28} className="text-emerald-600 shrink-0 relative bottom-[2px]" />
-            <span>Grow-Voxly</span>
-          </div>
-          
-          <div className="flex items-center gap-1 sm:gap-3">
-            <a href="#how-it-works" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
-              How It Works
-            </a>
-            <a href="#species" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
-              Species
-            </a>
-            {currentUser ? (
-              <Link to="/dashboard" className="font-bold text-sm text-emerald-800 bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-sm ring-1 ring-slate-900/5 hover:bg-white hover:shadow-md transition-all">
-                My Garden
-              </Link>
-            ) : (
-              <Link to="/login" className="font-bold text-sm text-slate-700 bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-sm ring-1 ring-slate-900/5 hover:text-emerald-700 hover:bg-white hover:shadow-md transition-all">
-                Access Engine
-              </Link>
-            )}
-          </div>
-        </nav>
+        {/* Wrapped in RevealSection so it drops down beautifully on load */}
+        <RevealSection customMargin="0px">
+          <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center pointer-events-auto">
+            <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide leading-none">
+              <Trees size={28} className="text-emerald-600 shrink-0 relative bottom-[2px]" />
+              <span>Grow-Voxly</span>
+            </div>
+            
+            <div className="flex items-center gap-1 sm:gap-3">
+              <a href="#how-it-works" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
+                How It Works
+              </a>
+              <a href="#species" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
+                Species
+              </a>
+              {currentUser ? (
+                <Link to="/dashboard" className="font-bold text-sm text-emerald-800 bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-sm ring-1 ring-slate-900/5 hover:bg-white hover:shadow-md transition-all">
+                  My Garden
+                </Link>
+              ) : (
+                <Link to="/login" className="font-bold text-sm text-slate-700 bg-white/60 backdrop-blur-md px-6 py-3 rounded-full shadow-sm ring-1 ring-slate-900/5 hover:text-emerald-700 hover:bg-white hover:shadow-md transition-all">
+                  Access Engine
+                </Link>
+              )}
+            </div>
+          </nav>
+        </RevealSection>
 
         {/* HERO COPY */}
-        <main className="flex-grow max-w-7xl mx-auto w-full px-6 flex items-center pt-10 pb-32 lg:py-0">
-          <motion.div
-            initial="hidden" animate="visible" variants={stagger}
-            className="w-full lg:w-7/12 flex flex-col items-center lg:items-start text-center lg:text-left pointer-events-auto"
-          >
-            <motion.div variants={fadeUp} custom={0}
+        {/* The Hero is already at the top, so a 0% margin works perfectly to trigger the delayed fade-ins immediately on load */}
+        <main className="flex-grow max-w-7xl mx-auto w-full px-6 flex items-center justify-center pt-10 pb-32 lg:py-0">
+          <RevealSection customMargin="0px" className="w-full lg:w-8/12 flex flex-col items-center text-center pointer-events-auto">
+            
+            <motion.div variants={fadeUp} custom={0.2}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 text-emerald-900 text-xs font-black uppercase tracking-widest mb-8 ring-1 ring-slate-900/5 backdrop-blur-md shadow-sm"
             >
               <Sparkles size={14} className="text-emerald-500" /> Voxel Web Architecture
             </motion.div>
 
-            <motion.h1 variants={fadeUp} custom={0.1}
-              className="text-6xl lg:text-[5rem] font-serif text-slate-900 mb-6 leading-[1.05] tracking-tight"
+            <motion.h1 variants={fadeUp} custom={0.4}
+              className="text-6xl lg:text-[6rem] font-serif text-slate-900 mb-6 leading-[1.05] tracking-tight"
             >
               Plant a Link. <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-br from-emerald-600 to-teal-400">
@@ -273,14 +262,14 @@ export default function Landing() {
               </span>
             </motion.h1>
 
-            <motion.p variants={fadeUp} custom={0.2}
-              className="text-lg lg:text-xl text-slate-600 mb-10 max-w-lg leading-relaxed font-medium"
+            <motion.p variants={fadeUp} custom={0.6}
+              className="text-lg lg:text-xl text-slate-600 mb-10 max-w-xl leading-relaxed font-medium"
             >
               We convert raw URL data into breathtaking, procedural 3D ecosystems. Ditch boring black-and-white pixels and share links your audience can actually explore.
             </motion.p>
 
-            <motion.div variants={fadeUp} custom={0.3}
-              className="flex flex-col sm:flex-row w-full sm:w-auto items-center gap-4"
+            <motion.div variants={fadeUp} custom={0.8}
+              className="flex flex-col sm:flex-row w-full sm:w-auto items-center justify-center gap-4"
             >
               {currentUser ? (
                 <Link to="/dashboard" className="w-full sm:w-auto bg-slate-900 text-white font-bold px-8 py-4 rounded-2xl hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-900/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group">
@@ -297,16 +286,16 @@ export default function Landing() {
                 </>
               )}
             </motion.div>
-          </motion.div>
+          </RevealSection>
         </main>
 
         {/* Scroll hint */}
-        <div className="pointer-events-auto flex justify-center pb-10">
+        <RevealSection customMargin="0px" delay={1.2} className="pointer-events-auto flex justify-center pb-10">
           <a href="#stats" className="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-600 transition-colors group">
             <span className="text-xs font-semibold tracking-widest uppercase">Discover</span>
             <ChevronDown size={18} className="animate-bounce" />
           </a>
-        </div>
+        </RevealSection>
       </div>
 
       {/* ── STATS BAR ─────────────────────────────────────────────────────── */}
@@ -368,7 +357,7 @@ export default function Landing() {
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
               return (
-                <motion.div key={f.title} variants={fadeUp} custom={i * 0.1}>
+                <motion.div key={f.title} variants={fadeUp} custom={i * 0.15}>
                   <div className="p-8 rounded-[2rem] bg-white ring-1 ring-slate-900/5 h-full transition-all hover:shadow-2xl hover:shadow-slate-200/60 hover:-translate-y-1">
                     <div className="w-14 h-14 bg-slate-50 text-emerald-600 flex items-center justify-center rounded-2xl mb-6 shadow-sm ring-1 ring-slate-900/5">
                       <Icon size={28} />
@@ -396,10 +385,10 @@ export default function Landing() {
 
           <RevealGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {TREES.map((tree, i) => (
-              <motion.div key={tree.id} variants={fadeUp} custom={i * 0.1}>
+              <motion.div key={tree.id} variants={fadeUp} custom={i * 0.15}>
                 <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
 
-                  {/* Blended Background Image */}
+                  {/* Blended Background Image - Reduced blending for local image clarity */}
                   <div
                     className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
                     style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
@@ -452,7 +441,7 @@ export default function Landing() {
             {QR_SHAPES.map((shape, i) => {
               const Icon = shape.icon;
               return (
-                <motion.div key={shape.id} variants={fadeUp} custom={i * 0.1}>
+                <motion.div key={shape.id} variants={fadeUp} custom={i * 0.15}>
                   <div className="p-8 rounded-[1.5rem] bg-white ring-1 ring-slate-900/5 text-center hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all h-full">
                     <div className="flex justify-center mb-5 text-emerald-600">
                       <Icon size={44} strokeWidth={1.5} />
@@ -525,49 +514,50 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col gap-8">
 
           {/* Top row */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            {/* FIXED: Added leading-none and relative bottom nudges to the footer logo as well */}
-            <div className="flex items-center gap-2 leading-none">
-              <Trees size={20} className="text-emerald-500 relative bottom-[1px]" />
-              <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
+          {/* Note: Decreased threshold to 15% here so the footer doesn't get permanently stuck off-screen on short monitors! */}
+          <RevealSection customMargin="-15%">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-2 leading-none">
+                <Trees size={20} className="text-emerald-500 relative bottom-[1px]" />
+                <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                <a href="#how-it-works" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">How It Works</a>
+                <a href="#species" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Species</a>
+                <Link to="/login" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Login</Link>
+                <Link to="/signup" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Sign Up</Link>
+              </div>
+
+              <p className="text-sm text-slate-500 font-medium">
+                Architected by{' '}
+                <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer"
+                  className="text-emerald-500 hover:text-emerald-400 hover:underline font-bold transition-colors">
+                  Shovith
+                </a>
+              </p>
             </div>
+          </RevealSection>
 
-            {/* Nav links */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-              <a href="#how-it-works" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">How It Works</a>
-              <a href="#species" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Species</a>
-              <Link to="/login" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Login</Link>
-              <Link to="/signup" className="text-slate-400 hover:text-emerald-400 font-medium transition-colors">Sign Up</Link>
-            </div>
-
-            {/* Credit */}
-            <p className="text-sm text-slate-500 font-medium">
-              Architected by{' '}
-              <a href="https://wa.me/918777845713" target="_blank" rel="noreferrer"
-                className="text-emerald-500 hover:text-emerald-400 hover:underline font-bold transition-colors">
-                Shovith
-              </a>
-            </p>
-          </div>
-
-          {/* Divider */}
           <div className="border-t border-slate-800" />
 
           {/* Bottom row — legal links */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-slate-600">
-              © {new Date().getFullYear()} Grow-Voxly. All rights reserved.
-            </p>
-            <div className="flex items-center gap-5 text-xs">
-              <Link to="/privacy" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
-                Privacy Policy
-              </Link>
-              <span className="text-slate-700">·</span>
-              <Link to="/terms" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
-                Terms of Service
-              </Link>
+          <RevealSection customMargin="-15%">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs text-slate-600">
+                © {new Date().getFullYear()} Grow-Voxly. All rights reserved.
+              </p>
+              <div className="flex items-center gap-5 text-xs">
+                <Link to="/privacy" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
+                  Privacy Policy
+                </Link>
+                <span className="text-slate-700">·</span>
+                <Link to="/terms" className="text-slate-500 hover:text-emerald-400 font-medium transition-colors">
+                  Terms of Service
+                </Link>
+              </div>
             </div>
-          </div>
+          </RevealSection>
 
         </div>
       </footer>
