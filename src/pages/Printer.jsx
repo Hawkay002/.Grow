@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Printer as PrinterIcon, Scissors, Power, Share2, RefreshCw, X, Trees } from 'lucide-react';
+import { Printer as PrinterIcon, Scissors, Power, Share2, RefreshCw, X, Trees, Loader2 } from 'lucide-react';
 import QRCode from 'qrcode';
 
 // --- Web Audio API Synth for Thermal Printer Sound ---
@@ -367,7 +367,7 @@ export default function PrinterModal({ onClose }) {
                   disabled={isSharing}
                   className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
-                  {isSharing ? <span className="animate-spin text-sm">⚙</span> : <Share2 size={16} />}
+                  {isSharing ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
                   SHARE WEB
                 </button>
               </div>
@@ -441,7 +441,7 @@ export default function PrinterModal({ onClose }) {
                         : 'bg-emerald-600 border-emerald-900 text-white hover:bg-emerald-500 shadow-[0_5px_10px_rgba(16,185,129,0.3)] cursor-pointer'
                     }`}
                   >
-                    {printStatus === 'printing' ? <span className="animate-spin text-[14px] mb-0.5">⚙</span> : <Power size={14} className="mb-0.5" />}
+                    {printStatus === 'printing' ? <Loader2 size={14} className="animate-spin mb-0.5" /> : <Power size={14} className="mb-0.5" />}
                     <span className="text-[7px] font-black tracking-widest uppercase">
                       {printStatus === 'printing' ? 'Wait' : 'Print'}
                     </span>
