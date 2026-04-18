@@ -133,7 +133,6 @@ export default function PrinterModal({ onClose }) {
   const printDuration = 4000; 
 
   useEffect(() => {
-    // Inject html2canvas if missing
     if (!document.getElementById('html2canvas-script')) {
       const script = document.createElement('script');
       script.id = 'html2canvas-script';
@@ -141,14 +140,12 @@ export default function PrinterModal({ onClose }) {
       document.head.appendChild(script);
     }
 
-    // Generate the QR code for the website
     QRCode.toDataURL('https://grow-voxly.vercel.app', { 
       margin: 1, 
       width: 140, 
       color: { dark: '#0f172a', light: '#fcfcfc' } 
     }).then(setQrDataUrl).catch(console.error);
 
-    // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'auto'; };
   }, []);
@@ -164,7 +161,6 @@ export default function PrinterModal({ onClose }) {
   };
 
   const startPrinting = () => {
-    // Generate exactly at the moment the button is pressed with relevant platform data
     setTicketData({
       id: Math.random().toString(36).substring(2, 8).toUpperCase(),
       date: new Date().toLocaleDateString(),
@@ -274,7 +270,7 @@ export default function PrinterModal({ onClose }) {
           </div>
 
           {/* 2. PAPER EXTRUSION ZONE */}
-          <div className={`absolute bottom-[135px] w-[340px] h-[700px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
+          <div className={`absolute bottom-[145px] w-[340px] h-[700px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
             
             {/* THE ANIMATION WRAPPER */}
             <div 
@@ -303,7 +299,7 @@ export default function PrinterModal({ onClose }) {
                   
                   {/* Artistic Trees Watermark */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
-                     <Trees size={220} strokeWidth={3} className="text-emerald-900" />
+                     <Trees size={220} className="text-emerald-900" />
                   </div>
 
                   <div className="relative z-10 flex flex-col font-sans">
@@ -380,84 +376,82 @@ export default function PrinterModal({ onClose }) {
           </div>
 
           {/* 3. THE GAP / SLOT OPENING */}
-          <div className={`w-[280px] h-[10px] bg-black absolute bottom-[130px] z-20 shadow-[inset_0_4px_8px_rgba(0,0,0,1)] rounded-sm ${printerPartAnimation}`}></div>
+          <div className={`w-[280px] h-[10px] bg-black absolute bottom-[140px] z-20 shadow-[inset_0_4px_8px_rgba(0,0,0,1)] rounded-sm ${printerPartAnimation}`}></div>
 
-          {/* 4. PRINTER FRONT BODY */}
-          <div className={`w-[340px] h-[135px] bg-gradient-to-b from-slate-800 to-slate-950 rounded-b-xl shadow-[0_25px_30px_-10px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)] relative z-30 flex flex-col border-t border-slate-700/50 ${printerPartAnimation}`}>
+          {/* 4. PRINTER FRONT BODY (Hardware Panel with Integrated Buttons) */}
+          <div className={`w-[340px] h-[145px] bg-gradient-to-b from-slate-800 to-slate-950 rounded-b-xl shadow-[0_25px_30px_-10px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)] relative z-30 flex flex-col border-t border-slate-700/50 ${printerPartAnimation}`}>
             <div className="absolute top-0 left-0 w-full h-[3px] opacity-60" 
                  style={{ backgroundImage: 'repeating-linear-gradient(90deg, #94a3b8 0px, #94a3b8 2px, transparent 2px, transparent 4px)' }}>
             </div>
             
-            <div className="flex-1 px-8 pt-6 pb-4 flex flex-col justify-between">
-              <div className="flex gap-4 opacity-20">
-                 <div className="h-[2px] flex-1 bg-black rounded-full" />
-                 <div className="h-[2px] flex-1 bg-black rounded-full" />
+            <div className="flex-1 px-6 pt-5 pb-5 flex flex-col justify-between">
+              
+              {/* Vents */}
+              <div className="flex gap-4 opacity-20 mx-4">
+                 <div className="h-[3px] flex-1 bg-black rounded-full" />
+                 <div className="h-[3px] flex-1 bg-black rounded-full" />
               </div>
 
-              <div className="flex justify-between items-end">
+              {/* Control Deck */}
+              <div className="flex justify-between items-center mt-auto">
+                
+                {/* Logo & Branding */}
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-600 shadow-inner flex items-center justify-center">
-                     <PrinterIcon size={16} className="text-emerald-400" />
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-600 shadow-inner flex items-center justify-center">
+                     <PrinterIcon size={18} className="text-emerald-400" />
                   </div>
-                  <div>
-                    <div className="text-[10px] font-bold tracking-widest text-slate-300">THERMA-PRINT</div>
-                    <div className="text-[8px] text-slate-500 tracking-wider">VOXLY SERIES 80</div>
+                  <div className="flex flex-col justify-center">
+                    <div className="text-[11px] font-bold tracking-widest text-slate-300 leading-tight">GROW-VOXLY</div>
+                    <div className="text-[8px] text-slate-500 tracking-wider">SERIES 80 ENG</div>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-center bg-slate-900/50 p-2 px-3 rounded-lg border border-black/30 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                    <span className="text-[6px] text-slate-400 font-bold tracking-widest">PWR</span>
+                {/* Integrated Hardware Buttons & LEDs */}
+                <div className="flex items-center gap-3">
+                  
+                  {/* Status LEDs */}
+                  <div className="flex flex-col gap-2 mr-1 bg-slate-900/50 p-1.5 rounded-md shadow-inner border border-black/20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" title="Power" />
+                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                      printStatus === 'printing' ? 'bg-teal-400 shadow-[0_0_6px_rgba(45,212,191,0.8)] animate-pulse' : 'bg-slate-700 shadow-inner'
+                    }`} title="Data" />
                   </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                      printStatus === 'printing' ? 'bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.8)] animate-pulse' : 'bg-slate-700 shadow-inner'
-                    }`} />
-                    <span className="text-[6px] text-slate-400 font-bold tracking-widest">DATA</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-slate-700 shadow-inner" />
-                    <span className="text-[6px] text-slate-400 font-bold tracking-widest">ERR</span>
-                  </div>
-                  <button className="ml-2 w-6 h-6 rounded-full bg-slate-700 border-b-2 border-slate-900 hover:bg-slate-600 active:border-b-0 active:translate-y-[2px] transition-all flex items-center justify-center cursor-default">
-                     <div className="w-3 h-3 rounded-full border-2 border-slate-500" />
+
+                  {/* Hardware TEAR Button */}
+                  <button
+                    onClick={handleTear}
+                    disabled={printStatus !== 'printed'}
+                    className={`relative flex flex-col items-center justify-center w-12 h-11 rounded-lg border-b-[3px] transition-all active:border-b-0 active:translate-y-[3px] ${
+                      printStatus === 'printed' 
+                        ? 'bg-slate-700 border-slate-900 text-white hover:bg-slate-600 shadow-[0_5px_10px_rgba(0,0,0,0.3)] cursor-pointer' 
+                        : 'bg-slate-800/80 border-slate-950 text-slate-600 cursor-not-allowed opacity-70'
+                    }`}
+                  >
+                    <Scissors size={14} className={`mb-0.5 ${printStatus === 'printed' ? 'animate-bounce' : ''}`} />
+                    <span className="text-[7px] font-black tracking-widest uppercase">Tear</span>
                   </button>
+
+                  {/* Hardware PRINT Button */}
+                  <button
+                    onClick={handlePrint}
+                    disabled={printStatus === 'tearing'}
+                    className={`relative flex flex-col items-center justify-center w-12 h-11 rounded-lg border-b-[3px] transition-all active:border-b-0 active:translate-y-[3px] ${
+                      printStatus === 'tearing'
+                        ? 'bg-slate-800 border-slate-950 text-slate-600 cursor-not-allowed opacity-70'
+                        : 'bg-emerald-600 border-emerald-900 text-white hover:bg-emerald-500 shadow-[0_5px_10px_rgba(16,185,129,0.3)] cursor-pointer'
+                    }`}
+                  >
+                    {printStatus === 'printing' ? <span className="animate-spin text-[14px] mb-0.5">⚙</span> : <Power size={14} className="mb-0.5" />}
+                    <span className="text-[7px] font-black tracking-widest uppercase">
+                      {printStatus === 'printing' ? 'Wait' : 'Print'}
+                    </span>
+                  </button>
+
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* --- MAIN PRINTER CONTROLS --- */}
-        <div className={`mt-6 flex flex-row gap-4 relative z-50 transition-all duration-700 ${viewMode === 'ticket' ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100 translate-y-0'}`}>
-          
-          <button
-            onClick={handleTear}
-            disabled={printStatus !== 'printed'}
-            className={`flex flex-1 items-center justify-center gap-2 w-36 py-2.5 rounded-lg font-bold text-xs transition-all ${
-              printStatus === 'printed' ? 'bg-slate-700 hover:bg-slate-600 shadow-md text-white active:scale-95'
-              : 'bg-slate-800/80 text-slate-600 cursor-not-allowed opacity-50'
-            }`}
-          >
-            <Scissors size={16} className={printStatus === 'printed' ? 'animate-bounce' : ''} />
-            TEAR
-          </button>
-
-          <button
-            onClick={handlePrint}
-            disabled={printStatus === 'tearing'}
-            className={`flex flex-1 items-center justify-center gap-2 w-36 py-2.5 rounded-lg font-bold text-xs transition-all ${
-              printStatus === 'tearing' ? 'bg-slate-800/80 text-slate-500 cursor-not-allowed shadow-inner' 
-              : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white active:scale-95'
-            }`}
-          >
-            {printStatus === 'printing' ? <span className="animate-spin text-sm">⚙</span> : <Power size={16} />}
-            {printStatus === 'printing' ? 'PROCESSING' : 'PRINT'}
-          </button>
-
-        </div>
-
       </div>
     </div>
   );
