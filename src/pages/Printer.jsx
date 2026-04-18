@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Printer as PrinterIcon, Scissors, Power, Share2, RefreshCw, X, Trees } from 'lucide-react';
+import { Printer as PrinterIcon, Scissors, Power, Share2, RefreshCw, X, Trees, Settings } from 'lucide-react';
 import QRCode from 'qrcode';
 
 // --- Web Audio API Synth for Thermal Printer Sound ---
@@ -165,11 +165,10 @@ export default function PrinterModal({ onClose }) {
       id: Math.random().toString(36).substring(2, 8).toUpperCase(),
       date: new Date().toLocaleDateString(),
       time: new Date().toLocaleTimeString(),
-      features: [
-        "Transforms any boring URL into an interactive 3D voxel tree.",
-        "Exports stunning, custom-shaped QR codes (Cubes, Spheres, etc).",
-        "Tracks real-time scan analytics directly in your dashboard.",
-        "Browser-native WebGL rendering with zero plugins required."
+      lines: [
+        "Transforms raw URLs into breathtaking, interactive 3D voxel ecosystems.",
+        "Cryptographic generation guarantees every link grows a completely unique structure.",
+        "Export custom geometric QR tiles and track your real-time scan analytics."
       ]
     });
 
@@ -222,8 +221,8 @@ export default function PrinterModal({ onClose }) {
 
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ 
-            title: 'Grow-Voxly', 
-            text: 'Turn your boring links into living 3D ecosystems! Create custom QR codes and track your scans. Plant your first tree here: https://grow-voxly.vercel.app',
+            title: 'Grow-Voxly - 3D Voxel URLs', 
+            text: 'Plant a Link. Grow a World. Turn your boring URLs into interactive 3D ecosystems. Visit: https://grow-voxly.vercel.app',
             files: [file] 
         });
         resetToIdle();
@@ -281,7 +280,7 @@ export default function PrinterModal({ onClose }) {
                   printStatus === 'printing' ? 'translateY(0%)' :
                   printStatus === 'printed' ? 'translateY(0%)' :
                   printStatus === 'tearing' ? 'translateY(-15px) rotate(-3deg) scale(1.02)' :
-                  'translateY(calc(-50dvh + 50% + 170px)) rotate(0deg) scale(1.1)', 
+                  'translateY(calc(-50dvh + 50% + 180px)) rotate(0deg) scale(1.1)', 
                 transition: 
                   printStatus === 'printing' ? `transform ${printDuration}ms linear` :
                   printStatus === 'tearing' ? 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' :
@@ -295,38 +294,37 @@ export default function PrinterModal({ onClose }) {
               <div ref={ticketRef} className="w-full h-auto bg-transparent text-slate-800 flex flex-col relative z-10 shrink-0">
                 <JaggedEdgeCode top={true} />
 
-                <div className="w-full bg-[#fcfcfc] px-5 pt-4 pb-5 flex flex-col relative overflow-hidden">
+                <div className="w-full bg-[#fcfcfc] px-5 pt-4 pb-4 flex flex-col relative overflow-hidden">
                   
                   {/* Artistic Trees Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
-                     <Trees size={220} className="text-emerald-900" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
+                     <Trees size={240} className="text-emerald-900" />
                   </div>
 
                   <div className="relative z-10 flex flex-col font-sans">
                     <div className="text-center font-serif font-black text-2xl mb-0.5 tracking-tight text-emerald-950">
                       GROW-VOXLY
                     </div>
-                    <div className="text-center text-[10px] text-slate-500 mb-3 pb-2 border-b border-dashed border-slate-300 font-medium tracking-wide">
+                    <div className="text-center text-[10px] text-slate-500 mb-2 pb-2 border-b border-dashed border-slate-300 font-medium tracking-wide">
                       The 3D Voxel URL Engine
                     </div>
                     
                     {ticketData && (
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex justify-between text-[10px] font-bold mb-1 text-slate-600">
+                      <div className="flex flex-col">
+                        <div className="flex justify-between text-[9px] font-bold mb-1">
                           <span>{ticketData.date}</span>
                           <span>{ticketData.time}</span>
                         </div>
-                        <div className="flex justify-between text-[10px] font-bold mb-2 text-slate-600">
+                        <div className="flex justify-between text-[9px] font-bold mb-2">
                           <span>SESSION ID:</span>
                           <span>#{ticketData.id}</span>
                         </div>
 
-                        {/* Pointwise Descriptive Features */}
-                        <div className="border-t border-b border-dashed border-slate-300 py-3 my-1 space-y-2.5">
-                          {ticketData.features.map((feature, idx) => (
-                            <div key={idx} className="flex items-start gap-2 text-[10px] font-bold text-slate-800 leading-tight">
-                              <span className="text-emerald-600 mt-[1px]">◆</span>
-                              <span>{feature}</span>
+                        <div className="border-t border-b border-dashed border-slate-300 py-2.5 my-1 space-y-2">
+                          {ticketData.lines.map((line, idx) => (
+                            <div key={idx} className="flex items-start gap-1.5 text-[9.5px] font-bold text-slate-800 leading-tight">
+                              <span className="text-emerald-600 mt-[1px]">▶</span>
+                              <span>{line}</span>
                             </div>
                           ))}
                         </div>
@@ -334,10 +332,10 @@ export default function PrinterModal({ onClose }) {
                     )}
                     
                     {qrDataUrl && (
-                      <div className="flex flex-col items-center mt-4 mb-1">
+                      <div className="flex flex-col items-center mt-3">
                          <img src={qrDataUrl} alt="Grow-Voxly QR" className="w-24 h-24 mix-blend-multiply" />
-                         <span className="text-[8px] font-bold uppercase tracking-wider mt-2 text-slate-500">Scan to visit website</span>
-                         <span className="text-[11px] font-black text-slate-900 mt-0.5 tracking-wide">grow-voxly.vercel.app</span>
+                         <span className="text-[8px] font-bold uppercase tracking-wider mt-1.5 text-slate-500">Scan to visit website</span>
+                         <span className="text-[10px] font-bold text-slate-900 mt-0.5">grow-voxly.vercel.app</span>
                       </div>
                     )}
 
@@ -368,8 +366,8 @@ export default function PrinterModal({ onClose }) {
                   disabled={isSharing}
                   className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
-                  {isSharing ? <span className="animate-spin text-sm">⚙</span> : <Share2 size={16} />}
-                  SHARE
+                  {isSharing ? <Settings size={16} className="animate-spin" /> : <Share2 size={16} />}
+                  SHARE WEB
                 </button>
               </div>
 
@@ -442,7 +440,7 @@ export default function PrinterModal({ onClose }) {
                         : 'bg-emerald-600 border-emerald-900 text-white hover:bg-emerald-500 shadow-[0_5px_10px_rgba(16,185,129,0.3)] cursor-pointer'
                     }`}
                   >
-                    {printStatus === 'printing' ? <span className="animate-spin text-[14px] mb-0.5">⚙</span> : <Power size={14} className="mb-0.5" />}
+                    {printStatus === 'printing' ? <Settings size={14} className="animate-spin mb-0.5" /> : <Power size={14} className="mb-0.5" />}
                     <span className="text-[7px] font-black tracking-widest uppercase">
                       {printStatus === 'printing' ? 'Wait' : 'Print'}
                     </span>
