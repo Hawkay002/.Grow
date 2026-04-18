@@ -185,13 +185,13 @@ export default function Profile() {
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-emerald-100 border border-emerald-50 mb-8">
           <h3 className="text-lg font-bold text-emerald-900 mb-2">Share Grow-Voxly</h3>
           <p className="text-sm text-slate-500 mb-6">
-            Love the platform? Print a digital receipt and share the ecosystem with your friends and network.
+            Love the platform? Share the ecosystem with your friends and network.
           </p>
           <button 
             onClick={() => setShowPrinterModal(true)} 
             className="w-full flex items-center justify-center gap-2 py-4 font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors ring-1 ring-emerald-200"
           >
-            <Share2 size={18} /> Print & Share
+            <Share2 size={18} /> Share
           </button>
         </div>
 
