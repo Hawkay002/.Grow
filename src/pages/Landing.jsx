@@ -166,7 +166,7 @@ function RevealSection({ children, className = '', delay = 0 }) {
 
 function RevealCard({ children, className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.50 });
+  const isInView = useInView(ref, { once: true, amount: 0.98 });
   return (
     <motion.div
       ref={ref}
