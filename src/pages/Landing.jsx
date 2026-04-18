@@ -20,21 +20,25 @@ function useWindowWidth() {
 }
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
+// UPDATED: Slowed down the duration from 0.55 to 0.9 and added a larger y-offset for a smoother, deeper breathe
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 35 },
   visible: (delay = 0) => ({
     opacity: 1, y: 0,
-    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1], delay }
+    transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1], delay }
   })
 };
+
+// UPDATED: Increased stagger timing to let each element reveal sequentially
 const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } }
+  visible: { transition: { staggerChildren: 0.2 } }
 };
-// Card stagger — used by features + QR shape grids
+
+// UPDATED: Slower stagger for the grid cards
 const cardStagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } }
+  visible: { transition: { staggerChildren: 0.15, delayChildren: 0.1 } }
 };
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
@@ -112,9 +116,9 @@ const QR_SHAPES = [
 ];
 
 const STEPS = [
-  { icon: Link2,  title: 'Paste Your URL',       desc: 'Drop any link — a portfolio, a product page, a bio — into the engine.' },
-  { icon: Trees,  title: 'Choose Your Tree',      desc: 'Pick from 9 procedurally-generated species, each with a distinct shape and colour.' },
-  { icon: Share2, title: 'Share the Experience',  desc: 'Your audience scans the living QR. Every scan is tracked in your dashboard.' },
+  { icon: Link2,  title: 'Paste Your URL',        desc: 'Drop any link — a portfolio, a product page, a bio — into the engine.' },
+  { icon: Trees,  title: 'Choose Your Tree',       desc: 'Pick from 9 procedurally-generated species, each with a distinct shape and colour.' },
+  { icon: Share2, title: 'Share the Experience',   desc: 'Your audience scans the living QR. Every scan is tracked in your dashboard.' },
 ];
 
 const FEATURES = [
@@ -145,15 +149,14 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: '9',    label: 'Tree Species'   },
-  { value: '4',    label: 'QR Tile Shapes' },
-  { value: '14K+', label: 'Links Grown'    },
-  { value: '100%', label: 'Browser Native' },
+  { value: '9',    label: 'Tree Species'    },
+  { value: '4',    label: 'QR Tile Shapes'  },
+  { value: '14K+', label: 'Links Grown'     },
+  { value: '100%', label: 'Browser Native'  },
 ];
 
 // ─── Reusable scroll-reveal wrappers ─────────────────────────────────────────
 
-// Single element — same as before
 function RevealSection({ children, className = '', delay = 0 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
@@ -171,10 +174,6 @@ function RevealSection({ children, className = '', delay = 0 }) {
   );
 }
 
-// FIX: Grid stagger container — ONE InView ref on the parent; children use
-// motion.div with variants={fadeUp} + custom={i * delay} directly.
-// This avoids N independent IntersectionObservers fighting each other and
-// ensures all visible cards in the grid animate as a single cohesive wave.
 function RevealGrid({ children, className = '' }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
@@ -191,73 +190,24 @@ function RevealGrid({ children, className = '' }) {
   );
 }
 
-// SpeciesGrid — single useInView trigger, direct inline transition per card.
-// Bypasses variant orchestration entirely so timing is always predictable.
-function SpeciesGrid({ trees }) {
-  const ref = useRef(null);
-  // amount:0 means trigger as soon as ANY pixel of the grid enters the viewport
-  const isInView = useInView(ref, { once: true, amount: 0 });
-
-  return (
-    <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {trees.map((tree, i) => (
-        <motion.div
-          key={tree.id}
-          initial={{ opacity: 0, y: 36 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
-          transition={{
-            duration: 0.52,
-            ease: [0.22, 1, 0.36, 1],
-            delay: i * 0.09,  // 90ms between each card — clearly visible cascade
-          }}
-        >
-          <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
-
-            {/* Blended Background Image */}
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
-              style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
-            />
-
-            <div className="relative z-10">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
-                <div
-                  className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
-                  style={{ background: tree.qr }}
-                  title="QR dark colour"
-                />
-              </div>
-              <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
-            </div>
-
-            <div className="relative z-10 flex flex-wrap items-center gap-1.5 mt-auto pt-4">
-              {tree.leaves.map((c) => (
-                <div key={c} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
-              ))}
-              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
-              <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Landing() {
   const { currentUser } = useAuth();
   const windowWidth = useWindowWidth();
+  const isDesktop = windowWidth > 1024;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-x-hidden selection:bg-emerald-200">
 
-      {/* ── SOFT BLENDING GRADIENT BACKGROUND ──────────── */}
+      {/* ── SOFT BLENDING GRADIENT BACKGROUND (UPDATED) ──────────── */}
+      {/* Significantly increased opacity and strengthened colors so the gradient visibly pops */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-200/50 via-teal-100/30 to-transparent rounded-full blur-[100px] lg:blur-[140px] opacity-80 animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-200/40 via-emerald-100/20 to-transparent rounded-full blur-[100px] lg:blur-[120px] opacity-60" />
-        <div className="absolute top-[15%] left-[5%] lg:left-[10%] w-[30rem] lg:w-[45rem] h-[30rem] lg:h-[45rem] bg-teal-300/20 rounded-full blur-[100px] lg:blur-[140px] opacity-60" />
+        {/* Top Right Aura */}
+        <div className="absolute top-[-10%] right-[-5%] w-[40rem] lg:w-[60rem] h-[40rem] lg:h-[60rem] bg-gradient-to-bl from-emerald-400/50 via-teal-300/40 to-transparent rounded-full blur-[80px] lg:blur-[100px] opacity-100 animate-pulse" style={{ animationDuration: '8s' }} />
+        {/* Bottom Left Aura */}
+        <div className="absolute bottom-[-10%] left-[-10%] w-[30rem] lg:w-[50rem] h-[30rem] lg:h-[50rem] bg-gradient-to-tr from-emerald-400/40 via-emerald-300/30 to-transparent rounded-full blur-[80px] lg:blur-[100px] opacity-100" />
+        {/* Deep Center Aura */}
+        <div className="absolute top-[15%] left-[5%] lg:left-[10%] w-[30rem] lg:w-[45rem] h-[30rem] lg:h-[45rem] bg-teal-400/30 rounded-full blur-[80px] lg:blur-[100px] opacity-100" />
       </div>
 
       {/* ── FLOATING HUD OVERLAYS ─────────────────────────────────────────── */}
@@ -277,10 +227,12 @@ export default function Landing() {
 
         {/* NAVBAR */}
         <nav className="w-full px-6 py-6 lg:px-12 flex justify-between items-center pointer-events-auto">
-          <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide">
-            <Trees size={36} className="text-emerald-600" />
-            Grow-Voxly
+          {/* FIXED: Added leading-none and relative bottom nudges to perfectly align the font-serif with the icon */}
+          <div className="flex items-center gap-2 text-emerald-950 font-serif font-bold text-2xl tracking-wide leading-none">
+            <Trees size={28} className="text-emerald-600 shrink-0 relative bottom-[2px]" />
+            <span>Grow-Voxly</span>
           </div>
+          
           <div className="flex items-center gap-1 sm:gap-3">
             <a href="#how-it-works" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
               How It Works
@@ -312,7 +264,7 @@ export default function Landing() {
               <Sparkles size={14} className="text-emerald-500" /> Voxel Web Architecture
             </motion.div>
 
-            <motion.h1 variants={fadeUp} custom={0.05}
+            <motion.h1 variants={fadeUp} custom={0.1}
               className="text-6xl lg:text-[5rem] font-serif text-slate-900 mb-6 leading-[1.05] tracking-tight"
             >
               Plant a Link. <br />
@@ -321,13 +273,13 @@ export default function Landing() {
               </span>
             </motion.h1>
 
-            <motion.p variants={fadeUp} custom={0.1}
+            <motion.p variants={fadeUp} custom={0.2}
               className="text-lg lg:text-xl text-slate-600 mb-10 max-w-lg leading-relaxed font-medium"
             >
               We convert raw URL data into breathtaking, procedural 3D ecosystems. Ditch boring black-and-white pixels and share links your audience can actually explore.
             </motion.p>
 
-            <motion.div variants={fadeUp} custom={0.15}
+            <motion.div variants={fadeUp} custom={0.3}
               className="flex flex-col sm:flex-row w-full sm:w-auto items-center gap-4"
             >
               {currentUser ? (
@@ -362,7 +314,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((s, i) => (
-              <RevealSection key={s.label} delay={i * 0.08} className="text-center">
+              <RevealSection key={s.label} delay={i * 0.15} className="text-center">
                 <div className="text-3xl lg:text-4xl font-serif font-bold text-emerald-400 mb-1">{s.value}</div>
                 <div className="text-xs font-semibold text-slate-400 tracking-widest uppercase">{s.label}</div>
               </RevealSection>
@@ -385,7 +337,7 @@ export default function Landing() {
             {STEPS.map((step, i) => {
               const Icon = step.icon;
               return (
-                <RevealSection key={step.title} delay={i * 0.12} className="flex flex-col items-center text-center px-8 py-6">
+                <RevealSection key={step.title} delay={i * 0.2} className="flex flex-col items-center text-center px-8 py-6">
                   <div className="relative mb-6">
                     <div className="w-14 h-14 rounded-2xl bg-emerald-50 ring-1 ring-emerald-100 flex items-center justify-center shadow-sm">
                       <Icon size={26} className="text-emerald-600" />
@@ -416,7 +368,7 @@ export default function Landing() {
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
               return (
-                <motion.div key={f.title} variants={fadeUp} custom={i * 0.07}>
+                <motion.div key={f.title} variants={fadeUp} custom={i * 0.1}>
                   <div className="p-8 rounded-[2rem] bg-white ring-1 ring-slate-900/5 h-full transition-all hover:shadow-2xl hover:shadow-slate-200/60 hover:-translate-y-1">
                     <div className="w-14 h-14 bg-slate-50 text-emerald-600 flex items-center justify-center rounded-2xl mb-6 shadow-sm ring-1 ring-slate-900/5">
                       <Icon size={28} />
@@ -442,7 +394,40 @@ export default function Landing() {
             </p>
           </RevealSection>
 
-          <SpeciesGrid trees={TREES} />
+          <RevealGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {TREES.map((tree, i) => (
+              <motion.div key={tree.id} variants={fadeUp} custom={i * 0.1}>
+                <div className="group relative overflow-hidden p-6 rounded-[1.5rem] bg-slate-50 ring-1 ring-slate-900/5 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all h-full flex flex-col justify-between z-10">
+
+                  {/* Blended Background Image */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-15 group-hover:opacity-25 transition-opacity z-0 pointer-events-none"
+                    style={{ backgroundImage: `url(${tree.imagePlaceholder})` }}
+                  />
+
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-2xl font-serif font-bold text-slate-900 capitalize">{tree.label}</h3>
+                      <div
+                        className="w-9 h-9 rounded-xl flex-shrink-0 ring-1 ring-black/5 shadow-sm"
+                        style={{ background: tree.qr }}
+                        title="QR dark colour"
+                      />
+                    </div>
+                    <p className="text-slate-600 text-sm leading-relaxed mb-6 font-medium">{tree.desc}</p>
+                  </div>
+
+                  <div className="relative z-10 flex flex-wrap items-center gap-1.5 mt-auto pt-4">
+                    {tree.leaves.map((c) => (
+                      <div key={c} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm" style={{ background: c }} title={c} />
+                    ))}
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full ring-1 ring-black/10 shadow-sm ml-1 opacity-80" style={{ background: tree.trunk }} title="Trunk" />
+                    <span className="text-[10px] text-slate-500 font-bold ml-2 tracking-widest uppercase">Palette</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </RevealGrid>
 
           <RevealSection className="flex justify-center mt-14">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-400 tracking-wide bg-slate-50 px-4 py-2 rounded-full ring-1 ring-slate-900/5">
@@ -467,7 +452,7 @@ export default function Landing() {
             {QR_SHAPES.map((shape, i) => {
               const Icon = shape.icon;
               return (
-                <motion.div key={shape.id} variants={fadeUp} custom={i * 0.08}>
+                <motion.div key={shape.id} variants={fadeUp} custom={i * 0.1}>
                   <div className="p-8 rounded-[1.5rem] bg-white ring-1 ring-slate-900/5 text-center hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all h-full">
                     <div className="flex justify-center mb-5 text-emerald-600">
                       <Icon size={44} strokeWidth={1.5} />
@@ -541,9 +526,9 @@ export default function Landing() {
 
           {/* Top row */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            {/* Brand */}
-            <div className="flex items-center gap-2">
-              <Trees size={28} className="text-emerald-500" />
+            {/* FIXED: Added leading-none and relative bottom nudges to the footer logo as well */}
+            <div className="flex items-center gap-2 leading-none">
+              <Trees size={20} className="text-emerald-500 relative bottom-[1px]" />
               <span className="font-serif font-bold text-white text-xl">Grow-Voxly</span>
             </div>
 
