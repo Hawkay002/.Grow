@@ -140,10 +140,11 @@ export default function PrinterModal({ onClose }) {
       document.head.appendChild(script);
     }
 
+    // Generate the QR code using the signature Emerald-900 color (#064e3b)
     QRCode.toDataURL('https://grow-voxly.vercel.app', { 
       margin: 1, 
       width: 140, 
-      color: { dark: '#0f172a', light: '#fcfcfc' } 
+      color: { dark: '#064e3b', light: '#fcfcfc' } 
     }).then(setQrDataUrl).catch(console.error);
 
     document.body.style.overflow = 'hidden';
@@ -166,9 +167,10 @@ export default function PrinterModal({ onClose }) {
       date: new Date().toLocaleDateString(),
       time: new Date().toLocaleTimeString(),
       lines: [
-        "Transforms raw URLs into breathtaking, interactive 3D voxel ecosystems.",
-        "Cryptographic generation guarantees every link grows a completely unique structure.",
-        "Export custom geometric QR tiles and track your real-time scan analytics."
+        "Turns boring links into beautiful 3D voxel trees you can actually explore.",
+        "Your URL is the seed. Every single link grows its own unique shape and colors.",
+        "Ditch the basic black-and-white pixels. Make your QR codes stand out.",
+        "Comes with free vanity URLs and real-time scan tracking."
       ]
     });
 
@@ -302,7 +304,7 @@ export default function PrinterModal({ onClose }) {
                   </div>
 
                   <div className="relative z-10 flex flex-col font-sans">
-                    <div className="text-center font-serif font-black text-2xl mb-0.5 tracking-tight text-emerald-950">
+                    <div className="text-center font-serif font-black text-2xl mb-0.5 tracking-tight text-emerald-900">
                       GROW-VOXLY
                     </div>
                     <div className="text-center text-[10px] text-slate-500 mb-2 pb-2 border-b border-dashed border-slate-300 font-medium tracking-wide">
@@ -311,13 +313,13 @@ export default function PrinterModal({ onClose }) {
                     
                     {ticketData && (
                       <div className="flex flex-col">
-                        <div className="flex justify-between text-[9px] font-bold mb-1">
+                        <div className="flex justify-between text-[9px] font-bold mb-1 text-slate-600">
                           <span>{ticketData.date}</span>
                           <span>{ticketData.time}</span>
                         </div>
                         <div className="flex justify-between text-[9px] font-bold mb-2">
-                          <span>SESSION ID:</span>
-                          <span>#{ticketData.id}</span>
+                          <span className="text-slate-600">SESSION ID:</span>
+                          <span className="text-slate-900">#{ticketData.id}</span>
                         </div>
 
                         <div className="border-t border-b border-dashed border-slate-300 py-2.5 my-1 space-y-2">
@@ -367,7 +369,7 @@ export default function PrinterModal({ onClose }) {
                   className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
                   {isSharing ? <Settings size={16} className="animate-spin" /> : <Share2 size={16} />}
-                  SHARE WEB
+                  SHARE
                 </button>
               </div>
 
