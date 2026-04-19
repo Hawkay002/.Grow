@@ -400,7 +400,7 @@ export default function PrinterModal({ onClose }) {
                   className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
                   {isSharing ? <Settings size={16} className="animate-spin" /> : <Share2 size={16} />}
-                  SHARE WEB
+                  SHARE
                 </button>
               </div>
 
