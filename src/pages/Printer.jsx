@@ -197,7 +197,7 @@ export default function PrinterModal({ onClose }) {
       lines: [
         "Turns boring links into beautiful 3D voxel trees you can actually explore.",
         "Your URL is the seed. Every single link grows its own unique shape and colors.",
-        "Ditch the basic black-and-white pixels. Make your QR codes stand out."
+        "Ditch the basic black-and-white pixels. Make your QR codes stand out.",
         "Comes with free vanity URLs and real-time scan tracking."
       ]
     });
