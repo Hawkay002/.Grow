@@ -195,9 +195,10 @@ export default function PrinterModal({ onClose }) {
       date: new Date().toLocaleDateString(),
       time: new Date().toLocaleTimeString(),
       lines: [
-        "Transforms raw URLs into breathtaking, interactive 3D voxel ecosystems.",
-        "Cryptographic generation guarantees every link grows a completely unique structure.",
-        "Export custom geometric QR tiles and track your real-time scan analytics."
+        "Turns boring links into beautiful 3D voxel trees you can actually explore.",
+        "Your URL is the seed. Every single link grows its own unique shape and colors.",
+        "Ditch the basic black-and-white pixels. Make your QR codes stand out."
+        "Comes with free vanity URLs and real-time scan tracking."
       ]
     });
 
@@ -397,7 +398,7 @@ export default function PrinterModal({ onClose }) {
                   className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
                   {isSharing ? <Settings size={16} className="animate-spin" /> : <Share2 size={16} />}
-                  SHARE WEB
+                  SHARE
                 </button>
               </div>
 
