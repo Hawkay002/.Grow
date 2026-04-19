@@ -168,6 +168,7 @@ export default function PrinterModal({ onClose }) {
       document.head.appendChild(script);
     }
 
+    // Custom Signature Emerald-900 QR Code
     QRCode.toDataURL('https://grow-voxly.vercel.app', { 
       margin: 1, 
       width: 140, 
@@ -281,7 +282,7 @@ export default function PrinterModal({ onClose }) {
       {/* ALWAYS VISIBLE Close Modal Button */}
       <button 
         onClick={onClose} 
-        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-[250]"
+        className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-[300]"
       >
         <X size={24} />
       </button>
@@ -299,8 +300,9 @@ export default function PrinterModal({ onClose }) {
              <div className="w-56 h-3 bg-black/30 rounded-full blur-[2px] shadow-inner"></div>
           </div>
 
-          {/* 2. PAPER EXTRUSION ZONE (Lowered to touch teeth perfectly) */}
-          <div className={`absolute bottom-[150px] w-[380px] h-[700px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
+          {/* 2. PAPER EXTRUSION ZONE */}
+          {/* FIXED: The bottom is explicitly set to 158px to overlap slightly with the 160px Front Body, guaranteeing a flush cut at the teeth. */}
+          <div className={`absolute bottom-[158px] w-[380px] h-[700px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
             
             {/* THE ANIMATION WRAPPER */}
             <div 
@@ -366,7 +368,7 @@ export default function PrinterModal({ onClose }) {
                       <div className="flex flex-col items-center mt-3">
                          <img src={qrDataUrl} alt="Grow-Voxly QR" className="w-24 h-24 mix-blend-multiply" />
                          <span className="text-[8px] font-bold uppercase tracking-wider mt-1.5 text-slate-500">Scan to visit website</span>
-                         <span className="text-[10px] font-bold text-slate-900 mt-0.5">grow-voxly.vercel.app</span>
+                         <span className="text-[10px] font-bold text-emerald-900 mt-0.5">grow-voxly.vercel.app</span>
                       </div>
                     )}
 
@@ -398,7 +400,7 @@ export default function PrinterModal({ onClose }) {
                   className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] text-white transition-all active:scale-95"
                 >
                   {isSharing ? <Settings size={16} className="animate-spin" /> : <Share2 size={16} />}
-                  SHARE
+                  SHARE WEB
                 </button>
               </div>
 
@@ -406,7 +408,8 @@ export default function PrinterModal({ onClose }) {
           </div>
 
           {/* 3. THE GAP / SLOT OPENING */}
-          <div className={`w-[320px] h-[12px] bg-neutral-950 absolute bottom-[154px] z-20 shadow-[inset_0_6px_10px_rgba(0,0,0,1),0_2px_0_rgba(255,255,255,0.1)] rounded-sm ${printerPartAnimation}`}></div>
+          {/* Sits behind the paper, visible as a dark cavity */}
+          <div className={`w-[320px] h-[20px] bg-neutral-950 absolute bottom-[150px] z-0 shadow-[inset_0_6px_10px_rgba(0,0,0,1)] rounded-sm ${printerPartAnimation}`}></div>
 
           {/* 4. PRINTER FRONT BODY (Hardware Panel with Integrated Buttons) */}
           <div className={`w-[380px] h-[160px] bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 rounded-b-2xl shadow-[0_30px_40px_-10px_rgba(0,0,0,0.8),inset_0_2px_3px_rgba(255,255,255,0.2)] relative z-30 flex flex-col border-t border-slate-600 ${printerPartAnimation}`}>
