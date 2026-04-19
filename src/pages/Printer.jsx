@@ -299,8 +299,8 @@ export default function PrinterModal({ onClose }) {
              <div className="w-56 h-3 bg-black/30 rounded-full blur-[2px] shadow-inner"></div>
           </div>
 
-          {/* 2. PAPER EXTRUSION ZONE */}
-          <div className={`absolute bottom-[160px] w-[380px] h-[700px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
+          {/* 2. PAPER EXTRUSION ZONE (Lowered to touch teeth perfectly) */}
+          <div className={`absolute bottom-[150px] w-[380px] h-[700px] flex flex-col items-center justify-end z-10 pointer-events-none ${viewMode === 'ticket' ? 'overflow-visible' : 'overflow-hidden'}`}>
             
             {/* THE ANIMATION WRAPPER */}
             <div 
